@@ -2,7 +2,9 @@ package web
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -79,6 +81,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		if pollInterval == "" {
 			pollInterval = strconv.Itoa(cfg.PollInterval)
 		}
+		timezone, _ := settingsRepo.Get("timezone")
 		data := map[string]any{
 			"Folders":      folders,
 			"IMAPEmail":    imapEmail,
@@ -86,6 +89,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"PollInterval": pollInterval,
 			"ListenAddr":   cfg.ListenAddr,
 			"Version":      version,
+			"Timezone":     timezone,
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}
@@ -203,5 +207,135 @@ func carddavImportHandler(settingsRepo *db.SettingsRepo, contactsRepo *db.Contac
 			return
 		}
 		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": fmt.Sprintf("Imported %d contacts from iCloud", count)})
+	}
+}
+
+type rulesExport struct {
+	Rules []ruleExport `json:"rules"`
+}
+
+type ruleExport struct {
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Priority    int              `json:"priority"`
+	Enabled     bool             `json:"enabled"`
+	Operator    string           `json:"operator"`
+	Conditions  []ruleCondExport `json:"conditions"`
+	Actions     []ruleActExport  `json:"actions"`
+}
+
+type ruleCondExport struct {
+	Field    string `json:"field"`
+	Operator string `json:"operator"`
+	Value    string `json:"value"`
+}
+
+type ruleActExport struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
+}
+
+func rulesExportHandler(repo *db.RulesRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rules, err := repo.List()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var exp rulesExport
+		for _, rule := range rules {
+			if rule.Name == "_catch_all" {
+				continue
+			}
+			re := ruleExport{
+				Name:        rule.Name,
+				Description: rule.Description,
+				Priority:    rule.Priority,
+				Enabled:     rule.Enabled,
+			}
+			for _, g := range rule.Groups {
+				re.Operator = g.Operator
+				for _, c := range g.Conditions {
+					re.Conditions = append(re.Conditions, ruleCondExport{
+						Field: c.Field, Operator: c.Operator, Value: c.Value,
+					})
+				}
+			}
+			for _, a := range rule.Actions {
+				re.Actions = append(re.Actions, ruleActExport{Type: a.Type, Value: a.Value})
+			}
+			exp.Rules = append(exp.Rules, re)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Disposition", "attachment; filename=\"icloud-mailflow-rules.json\"")
+		json.NewEncoder(w).Encode(exp)
+	}
+}
+
+func rulesImportHandler(repo *db.RulesRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.ParseMultipartForm(10 << 20)
+		file, _, err := r.FormFile("rules_file")
+		if err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "No file selected"})
+			return
+		}
+		defer file.Close()
+
+		data, err := io.ReadAll(file)
+		if err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Failed to read file"})
+			return
+		}
+
+		var exp rulesExport
+		if err := json.Unmarshal(data, &exp); err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Invalid JSON: " + err.Error()})
+			return
+		}
+
+		imported := 0
+		for _, re := range exp.Rules {
+			rule := &db.Rule{
+				Name:        re.Name,
+				Description: re.Description,
+				Priority:    re.Priority,
+				Enabled:     re.Enabled,
+			}
+			if len(re.Conditions) > 0 {
+				g := db.ConditionGroup{Operator: re.Operator}
+				if g.Operator == "" {
+					g.Operator = "AND"
+				}
+				for _, c := range re.Conditions {
+					g.Conditions = append(g.Conditions, db.Condition{
+						Field: c.Field, Operator: c.Operator, Value: c.Value,
+					})
+				}
+				rule.Groups = []db.ConditionGroup{g}
+			}
+			for _, a := range re.Actions {
+				rule.Actions = append(rule.Actions, db.Action{Type: a.Type, Value: a.Value})
+			}
+			if err := repo.Create(rule); err != nil {
+				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Import failed at '" + re.Name + "': " + err.Error()})
+				return
+			}
+			imported++
+		}
+
+		if imported == 0 {
+			renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "No rules to import"})
+			return
+		}
+		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": fmt.Sprintf("Imported %d rules", imported)})
+	}
+}
+
+func settingsSaveTimezone(settingsRepo *db.SettingsRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		settingsRepo.Set("timezone", r.FormValue("timezone"))
+		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
 }

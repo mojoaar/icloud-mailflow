@@ -13,6 +13,7 @@ import (
 )
 
 type Poller struct {
+	mu         sync.Mutex
 	imapClient imap.Client
 	rulesRepo  *db.RulesRepo
 	collector  *contacts.Collector
@@ -80,6 +81,8 @@ func (p *Poller) loop() {
 }
 
 func (p *Poller) process() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	uids, err := p.imapClient.SearchMessages(p.source, 50)
 	if err != nil {
 		return fmt.Errorf("search: %w", err)
@@ -123,43 +126,11 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 	if msg != nil {
 		subject = msg.Subject
 	}
-	for _, action := range rule.Actions {
-		status := "success"
-		errMsg := ""
-		switch action.Type {
-		case "move_to_folder":
-			if action.Value == "" {
-				slog.Warn("move_to_folder action has empty value, skipping", "uid", uid, "rule", rule.Name)
-				continue
-			}
-			if err := p.imapClient.MoveMessage(uid, action.Value); err != nil {
-				slog.Error("move failed", "uid", uid, "dest", action.Value, "error", err)
-				status = "error"
-				errMsg = err.Error()
-			}
-		case "mark_as_read":
-			if err := p.imapClient.SetFlags(uid, []string{"\\Seen"}); err != nil {
-				slog.Error("mark as read failed", "uid", uid, "error", err)
-				status = "error"
-				errMsg = err.Error()
-			}
-		case "set_flag":
-			if action.Value == "" {
-				slog.Warn("set_flag action has empty value, skipping", "uid", uid, "rule", rule.Name)
-				continue
-			}
-			if err := p.imapClient.SetFlags(uid, []string{action.Value}); err != nil {
-				slog.Error("set flag failed", "uid", uid, "flag", action.Value, "error", err)
-				status = "error"
-				errMsg = err.Error()
-			}
-		default:
-			slog.Warn("unknown action type", "type", action.Type)
-			continue
-		}
+
+	logAction := func(actionUID uint32, action db.Action, status string) {
 		if p.logRepo != nil {
 			p.logRepo.Insert(&db.LogEntry{
-				UID:         int64(uid),
+				UID:         int64(actionUID),
 				Subject:     subject,
 				FromAddr:    from,
 				RuleName:    rule.Name,
@@ -167,9 +138,65 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 				ActionValue: action.Value,
 				Status:      status,
 			})
-			if errMsg != "" {
-				_ = errMsg
+		}
+	}
+
+	effectiveUID := uid
+	destFolder := ""
+
+	for _, action := range rule.Actions {
+		if action.Type != "move_to_folder" {
+			continue
+		}
+		if action.Value == "" {
+			slog.Warn("move_to_folder action has empty value, skipping", "uid", effectiveUID, "rule", rule.Name)
+			continue
+		}
+		newUID, err := p.imapClient.MoveMessage(effectiveUID, action.Value)
+		if err != nil {
+			slog.Error("move failed", "uid", effectiveUID, "dest", action.Value, "error", err)
+			logAction(effectiveUID, action, "error")
+		} else {
+			logAction(effectiveUID, action, "success")
+			effectiveUID = newUID
+			destFolder = action.Value
+		}
+	}
+
+	if destFolder != "" {
+		p.imapClient.SelectMailbox(destFolder)
+	}
+
+	for _, action := range rule.Actions {
+		switch action.Type {
+		case "move_to_folder":
+		case "mark_as_read":
+			if err := p.imapClient.SetFlags(effectiveUID, []string{"\\Seen"}); err != nil {
+				slog.Error("mark as read failed", "uid", effectiveUID, "error", err)
+				logAction(effectiveUID, action, "error")
+			} else {
+				logAction(effectiveUID, action, "success")
 			}
+		case "set_flag":
+			if action.Value == "" {
+				slog.Warn("set_flag action has empty value, skipping", "uid", effectiveUID, "rule", rule.Name)
+				continue
+			}
+			if err := p.imapClient.SetFlags(effectiveUID, []string{action.Value}); err != nil {
+				slog.Error("set flag failed", "uid", effectiveUID, "flag", action.Value, "error", err)
+				logAction(effectiveUID, action, "error")
+			} else {
+				logAction(effectiveUID, action, "success")
+			}
+		case "mark_as_unread":
+			if err := p.imapClient.RemoveFlags(effectiveUID, []string{"\\Seen"}); err != nil {
+				slog.Error("mark as unread failed", "uid", effectiveUID, "error", err)
+				logAction(effectiveUID, action, "error")
+			} else {
+				logAction(effectiveUID, action, "success")
+			}
+		default:
+			slog.Warn("unknown action type", "type", action.Type)
 		}
 	}
 }

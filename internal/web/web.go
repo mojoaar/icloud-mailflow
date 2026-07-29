@@ -3,6 +3,7 @@ package web
 import (
 	"database/sql"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -31,6 +32,17 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	contactsRepo := db.NewContactsRepo(d)
 
 	r.Use(authMiddleware(sessRepo))
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == "POST" {
+				r.ParseForm()
+				if m := r.Form.Get("_method"); m != "" {
+					r.Method = strings.ToUpper(m)
+				}
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 
@@ -44,7 +56,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Get("/dashboard", dashboardHandler(imapClient, p, rulesRepo, foldersRepo, settingsRepo, contactsRepo, cfg))
 	r.Post("/poller/tick", pollerTickHandler(p))
 
-	r.Get("/activity", activityHandler(logRepo))
+	r.Get("/activity", activityHandler(logRepo, settingsRepo))
 
 	r.Get("/rules", rulesListHandler(rulesRepo))
 	r.Get("/rules/new", rulesNewHandler(foldersRepo, contactsRepo))
@@ -61,6 +73,9 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/settings/password", settingsSavePassword(settingsRepo))
 	r.Post("/settings/poll", settingsSavePoll(cfg, settingsRepo))
 	r.Post("/settings/carddav-import", carddavImportHandler(settingsRepo, contactsRepo))
+	r.Get("/settings/rules/export", rulesExportHandler(rulesRepo))
+	r.Post("/settings/rules/import", rulesImportHandler(rulesRepo))
+	r.Post("/settings/timezone", settingsSaveTimezone(settingsRepo))
 
 	r.Get("/api/contacts", contactsSearchHandler(db.NewContactsRepo(d)))
 	r.Get("/api/folders", foldersListHandler(imapClient, foldersRepo))

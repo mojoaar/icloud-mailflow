@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.2.0] — Bug Fixes & Polish
+
+### Fixed
+- `mark_as_read` now correctly applies to destination folder after move (uses `SelectMailbox` repositioning)
+- Rule conditions on `from`/`to`/`cc` now match against email addresses only (not `Name <Email>` format)
+- Catch-all rule no longer requires `has_attachment` condition — matches all unmatched messages
+- New rules auto-assign correct priority (before catch-all, not after)
+- Drag-and-drop reorder preserves catch-all priority and doesn't duplicate UI elements
+- `parseActions`/`parseConditions` now reset before re-parsing form (removing actions actually works)
+- Duplicate activity log entries prevented (mutex on poller process, catch-all deduplication)
+- Folder list sorted case-insensitively (eBoks now in correct position)
+- `_method` override middleware for PUT/DELETE forms (rule editing works)
+- Seed Contacts button shows immediate "Scanning..." feedback
+- Toast notifications fixed at bottom-right with auto-dismiss and click-to-dismiss
+
+### Added
+- `mark_as_unread` action (removes `\Seen` flag via IMAP `StoreFlagsDel`)
+- Rules export/import as JSON from Settings
+- Timezone setting with local time display in activity log
+- Contact autocomplete (datalist) on rule condition value inputs
+- Folder autocomplete (datalist) on rule action value inputs
+- Seed Contacts scans all synced folders, shows contact count
+- Remove button (×) on condition and action rows in rule editor
+- Refresh Folders button on settings polling section
+- Activity page in nav, version + repo link in settings footer
+- IMAP connection test button on settings
+
 ## [0.1.0] — Initial Release
 
 ### Core

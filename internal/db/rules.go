@@ -156,6 +156,7 @@ func (r *RulesRepo) Reorder(ids []int64) error {
 			return err
 		}
 	}
+	tx.Exec(`UPDATE rules SET priority = 999 WHERE name = ?`, "_catch_all")
 	return tx.Commit()
 }
 
@@ -281,6 +282,8 @@ func (r *RulesRepo) EnsureCatchAll() error {
 	if count > 0 {
 		r.DB.Exec(`DELETE FROM conditions WHERE group_id IN (SELECT id FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?))`, "_catch_all")
 		r.DB.Exec(`DELETE FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all")
+		r.DB.Exec(`DELETE FROM actions WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all")
+		r.DB.Exec(`INSERT INTO actions (rule_id, type, value) VALUES ((SELECT id FROM rules WHERE name = ?), 'move_to_folder', 'INBOX')`, "_catch_all")
 		return nil
 	}
 	var maxPri sql.NullInt64

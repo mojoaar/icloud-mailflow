@@ -36,8 +36,10 @@ type Message struct {
 type Client interface {
 	SearchMessages(folder string, limit int) ([]goimap.UID, error)
 	FetchMessage(uid uint32) (*Message, error)
-	MoveMessage(uid uint32, dest string) error
+	MoveMessage(uid uint32, dest string) (uint32, error)
+	SelectMailbox(name string) error
 	SetFlags(uid uint32, flags []string) error
+	RemoveFlags(uid uint32, flags []string) error
 	CreateFolder(name string) error
 	ListFolders() ([]Folder, error)
 }
@@ -134,9 +136,20 @@ func (c *IMAPClient) FetchMessage(uid uint32) (*Message, error) {
 	return convertMessage(msgs[0]), nil
 }
 
-func (c *IMAPClient) MoveMessage(uid uint32, dest string) error {
+func (c *IMAPClient) MoveMessage(uid uint32, dest string) (uint32, error) {
 	seqSet := goimap.UIDSetNum(goimap.UID(uid))
-	_, err := c.client.Move(seqSet, dest).Wait()
+	data, err := c.client.Move(seqSet, dest).Wait()
+	if err != nil {
+		return uid, err
+	}
+	if uidSet, ok := data.DestUIDs.(goimap.UIDSet); ok && len(uidSet) > 0 {
+		return uint32(uidSet[0].Start), nil
+	}
+	return uid, nil
+}
+
+func (c *IMAPClient) SelectMailbox(name string) error {
+	_, err := c.SelectFolder(name)
 	return err
 }
 
@@ -152,6 +165,19 @@ func (c *IMAPClient) SetFlags(uid uint32, flags []string) error {
 	}
 	store := &goimap.StoreFlags{
 		Op:    goimap.StoreFlagsAdd,
+		Flags: imapFlags,
+	}
+	return c.client.Store(seqSet, store, nil).Close()
+}
+
+func (c *IMAPClient) RemoveFlags(uid uint32, flags []string) error {
+	seqSet := goimap.UIDSetNum(goimap.UID(uid))
+	imapFlags := make([]goimap.Flag, len(flags))
+	for i, f := range flags {
+		imapFlags[i] = goimap.Flag(f)
+	}
+	store := &goimap.StoreFlags{
+		Op:    goimap.StoreFlagsDel,
 		Flags: imapFlags,
 	}
 	return c.client.Store(seqSet, store, nil).Close()

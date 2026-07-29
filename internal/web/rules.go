@@ -44,12 +44,16 @@ func rulesCreateHandler(repo *db.RulesRepo) http.HandlerFunc {
 		rule.Priority, _ = strconv.Atoi(r.FormValue("priority"))
 		if rule.Priority == 0 {
 			rules, _ := repo.List()
-			if len(rules) > 0 {
-				rule.Priority = rules[len(rules)-1].Priority + 1
+			for _, r := range rules {
+				if r.Name != "_catch_all" {
+					rule.Priority++
+				}
 			}
 		}
+		parseConditions(r, rule)
+		parseActions(r, rule)
 		if err := repo.Create(rule); err != nil {
-			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "New": true, "Fields": conditionFields()})
+			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "New": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}})
 			return
 		}
 		repo.EnsureCatchAll()
@@ -143,6 +147,7 @@ func conditionFields() []map[string]string {
 }
 
 func parseConditions(r *http.Request, rule *db.Rule) {
+	rule.Groups = nil
 	r.ParseForm()
 	fields := r.Form["cond_field"]
 	ops := r.Form["cond_op"]
@@ -164,6 +169,7 @@ func parseConditions(r *http.Request, rule *db.Rule) {
 }
 
 func parseActions(r *http.Request, rule *db.Rule) {
+	rule.Actions = nil
 	r.ParseForm()
 	types := r.Form["action_type"]
 	values := r.Form["action_value"]

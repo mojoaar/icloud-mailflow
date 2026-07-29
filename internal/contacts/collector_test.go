@@ -31,8 +31,10 @@ func (m *mockClient) FetchMessage(uid uint32) (*imap.Message, error) {
 	return &imap.Message{UID: uid}, nil
 }
 
-func (m *mockClient) MoveMessage(uid uint32, dest string) error { return nil }
+func (m *mockClient) MoveMessage(uid uint32, dest string) (uint32, error) { return uid, nil }
+func (m *mockClient) SelectMailbox(name string) error        { return nil }
 func (m *mockClient) SetFlags(uid uint32, flags []string) error  { return nil }
+func (m *mockClient) RemoveFlags(uid uint32, flags []string) error { return nil }
 func (m *mockClient) CreateFolder(name string) error             { return nil }
 func (m *mockClient) ListFolders() ([]imap.Folder, error)       { return nil, nil }
 

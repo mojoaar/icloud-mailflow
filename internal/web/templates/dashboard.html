@@ -13,10 +13,13 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <h2 style="margin:0">Status</h2>
         <div style="display:flex;gap:8px">
-            <button class="btn" hx-post="/contacts/seed" hx-target="#toast-container" hx-swap="innerHTML">
+            <button class="btn" hx-post="/contacts/seed"
+                hx-target="#seed-toast" hx-swap="innerHTML"
+                onclick="document.getElementById('seed-toast').innerHTML='Scanning folders for contacts...'">
                 Seed Contacts
             </button>
-            <button class="btn btn-primary" hx-post="/poller/tick" hx-target="#toast-container" hx-swap="innerHTML">
+            <button class="btn btn-primary" hx-post="/poller/tick"
+                hx-target="#poll-toast" hx-swap="innerHTML">
                 Run Poll Now
             </button>
         </div>
@@ -31,7 +34,8 @@
     </table>
 </div>
 
-<div id="toast-container"></div>
+<div id="seed-toast"></div>
+<div id="poll-toast"></div>
 
 {{if .Rules}}
 <div class="card">

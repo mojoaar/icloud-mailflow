@@ -17,7 +17,7 @@ func NewFoldersRepo(d *sql.DB) *FoldersRepo {
 }
 
 func (r *FoldersRepo) List() ([]Folder, error) {
-	rows, err := r.DB.Query(`SELECT id, name, path, flags, synced_at FROM folders ORDER BY name`)
+	rows, err := r.DB.Query(`SELECT id, name, path, flags, synced_at FROM folders ORDER BY name COLLATE NOCASE`)
 	if err != nil {
 		return nil, err
 	}

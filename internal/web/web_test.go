@@ -29,11 +29,19 @@ func (m *mockIMAPClient) FetchMessage(uid uint32) (*imap.Message, error) {
 	return &imap.Message{UID: uid}, nil
 }
 
-func (m *mockIMAPClient) MoveMessage(uid uint32, dest string) error {
+func (m *mockIMAPClient) MoveMessage(uid uint32, dest string) (uint32, error) {
+	return uid, nil
+}
+
+func (m *mockIMAPClient) SelectMailbox(name string) error {
 	return nil
 }
 
 func (m *mockIMAPClient) SetFlags(uid uint32, flags []string) error {
+	return nil
+}
+
+func (m *mockIMAPClient) RemoveFlags(uid uint32, flags []string) error {
 	return nil
 }
 

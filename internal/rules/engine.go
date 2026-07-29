@@ -137,12 +137,7 @@ func addrsToString(addrs []imap.Address) string {
 	}
 	parts := make([]string, len(addrs))
 	for i, a := range addrs {
-		name := decodeMIME(a.Name)
-		if name != "" {
-			parts[i] = fmt.Sprintf("%s <%s>", name, a.Email)
-		} else {
-			parts[i] = a.Email
-		}
+		parts[i] = a.Email
 	}
 	return strings.Join(parts, ", ")
 }

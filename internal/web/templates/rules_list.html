@@ -1,9 +1,10 @@
 {{define "rules_list"}}
+<div id="rules-panel">
 <h1>Rules</h1>
 <a href="/rules/new" class="btn btn-primary">+ New Rule</a>
 
 {{if .Rules}}
-<div class="card" style="margin-top:16px" id="rules-card">
+<div class="card" style="margin-top:16px">
     <table>
         <thead><tr><th></th><th>Priority</th><th>Name</th><th>Status</th><th>Conditions</th><th>Actions</th><th></th></tr></thead>
         <tbody id="rules-tbody">
@@ -29,6 +30,7 @@
     <p>No rules yet. Create your first rule to start sorting mail.</p>
 </div>
 {{end}}
+</div>
 
 <script>
 (function() {
@@ -88,7 +90,7 @@
         });
 
         htmx.ajax('POST', '/rules/reorder', {
-            target: '#rules-card',
+            target: '#rules-panel',
             swap: 'outerHTML',
             values: {'rule_ids': ids}
         });

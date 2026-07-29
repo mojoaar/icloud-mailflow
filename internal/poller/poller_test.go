@@ -21,6 +21,7 @@ type trackedMock struct {
 	fetchErr        error
 	moveCalls       []moveCall
 	setFlagsCalls   []setFlagsCall
+	removeFlagsCalls []removeFlagsCall
 	searchFolders   []string
 }
 
@@ -30,6 +31,11 @@ type moveCall struct {
 }
 
 type setFlagsCall struct {
+	UID   uint32
+	Flags []string
+}
+
+type removeFlagsCall struct {
 	UID   uint32
 	Flags []string
 }
@@ -51,16 +57,25 @@ func (m *trackedMock) FetchMessage(uid uint32) (*imap.Message, error) {
 	return &imap.Message{UID: uid}, nil
 }
 
-func (m *trackedMock) MoveMessage(uid uint32, dest string) error {
+func (m *trackedMock) MoveMessage(uid uint32, dest string) (uint32, error) {
 	m.mu.Lock()
 	m.moveCalls = append(m.moveCalls, moveCall{UID: uid, Dest: dest})
 	m.mu.Unlock()
-	return nil
+	return uid + 100, nil
 }
 
 func (m *trackedMock) SetFlags(uid uint32, flags []string) error {
 	m.mu.Lock()
 	m.setFlagsCalls = append(m.setFlagsCalls, setFlagsCall{UID: uid, Flags: flags})
+	m.mu.Unlock()
+	return nil
+}
+
+func (m *trackedMock) SelectMailbox(name string) error { return nil }
+
+func (m *trackedMock) RemoveFlags(uid uint32, flags []string) error {
+	m.mu.Lock()
+	m.removeFlagsCalls = append(m.removeFlagsCalls, removeFlagsCall{UID: uid, Flags: flags})
 	m.mu.Unlock()
 	return nil
 }
@@ -538,4 +553,27 @@ func TestProcessLogsActions(t *testing.T) {
 	if e.ActionType != "mark_as_read" || e.Status != "success" {
 		t.Errorf("action = %q, status = %q", e.ActionType, e.Status)
 	}
+}
+
+func TestExecuteActionsFlagOnDestUID(t *testing.T) {
+	mock := &trackedMock{}
+	p := &Poller{imapClient: mock}
+
+	rule := &db.Rule{
+		Name: "test",
+		Actions: []db.Action{
+			{Type: "mark_as_read"},
+			{Type: "move_to_folder", Value: "Archive"},
+		},
+	}
+	p.executeActions(rule, 10, nil)
+
+	mock.mu.Lock()
+	if len(mock.moveCalls) != 1 || mock.moveCalls[0].UID != 10 {
+		t.Fatalf("expected MoveMessage on uid 10, got %v", mock.moveCalls)
+	}
+	if len(mock.setFlagsCalls) != 1 || mock.setFlagsCalls[0].UID != 110 {
+		t.Fatalf("expected SetFlags on dest uid 110, got %v", mock.setFlagsCalls)
+	}
+	mock.mu.Unlock()
 }

@@ -448,8 +448,8 @@ func TestEvaluateMultipleGroupsOneFails(t *testing.T) {
 func TestGetFieldValueFrom(t *testing.T) {
 	msg := makeMsgFull("test", []imap.Address{{Name: "Alice", Email: "alice@example.com"}}, nil, nil)
 	v := getFieldValue("from", msg)
-	if v != "Alice <alice@example.com>" {
-		t.Errorf("got %q, want Alice <alice@example.com>", v)
+	if v != "alice@example.com" {
+		t.Errorf("got %q, want alice@example.com", v)
 	}
 }
 
@@ -507,7 +507,7 @@ func TestAddrsToStringMultipleAddresses(t *testing.T) {
 		{Email: "bob@example.com"},
 	}
 	v := addrsToString(addrs)
-	expected := "Alice <alice@example.com>, bob@example.com"
+	expected := "alice@example.com, bob@example.com"
 	if v != expected {
 		t.Errorf("got %q, want %q", v, expected)
 	}

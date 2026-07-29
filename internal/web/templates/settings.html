@@ -63,6 +63,20 @@
 </div>
 
 <div class="card">
+    <h2>Rules</h2>
+    <p style="color:var(--muted);margin-bottom:12px">Export or import your rule configurations.</p>
+    <div style="display:flex;gap:8px;align-items:center">
+        <a href="/settings/rules/export" class="btn" download>Export</a>
+        <form hx-encoding="multipart/form-data" hx-post="/settings/rules/import"
+            hx-target="#rules-import-toast" hx-swap="innerHTML" style="display:flex;gap:8px;align-items:center;margin:0">
+            <input type="file" name="rules_file" accept=".json" style="font-size:0.85rem">
+            <button type="submit" class="btn">Import</button>
+        </form>
+    </div>
+    <div id="rules-import-toast" style="margin-top:8px"></div>
+</div>
+
+<div class="card">
     <h2>iCloud Contacts</h2>
     <p style="color:var(--muted);margin-bottom:12px">Import contacts from your iCloud address book using the same app-specific password.</p>
     <button class="btn btn-primary" hx-post="/settings/carddav-import"
@@ -70,6 +84,28 @@
         Import iCloud Contacts
     </button>
     <div id="carddav-toast" style="margin-top:8px"></div>
+</div>
+
+<div class="card">
+    <h2>Regional</h2>
+    <form method="POST" action="/settings/timezone">
+        <div class="form-group">
+            <label>Timezone</label>
+            <select name="timezone" style="width:100%">
+                <option value="UTC" {{if eq .Timezone "UTC"}}selected{{end}}>UTC</option>
+                <option value="Europe/Copenhagen" {{if eq .Timezone "Europe/Copenhagen"}}selected{{end}}>Europe/Copenhagen</option>
+                <option value="Europe/London" {{if eq .Timezone "Europe/London"}}selected{{end}}>Europe/London</option>
+                <option value="Europe/Berlin" {{if eq .Timezone "Europe/Berlin"}}selected{{end}}>Europe/Berlin</option>
+                <option value="America/New_York" {{if eq .Timezone "America/New_York"}}selected{{end}}>America/New_York</option>
+                <option value="America/Chicago" {{if eq .Timezone "America/Chicago"}}selected{{end}}>America/Chicago</option>
+                <option value="America/Denver" {{if eq .Timezone "America/Denver"}}selected{{end}}>America/Denver</option>
+                <option value="America/Los_Angeles" {{if eq .Timezone "America/Los_Angeles"}}selected{{end}}>America/Los_Angeles</option>
+                <option value="Asia/Tokyo" {{if eq .Timezone "Asia/Tokyo"}}selected{{end}}>Asia/Tokyo</option>
+                <option value="Australia/Sydney" {{if eq .Timezone "Australia/Sydney"}}selected{{end}}>Australia/Sydney</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
 </div>
 
 <div class="card">
