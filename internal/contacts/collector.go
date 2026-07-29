@@ -1,6 +1,7 @@
 package contacts
 
 import (
+	"fmt"
 	"log/slog"
 	"net/mail"
 	"regexp"
@@ -50,6 +51,9 @@ func (c *Collector) CollectFromBody(body string) {
 }
 
 func (c *Collector) SeedFromFolder(folder string) error {
+	if c.client == nil {
+		return fmt.Errorf("IMAP not connected")
+	}
 	uids, err := c.client.SearchMessages(folder, 200)
 	if err != nil {
 		return err
