@@ -25,7 +25,6 @@ func generateToken() (string, error) {
 func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			http.SetCookie(w, csrfCookie())
 			renderPage(w, r, "Login", "login", map[string]any{})
 			return
 		}

@@ -92,7 +92,8 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 
 var csrfMiddleware = func(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" || r.Method == "HEAD" || r.Header.Get("HX-Request") == "true" {
+		if r.Method == "GET" || r.Method == "HEAD" || r.Header.Get("HX-Request") == "true" ||
+			strings.HasPrefix(r.URL.Path, "/login") || strings.HasPrefix(r.URL.Path, "/setup") {
 			next.ServeHTTP(w, r)
 			return
 		}
