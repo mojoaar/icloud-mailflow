@@ -1,0 +1,11 @@
+# Binary
+/mailflow
+/icloud-mailflow
+
+# Data directory (SQLite DB + config)
+/data
+
+# IDE
+.idea/
+.vscode/
+*.swp
