@@ -28,7 +28,7 @@ func rulesNewHandler(foldersRepo *db.FoldersRepo, contactsRepo *db.ContactsRepo)
 	return func(w http.ResponseWriter, r *http.Request) {
 		folders, _ := foldersRepo.List()
 		contacts, _ := contactsRepo.ListAll()
-		data := map[string]any{"Rule": &db.Rule{Enabled: true}, "New": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts}
+		data := map[string]any{"Rule": &db.Rule{Enabled: true}, "New": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts, "CondOperator": "AND"}
 		renderPage(w, r, "New Rule", "rules_form", data)
 	}
 }
@@ -53,7 +53,7 @@ func rulesCreateHandler(repo *db.RulesRepo) http.HandlerFunc {
 		parseConditions(r, rule)
 		parseActions(r, rule)
 		if err := repo.Create(rule); err != nil {
-			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "New": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}})
+			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "New": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": "AND"})
 			return
 		}
 		repo.EnsureCatchAll()
@@ -71,7 +71,11 @@ func rulesEditHandler(repo *db.RulesRepo, foldersRepo *db.FoldersRepo, contactsR
 		}
 		folders, _ := foldersRepo.List()
 		contacts, _ := contactsRepo.ListAll()
-		renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Edit": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts})
+		op := "AND"
+		if len(rule.Groups) > 0 {
+			op = rule.Groups[0].Operator
+		}
+		renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Edit": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts, "CondOperator": op})
 	}
 }
 
@@ -91,7 +95,11 @@ func rulesUpdateHandler(repo *db.RulesRepo) http.HandlerFunc {
 		parseConditions(r, rule)
 		parseActions(r, rule)
 		if err := repo.Update(rule); err != nil {
-			renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "Edit": true, "Fields": conditionFields()})
+			op := "AND"
+			if len(rule.Groups) > 0 {
+				op = rule.Groups[0].Operator
+			}
+			renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "Edit": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": op})
 			return
 		}
 		repo.EnsureCatchAll()
@@ -155,7 +163,11 @@ func parseConditions(r *http.Request, rule *db.Rule) {
 	if len(fields) == 0 {
 		return
 	}
-	group := db.ConditionGroup{Operator: "AND"}
+	operator := r.FormValue("cond_operator")
+	if operator != "OR" {
+		operator = "AND"
+	}
+	group := db.ConditionGroup{Operator: operator}
 	for i := range fields {
 		if i < len(ops) && i < len(vals) {
 			group.Conditions = append(group.Conditions, db.Condition{

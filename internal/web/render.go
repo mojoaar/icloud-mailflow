@@ -14,6 +14,7 @@ type pageData struct {
 	Title     string
 	Content   template.HTML
 	CSRFToken string
+	ShowNav   bool
 }
 
 var tmpl *template.Template
@@ -27,6 +28,8 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 	http.SetCookie(w, csrfCookieWithToken(token))
 	if m, ok := data.(map[string]any); ok {
 		m["CSRFToken"] = token
+	} else {
+		data = map[string]any{"CSRFToken": token}
 	}
 	var buf bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&buf, pageName, data); err != nil {
@@ -37,6 +40,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 		Title:     title,
 		Content:   template.HTML(buf.String()),
 		CSRFToken: token,
+		ShowNav:   pageName != "login" && pageName != "setup",
 	}
 	if err := tmpl.ExecuteTemplate(w, "base.html", pd); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

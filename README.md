@@ -4,21 +4,66 @@ Automated iCloud mail sorting using IMAP rules.
 
 ## Features
 
-- **IMAP Rules Engine** — match messages by from/to/cc/subject/attachment, execute actions (move to folder, mark as read, set flags)
+- **IMAP Rules Engine** — match messages by from/to/cc/subject/attachment with AND/OR logic, execute actions (move to folder, mark as read, mark as unread, set flags)
+- **Drag & Drop Rule Reorder** — reorder rules via drag-and-drop on the rules page
 - **CardDAV Contacts Import** — import contacts from iCloud address book
 - **Email Contact Collection** — automatically extract contacts from processed messages
-- **Drag & Drop Rule Reorder** — reorder rules via drag-and-drop on the rules page
-- **Activity Log** — see what rules matched and how messages were processed
+- **Contact Autocomplete** — contacts suggest in rule condition value inputs
+- **Rules Export/Import** — backup and restore rule configurations as JSON
+- **Activity Log** — see every rule match and action result with timestamps
+- **Timezone Support** — display activity log in your local timezone
 - **Folder Auto-Create** — source folder is created on iCloud if it doesn't exist
 - **Test Connection** — verify IMAP credentials before saving
 
+### Security
+- IMAP password encrypted at rest with AES-256-GCM
+- CSRF protection on all forms
+- Rate-limited login (5 attempts/minute/IP)
+- bcrypt hashed admin password
+- SameSite=Strict session cookies
+
+## How It Works
+
+```
+Incoming mail → iCloud Rule → "Processing" folder → Mailflow poller → Match rules → Execute actions
+```
+
+1. Create an iCloud mail rule that moves all incoming mail to a "Processing" folder (see below)
+2. Mailflow polls the Processing folder every 60 seconds
+3. Each message is checked against your rules (first match wins)
+4. Matched actions execute: move to folder, mark as read, etc.
+5. Unmatched messages fall through to the catch-all rule
+
 ## Quick Start
+
+### 1. Configure iCloud Mail
+
+Create a rule on iCloud to route mail to the Processing folder:
+
+1. Go to [icloud.com/mail](https://www.icloud.com/mail)
+2. Click the settings gear ⚙ → **Rules** → **Add a Rule**
+3. Set "If a message" → **is addressed to** → leave the address field empty (matches all)
+4. Under "Then" → **Move to Folder** → choose **New Folder...** → enter **Processing**
+5. Click **Done** → **Done**
+
+All new incoming mail will now land in the Processing folder.
+
+### 2. Start Mailflow
 
 ```bash
 go run ./cmd/mailflow/ -data=./data
 ```
 
 Open http://127.0.0.1:8080/setup — configure your admin password and iCloud app-specific password.
+
+### 3. Create your first rule
+
+1. Go to **Rules** → **+ New Rule**
+2. Add a condition (e.g. `from contains @work.com`) with **ALL** or **ANY** matching
+3. Add an action (e.g. `Move to Folder → Work`)
+4. Save
+
+The rule runs immediately on the next poll tick. Click **Run Poll Now** to trigger manually.
 
 ## Docker
 

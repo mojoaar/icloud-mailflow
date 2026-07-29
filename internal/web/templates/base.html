@@ -9,6 +9,7 @@
 <body>
     <nav>
         <a href="/dashboard" class="brand">iCloud Mailflow</a>
+        {{if .ShowNav}}
         <div class="nav-links">
             <a href="/dashboard">Dashboard</a>
             <a href="/activity">Activity</a>
@@ -16,6 +17,7 @@
             <a href="/settings">Settings</a>
             <a href="/logout">Logout</a>
         </div>
+        {{end}}
     </nav>
     <main>{{.Content}}</main>
     <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"></script>

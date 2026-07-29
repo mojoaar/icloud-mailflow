@@ -32,6 +32,14 @@
     </div>
 
     <h2>Conditions</h2>
+    <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:0.85rem;color:var(--muted)">Match</span>
+        <select name="cond_operator" style="width:90px">
+            <option value="AND" {{if ne .CondOperator "OR"}}selected{{end}}>ALL</option>
+            <option value="OR" {{if eq .CondOperator "OR"}}selected{{end}}>ANY</option>
+        </select>
+        <span style="font-size:0.85rem;color:var(--muted)">conditions</span>
+    </div>
     <div class="card" id="conditions">
         {{range $gi, $group := .Rule.Groups}}
         {{range $ci, $cond := $group.Conditions}}
