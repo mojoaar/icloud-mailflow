@@ -3,12 +3,13 @@
 <a href="/rules/new" class="btn btn-primary">+ New Rule</a>
 
 {{if .Rules}}
-<div class="card" style="margin-top:16px">
+<div class="card" style="margin-top:16px" id="rules-card">
     <table>
-        <thead><tr><th>Priority</th><th>Name</th><th>Status</th><th>Conditions</th><th>Actions</th><th></th></tr></thead>
-        <tbody>
+        <thead><tr><th></th><th>Priority</th><th>Name</th><th>Status</th><th>Conditions</th><th>Actions</th><th></th></tr></thead>
+        <tbody id="rules-tbody">
         {{range .Rules}}
-        <tr>
+        <tr draggable="true" data-rule-id="{{.ID}}">
+            <td style="width:24px;cursor:grab;color:var(--muted)">⋮⋮</td>
             <td>{{.Priority}}</td>
             <td><strong>{{.Name}}</strong>{{if .Description}}<br><small style="color:var(--muted)">{{.Description}}</small>{{end}}</td>
             <td>{{if .Enabled}}<span class="badge badge-on">on</span>{{else}}<span class="badge badge-off">off</span>{{end}}</td>
@@ -28,4 +29,70 @@
     <p>No rules yet. Create your first rule to start sorting mail.</p>
 </div>
 {{end}}
+
+<script>
+(function() {
+    var tbody = document.getElementById('rules-tbody');
+    if (!tbody) return;
+    var dragRow = null;
+
+    tbody.addEventListener('dragstart', function(e) {
+        var tr = e.target.closest('tr[draggable]');
+        if (!tr) return;
+        dragRow = tr;
+        tr.classList.add('row-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    tbody.addEventListener('dragend', function(e) {
+        var tr = e.target.closest('tr');
+        if (tr) tr.classList.remove('row-dragging');
+        var rows = tbody.querySelectorAll('tr');
+        rows.forEach(function(r) { r.classList.remove('row-drag-over'); });
+        dragRow = null;
+    });
+
+    tbody.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        var tr = e.target.closest('tr');
+        if (!tr || tr === dragRow) return;
+        var rows = tbody.querySelectorAll('tr');
+        rows.forEach(function(r) { r.classList.remove('row-drag-over'); });
+        tr.classList.add('row-drag-over');
+        e.dataTransfer.dropEffect = 'move';
+    });
+
+    tbody.addEventListener('dragleave', function(e) {
+        var tr = e.target.closest('tr');
+        if (tr) tr.classList.remove('row-drag-over');
+    });
+
+    tbody.addEventListener('drop', function(e) {
+        e.preventDefault();
+        var tr = e.target.closest('tr');
+        if (!tr || tr === dragRow || !dragRow) return;
+        tr.classList.remove('row-drag-over');
+
+        var rows = tbody.querySelectorAll('tr');
+        var before = Array.from(rows).indexOf(dragRow);
+        var after = Array.from(rows).indexOf(tr);
+        if (after > before) {
+            tr.after(dragRow);
+        } else {
+            tr.before(dragRow);
+        }
+
+        var ids = [];
+        tbody.querySelectorAll('tr').forEach(function(r) {
+            ids.push(r.getAttribute('data-rule-id'));
+        });
+
+        htmx.ajax('POST', '/rules/reorder', {
+            target: '#rules-card',
+            swap: 'outerHTML',
+            values: {'rule_ids': ids}
+        });
+    });
+})();
+</script>
 {{end}}

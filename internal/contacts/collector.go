@@ -13,10 +13,10 @@ var emailRE = regexp.MustCompile(`[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2
 
 type Collector struct {
 	repo   *db.ContactsRepo
-	client *imap.IMAPClient
+	client imap.Client
 }
 
-func NewCollector(repo *db.ContactsRepo, client *imap.IMAPClient) *Collector {
+func NewCollector(repo *db.ContactsRepo, client imap.Client) *Collector {
 	return &Collector{repo: repo, client: client}
 }
 
@@ -53,6 +53,9 @@ func (c *Collector) SeedFromFolder(folder string) error {
 	uids, err := c.client.SearchMessages(folder, 200)
 	if err != nil {
 		return err
+	}
+	for i, j := 0, len(uids)-1; i < j; i, j = i+1, j-1 {
+		uids[i], uids[j] = uids[j], uids[i]
 	}
 	slog.Debug("seeding contacts from folder", "folder", folder, "count", len(uids))
 	for _, uid := range uids {

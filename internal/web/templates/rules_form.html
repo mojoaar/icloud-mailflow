@@ -52,7 +52,7 @@
                 <option value="exists" {{if eq $cond.Operator "exists"}}selected{{end}}>exists</option>
                 <option value="not_exists" {{if eq $cond.Operator "not_exists"}}selected{{end}}>doesn't exist</option>
             </select>
-            <input type="text" name="cond_value" value="{{$cond.Value}}" placeholder="value" style="flex:1">
+            <input type="text" name="cond_value" value="{{$cond.Value}}" placeholder="value" list="contact-list" style="flex:1">
         </div>
         {{end}}
         {{end}}
@@ -65,11 +65,19 @@
         <div class="action-row" style="display:flex;gap:8px;margin-bottom:8px">
             <select name="action_type" style="width:160px">
                 <option value="move_to_folder" {{if eq .Type "move_to_folder"}}selected{{end}}>Move to Folder</option>
+                <option value="mark_as_read" {{if eq .Type "mark_as_read"}}selected{{end}}>Mark as Read</option>
+                <option value="set_flag" {{if eq .Type "set_flag"}}selected{{end}}>Set Flag</option>
             </select>
-            <input type="text" name="action_value" value="{{.Value}}" placeholder="Folder name" style="flex:1">
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Folder name" list="folder-list" style="flex:1">
         </div>
         {{end}}
     </div>
+    <datalist id="folder-list">
+        {{range .Folders}}<option value="{{.Name}}">{{end}}
+    </datalist>
+    <datalist id="contact-list">
+        {{range .Contacts}}<option value="{{.Email}}">{{if .Name}}{{.Name}} ({{.Email}}){{end}}</option>{{end}}
+    </datalist>
     <button type="button" class="btn" onclick="addAction()" style="margin-top:8px">+ Add Action</button>
 
     <div style="margin-top:24px;display:flex;gap:8px">
@@ -85,15 +93,15 @@ function addCondition() {
     div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
     div.innerHTML = '<select name="cond_field">{{range .Fields}}<option value="{{.value}}">{{.label}}</option>{{end}}</select>' +
         '<select name="cond_op" style="width:140px"><option value="contains">contains</option><option value="not_contains">doesn\'t contain</option><option value="equals">equals</option><option value="not_equals">doesn\'t equal</option><option value="starts_with">starts with</option><option value="ends_with">ends with</option><option value="matches_regex">matches regex</option><option value="exists">exists</option><option value="not_exists">doesn\'t exist</option></select>' +
-        '<input type="text" name="cond_value" placeholder="value" style="flex:1">';
+        '<input type="text" name="cond_value" placeholder="value" list="contact-list" style="flex:1">';
     document.getElementById('conditions').appendChild(div);
 }
 function addAction() {
     var div = document.createElement('div');
     div.className = 'action-row';
     div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
-    div.innerHTML = '<select name="action_type" style="width:160px"><option value="move_to_folder">Move to Folder</option></select>' +
-        '<input type="text" name="action_value" placeholder="Folder name" style="flex:1">';
+    div.innerHTML = '<select name="action_type" style="width:160px"><option value="move_to_folder">Move to Folder</option><option value="mark_as_read">Mark as Read</option><option value="set_flag">Set Flag</option></select>' +
+        '<input type="text" name="action_value" placeholder="Folder name" list="folder-list" style="flex:1">';
     document.getElementById('actions').appendChild(div);
 }
 </script>

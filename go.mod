@@ -4,6 +4,8 @@ go 1.26.5
 
 require (
 	github.com/emersion/go-imap/v2 v2.0.0-beta.8
+	github.com/emersion/go-vcard v0.0.0-20230815062825-8fda7d206ec9
+	github.com/emersion/go-webdav v0.7.0
 	github.com/go-chi/chi/v5 v5.3.1
 	golang.org/x/crypto v0.54.0
 	modernc.org/sqlite v1.55.0

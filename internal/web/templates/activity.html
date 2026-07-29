@@ -1,0 +1,36 @@
+{{define "activity"}}
+<h1>Activity Log</h1>
+
+{{if not .Entries}}
+<div class="card">
+    <p style="color:var(--muted)">No activity yet. Messages will appear here when rules process mail.</p>
+</div>
+{{else}}
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Subject</th>
+                <th>From</th>
+                <th>Rule</th>
+                <th>Action</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+        {{range .Entries}}
+        <tr>
+            <td style="white-space:nowrap;font-size:0.8rem;color:var(--muted)">{{.CreatedAt}}</td>
+            <td>{{.Subject}}</td>
+            <td>{{.FromAddr}}</td>
+            <td>{{.RuleName}}</td>
+            <td>{{.ActionType}}{{if .ActionValue}} → {{.ActionValue}}{{end}}</td>
+            <td>{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+{{end}}

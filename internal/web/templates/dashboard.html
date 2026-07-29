@@ -12,15 +12,21 @@
 <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <h2 style="margin:0">Status</h2>
-        <button class="btn btn-primary" hx-post="/poller/tick" hx-target="#toast-container" hx-swap="innerHTML">
-            Run Poll Now
-        </button>
+        <div style="display:flex;gap:8px">
+            <button class="btn" hx-post="/contacts/seed" hx-target="#toast-container" hx-swap="innerHTML">
+                Seed Contacts
+            </button>
+            <button class="btn btn-primary" hx-post="/poller/tick" hx-target="#toast-container" hx-swap="innerHTML">
+                Run Poll Now
+            </button>
+        </div>
     </div>
     <table>
         <tr><td>IMAP Server</td><td>{{.IMAPEmail}} @ imap.mail.me.com</td></tr>
         <tr><td>Source Folder</td><td>{{.SourceFolder}}</td></tr>
         <tr><td>Poll Interval</td><td>{{.PollInterval}}s</td></tr>
         <tr><td>Rules</td><td>{{len .Rules}}</td></tr>
+        <tr><td>Contacts</td><td>{{.Contacts}}</td></tr>
         <tr><td>Folders</td><td>{{len .Folders}}</td></tr>
     </table>
 </div>

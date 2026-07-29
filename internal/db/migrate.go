@@ -54,6 +54,17 @@ var migrations = []string{
 		token TEXT PRIMARY KEY,
 		expires_at TEXT NOT NULL
 	)`,
+	`CREATE TABLE IF NOT EXISTS message_log (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		created_at TEXT NOT NULL DEFAULT (datetime('now')),
+		uid INTEGER NOT NULL,
+		subject TEXT NOT NULL DEFAULT '',
+		from_addr TEXT NOT NULL DEFAULT '',
+		rule_name TEXT NOT NULL DEFAULT '',
+		action_type TEXT NOT NULL DEFAULT '',
+		action_value TEXT NOT NULL DEFAULT '',
+		status TEXT NOT NULL DEFAULT 'success'
+	)`,
 }
 
 func Migrate(d *sql.DB) error {

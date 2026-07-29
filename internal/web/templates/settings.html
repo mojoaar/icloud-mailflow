@@ -12,8 +12,16 @@
             <label>App-Specific Password</label>
             <input type="password" name="imap_password" placeholder="Leave blank to keep current" style="width:100%">
         </div>
-        <button type="submit" class="btn btn-primary">Save IMAP Settings</button>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+            <button type="submit" class="btn btn-primary">Save IMAP Settings</button>
+            <button type="button" class="btn" hx-post="/settings/imap/test"
+                hx-include="[name='imap_email'],[name='imap_password']"
+                hx-target="#imap-toast" hx-swap="innerHTML">
+                Test Connection
+            </button>
+        </div>
     </form>
+    <div id="imap-toast"></div>
 </div>
 
 <div class="card">
@@ -31,12 +39,20 @@
     <h2>Polling</h2>
     <form method="POST" action="/settings/poll">
         <div class="form-group">
-            <label>Source Folder (where rules run on new mail)</label>
-            <select name="source_folder" style="width:100%">
-                {{range .Folders}}
-                <option value="{{.Name}}" {{if eq $.SourceFolder .Name}}selected{{end}}>{{.Name}}</option>
-                {{end}}
-            </select>
+            <label style="display:flex;justify-content:space-between;align-items:center">
+                <span>Source Folder (where rules run on new mail)</span>
+                <button type="button" class="btn" style="font-size:0.75rem;padding:2px 8px"
+                    hx-get="/api/folders" hx-target="#folders-select" hx-swap="innerHTML">
+                    Refresh
+                </button>
+            </label>
+            <div id="folders-select">
+                <select name="source_folder" style="width:100%">
+                    {{range .Folders}}
+                    <option value="{{.Name}}" {{if eq $.SourceFolder .Name}}selected{{end}}>{{.Name}}</option>
+                    {{end}}
+                </select>
+            </div>
         </div>
         <div class="form-group">
             <label>Poll Interval (seconds)</label>
@@ -47,10 +63,22 @@
 </div>
 
 <div class="card">
+    <h2>iCloud Contacts</h2>
+    <p style="color:var(--muted);margin-bottom:12px">Import contacts from your iCloud address book using the same app-specific password.</p>
+    <button class="btn btn-primary" hx-post="/settings/carddav-import"
+        hx-target="#carddav-toast" hx-swap="innerHTML">
+        Import iCloud Contacts
+    </button>
+    <div id="carddav-toast" style="margin-top:8px"></div>
+</div>
+
+<div class="card">
     <h2>Server</h2>
     <table>
         <tr><td>Listen Address</td><td>{{.ListenAddr}}</td></tr>
         <tr><td>Folders</td><td>{{len .Folders}} synced</td></tr>
+        <tr><td>Version</td><td>v{{.Version}}</td></tr>
+        <tr><td>Repository</td><td><a href="https://github.com/mojoaar/icloud-mailflow" target="_blank" style="color:var(--accent)">github.com/mojoaar/icloud-mailflow</a></td></tr>
     </table>
 </div>
 {{end}}

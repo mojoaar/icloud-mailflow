@@ -1,14 +1,18 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
+	"github.com/mojoaar/icloud-mailflow/internal/config"
+	"github.com/mojoaar/icloud-mailflow/internal/contacts"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
 	"github.com/mojoaar/icloud-mailflow/internal/poller"
 )
 
-func dashboardHandler(imapClient *imap.IMAPClient, p *poller.Poller, rulesRepo *db.RulesRepo, foldersRepo *db.FoldersRepo, settingsRepo *db.SettingsRepo) http.HandlerFunc {
+func dashboardHandler(imapClient imap.Client, p *poller.Poller, rulesRepo *db.RulesRepo, foldersRepo *db.FoldersRepo, settingsRepo *db.SettingsRepo, contactsRepo *db.ContactsRepo, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rules, err := rulesRepo.List()
 		if err != nil {
@@ -18,6 +22,7 @@ func dashboardHandler(imapClient *imap.IMAPClient, p *poller.Poller, rulesRepo *
 		if err != nil {
 			folders = []db.Folder{}
 		}
+		contactsCount, _ := contactsRepo.Count()
 		status := "disconnected"
 		if imapClient != nil {
 			status = "connected"
@@ -26,10 +31,17 @@ func dashboardHandler(imapClient *imap.IMAPClient, p *poller.Poller, rulesRepo *
 		sourceFolder, _ := settingsRepo.Get("source_folder")
 		pollInterval, _ := settingsRepo.Get("poll_interval")
 		imapEmail, _ := settingsRepo.Get("imap_email")
+		if sourceFolder == "" {
+			sourceFolder = cfg.SourceFolder
+		}
+		if pollInterval == "" {
+			pollInterval = strconv.Itoa(cfg.PollInterval)
+		}
 
 		data := map[string]any{
 			"Rules":        rules,
 			"Folders":      folders,
+			"Contacts":     contactsCount,
 			"Status":       status,
 			"Configured":   passwordSet != "" && imapEmail != "",
 			"SourceFolder": sourceFolder,
@@ -47,5 +59,30 @@ func pollerTickHandler(p *poller.Poller) http.HandlerFunc {
 			return
 		}
 		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Poll complete"})
+	}
+}
+
+func seedContactsHandler(collector *contacts.Collector, foldersRepo *db.FoldersRepo, contactsRepo *db.ContactsRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if collector == nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "IMAP not connected"})
+			return
+		}
+		before, _ := contactsRepo.Count()
+		folders, err := foldersRepo.List()
+		if err != nil || len(folders) == 0 {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "No folders synced"})
+			return
+		}
+		for _, f := range folders {
+			collector.SeedFromFolder(f.Name)
+		}
+		after, _ := contactsRepo.Count()
+		diff := after - before
+		if diff > 0 {
+			renderPartial(w, "toast", map[string]string{"Type": "success", "Message": fmt.Sprintf("Collected %d new contacts from %d folders", diff, len(folders))})
+		} else {
+			renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Contacts already up to date"})
+		}
 	}
 }

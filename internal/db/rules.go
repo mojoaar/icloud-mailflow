@@ -279,6 +279,8 @@ func (r *RulesRepo) EnsureCatchAll() error {
 		return err
 	}
 	if count > 0 {
+		r.DB.Exec(`DELETE FROM conditions WHERE group_id IN (SELECT id FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?))`, "_catch_all")
+		r.DB.Exec(`DELETE FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all")
 		return nil
 	}
 	var maxPri sql.NullInt64
@@ -293,9 +295,6 @@ func (r *RulesRepo) EnsureCatchAll() error {
 		return err
 	}
 	ruleID, _ := res.LastInsertId()
-	gRes, _ := r.DB.Exec(`INSERT INTO condition_groups (rule_id, logic_operator) VALUES (?, 'AND')`, ruleID)
-	gID, _ := gRes.LastInsertId()
-	r.DB.Exec(`INSERT INTO conditions (group_id, field, operator, value) VALUES (?, 'has_attachment', 'exists', '')`, gID)
 	r.DB.Exec(`INSERT INTO actions (rule_id, type, value) VALUES (?, 'move_to_folder', 'INBOX')`, ruleID)
 	return nil
 }

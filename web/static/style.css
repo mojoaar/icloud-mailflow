@@ -118,15 +118,20 @@ input:focus, select:focus, textarea:focus {
 
 .toast {
     position: fixed;
-    top: 12px;
-    right: 12px;
+    bottom: 16px;
+    right: 16px;
     padding: 10px 18px;
     border-radius: var(--radius);
     font-size: 0.85rem;
     z-index: 1000;
+    cursor: pointer;
     animation: fadeIn 0.2s ease;
 }
 .toast-success { background: #033a16; border: 1px solid var(--green); color: var(--green); }
 .toast-error { background: #490202; border: 1px solid var(--red); color: var(--red); }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } }
+
+tr[draggable] { cursor: grab; }
+.row-dragging { opacity: 0.3; }
+.row-drag-over { border-top: 2px solid var(--accent) !important; }

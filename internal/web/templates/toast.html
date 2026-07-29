@@ -1,3 +1,4 @@
 {{define "toast"}}
-<div class="toast toast-{{.Type}}">{{.Message}}</div>
+<div class="toast toast-{{.Type}}" onclick="this.remove()">{{.Message}}</div>
+<script>setTimeout(function(){var t=document.querySelector('.toast');if(t)t.remove()},5000)</script>
 {{end}}

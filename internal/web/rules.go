@@ -24,9 +24,11 @@ func rulesListHandler(repo *db.RulesRepo) http.HandlerFunc {
 	}
 }
 
-func rulesNewHandler() http.HandlerFunc {
+func rulesNewHandler(foldersRepo *db.FoldersRepo, contactsRepo *db.ContactsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data := map[string]any{"Rule": &db.Rule{Enabled: true}, "New": true, "Fields": conditionFields()}
+		folders, _ := foldersRepo.List()
+		contacts, _ := contactsRepo.ListAll()
+		data := map[string]any{"Rule": &db.Rule{Enabled: true}, "New": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts}
 		renderPage(w, r, "New Rule", "rules_form", data)
 	}
 }
@@ -40,6 +42,12 @@ func rulesCreateHandler(repo *db.RulesRepo) http.HandlerFunc {
 			Enabled:     r.FormValue("enabled") == "on",
 		}
 		rule.Priority, _ = strconv.Atoi(r.FormValue("priority"))
+		if rule.Priority == 0 {
+			rules, _ := repo.List()
+			if len(rules) > 0 {
+				rule.Priority = rules[len(rules)-1].Priority + 1
+			}
+		}
 		if err := repo.Create(rule); err != nil {
 			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "New": true, "Fields": conditionFields()})
 			return
@@ -49,7 +57,7 @@ func rulesCreateHandler(repo *db.RulesRepo) http.HandlerFunc {
 	}
 }
 
-func rulesEditHandler(repo *db.RulesRepo) http.HandlerFunc {
+func rulesEditHandler(repo *db.RulesRepo, foldersRepo *db.FoldersRepo, contactsRepo *db.ContactsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 		rule, err := repo.Get(id)
@@ -57,7 +65,9 @@ func rulesEditHandler(repo *db.RulesRepo) http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Edit": true, "Fields": conditionFields()})
+		folders, _ := foldersRepo.List()
+		contacts, _ := contactsRepo.ListAll()
+		renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Edit": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts})
 	}
 }
 

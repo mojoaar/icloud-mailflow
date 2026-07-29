@@ -46,6 +46,12 @@ func (r *ContactsRepo) Search(q string) ([]Contact, error) {
 	return out, rows.Err()
 }
 
+func (r *ContactsRepo) Count() (int, error) {
+	var count int
+	err := r.DB.QueryRow(`SELECT COUNT(*) FROM contacts`).Scan(&count)
+	return count, err
+}
+
 func (r *ContactsRepo) UpsertBatch(entries []Contact) error {
 	tx, err := r.DB.Begin()
 	if err != nil {
@@ -63,4 +69,21 @@ func (r *ContactsRepo) UpsertBatch(entries []Contact) error {
 		}
 	}
 	return tx.Commit()
+}
+
+func (r *ContactsRepo) ListAll() ([]Contact, error) {
+	rows, err := r.DB.Query(`SELECT email, name, first_at, last_at, count FROM contacts ORDER BY count DESC, email ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Contact
+	for rows.Next() {
+		var c Contact
+		if err := rows.Scan(&c.Email, &c.Name, &c.FirstAt, &c.LastAt, &c.Count); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
 }

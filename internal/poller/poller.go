@@ -13,24 +13,26 @@ import (
 )
 
 type Poller struct {
-	imapClient *imap.IMAPClient
-	rulesRepo *db.RulesRepo
-	collector *contacts.Collector
-	interval  time.Duration
-	source    string
-	stopCh    chan struct{}
-	wg        sync.WaitGroup
-	running   bool
+	imapClient imap.Client
+	rulesRepo  *db.RulesRepo
+	collector  *contacts.Collector
+	logRepo    *db.LogRepo
+	interval   time.Duration
+	source     string
+	stopCh     chan struct{}
+	wg         sync.WaitGroup
+	running    bool
 }
 
-func NewPoller(imapClient *imap.IMAPClient, rulesRepo *db.RulesRepo, collector *contacts.Collector, intervalSec int, source string) *Poller {
+func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, intervalSec int, source string) *Poller {
 	return &Poller{
 		imapClient: imapClient,
 		rulesRepo: rulesRepo,
 		collector: collector,
-		interval:  time.Duration(intervalSec) * time.Second,
-		source:    source,
-		stopCh:    make(chan struct{}),
+		logRepo:  logRepo,
+		interval: time.Duration(intervalSec) * time.Second,
+		source:   source,
+		stopCh:   make(chan struct{}),
 	}
 }
 
@@ -106,21 +108,68 @@ func (p *Poller) process() error {
 		}
 		if matched != nil {
 			slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
-			p.executeActions(matched, uint32(uid))
+			p.executeActions(matched, uint32(uid), msg)
 		}
 	}
 	return nil
 }
 
-func (p *Poller) executeActions(rule *db.Rule, uid uint32) {
+func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
+	from := ""
+	if msg != nil && len(msg.From) > 0 {
+		from = msg.From[0].Email
+	}
+	subject := ""
+	if msg != nil {
+		subject = msg.Subject
+	}
 	for _, action := range rule.Actions {
+		status := "success"
+		errMsg := ""
 		switch action.Type {
 		case "move_to_folder":
+			if action.Value == "" {
+				slog.Warn("move_to_folder action has empty value, skipping", "uid", uid, "rule", rule.Name)
+				continue
+			}
 			if err := p.imapClient.MoveMessage(uid, action.Value); err != nil {
 				slog.Error("move failed", "uid", uid, "dest", action.Value, "error", err)
+				status = "error"
+				errMsg = err.Error()
+			}
+		case "mark_as_read":
+			if err := p.imapClient.SetFlags(uid, []string{"\\Seen"}); err != nil {
+				slog.Error("mark as read failed", "uid", uid, "error", err)
+				status = "error"
+				errMsg = err.Error()
+			}
+		case "set_flag":
+			if action.Value == "" {
+				slog.Warn("set_flag action has empty value, skipping", "uid", uid, "rule", rule.Name)
+				continue
+			}
+			if err := p.imapClient.SetFlags(uid, []string{action.Value}); err != nil {
+				slog.Error("set flag failed", "uid", uid, "flag", action.Value, "error", err)
+				status = "error"
+				errMsg = err.Error()
 			}
 		default:
 			slog.Warn("unknown action type", "type", action.Type)
+			continue
+		}
+		if p.logRepo != nil {
+			p.logRepo.Insert(&db.LogEntry{
+				UID:         int64(uid),
+				Subject:     subject,
+				FromAddr:    from,
+				RuleName:    rule.Name,
+				ActionType:  action.Type,
+				ActionValue: action.Value,
+				Status:      status,
+			})
+			if errMsg != "" {
+				_ = errMsg
+			}
 		}
 	}
 }

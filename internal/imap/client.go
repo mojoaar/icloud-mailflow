@@ -33,6 +33,15 @@ type Message struct {
 	Flags     []string  `json:"flags"`
 }
 
+type Client interface {
+	SearchMessages(folder string, limit int) ([]goimap.UID, error)
+	FetchMessage(uid uint32) (*Message, error)
+	MoveMessage(uid uint32, dest string) error
+	SetFlags(uid uint32, flags []string) error
+	CreateFolder(name string) error
+	ListFolders() ([]Folder, error)
+}
+
 type IMAPClient struct {
 	cfg    *config.Config
 	client *imapclient.Client
@@ -129,6 +138,10 @@ func (c *IMAPClient) MoveMessage(uid uint32, dest string) error {
 	seqSet := goimap.UIDSetNum(goimap.UID(uid))
 	_, err := c.client.Move(seqSet, dest).Wait()
 	return err
+}
+
+func (c *IMAPClient) CreateFolder(name string) error {
+	return c.client.Create(name, nil).Wait()
 }
 
 func (c *IMAPClient) SetFlags(uid uint32, flags []string) error {

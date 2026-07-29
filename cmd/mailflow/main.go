@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"log/slog"
 	"net/http"
@@ -16,40 +17,58 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/web"
 )
 
-func main() {
-	dataDir := flag.String("data", "./data", "Data directory for config, db, and logs")
-	flag.Parse()
+const version = "0.1.0"
 
-	if err := os.MkdirAll(*dataDir, 0700); err != nil {
-		slog.Error("failed to create data directory", "error", err)
-		os.Exit(1)
+type App struct {
+	Config     *config.Config
+	DB         *sql.DB
+	ImapConn   *imap.IMAPClient
+	ImapClient imap.Client
+	Poller     *poller.Poller
+	Router     http.Handler
+}
+
+func (a *App) Close() {
+	if a.Poller != nil {
+		a.Poller.Stop()
+	}
+	if a.ImapConn != nil {
+		a.ImapConn.Close()
+	}
+	if a.DB != nil {
+		a.DB.Close()
+	}
+}
+
+func initialize(dataDir string) (*App, error) {
+	if err := os.MkdirAll(dataDir, 0700); err != nil {
+		return nil, err
 	}
 
-	cfg, err := config.Load(*dataDir)
+	cfg, err := config.Load(dataDir)
 	if err != nil {
-		slog.Error("failed to load config", "error", err)
-		os.Exit(1)
+		return nil, err
 	}
 
-	dbPath := *dataDir + "/mailflow.db"
+	dbPath := dataDir + "/mailflow.db"
 	database, err := db.Open(dbPath)
 	if err != nil {
-		slog.Error("failed to open database", "error", err)
-		os.Exit(1)
+		return nil, err
 	}
-	defer database.Close()
 
 	if err := db.Migrate(database); err != nil {
-		slog.Error("failed to run migrations", "error", err)
-		os.Exit(1)
+		database.Close()
+		return nil, err
 	}
 
 	rulesRepo := db.NewRulesRepo(database)
 	if err := rulesRepo.EnsureCatchAll(); err != nil {
-		slog.Warn("failed to ensure catch-all rule", "error", err)
+		database.Close()
+		return nil, err
 	}
 
-	var imapClient *imap.IMAPClient
+	var imapConn *imap.IMAPClient
+	var imapClient imap.Client
 	settingsRepo := db.NewSettingsRepo(database)
 
 	imapEmail, _ := settingsRepo.Get("imap_email")
@@ -58,32 +77,55 @@ func main() {
 	if imapEmail != "" && imapPassword != "" {
 		cfg.IMAPEmail = imapEmail
 		cfg.IMAPPassword = imapPassword
-		imapClient = imap.New(cfg)
-		if err := imapClient.Connect(); err != nil {
+		imapConn = imap.New(cfg)
+		if err := imapConn.Connect(); err != nil {
 			slog.Warn("imap connection failed, server will start without mail processing", "error", err)
-			imapClient = nil
+			imapConn = nil
 		}
+		imapClient = imapConn
+		imapClient.CreateFolder(cfg.SourceFolder)
 	}
 
 	contactsRepo := db.NewContactsRepo(database)
 	contactsCollector := contacts.NewCollector(contactsRepo, imapClient)
+	logRepo := db.NewLogRepo(database)
 
 	var p *poller.Poller
 	if imapClient != nil {
-		p = poller.NewPoller(imapClient, rulesRepo, contactsCollector, cfg.PollInterval, cfg.SourceFolder)
+		p = poller.NewPoller(imapClient, rulesRepo, contactsCollector, logRepo, cfg.PollInterval, cfg.SourceFolder)
 		p.Start()
-		defer p.Stop()
 	}
 
-	router := web.New(cfg, database, imapClient, p)
+	router := web.New(cfg, database, imapClient, contactsCollector, logRepo, version, p)
+
+	return &App{
+		Config:     cfg,
+		DB:         database,
+		ImapConn:   imapConn,
+		ImapClient: imapClient,
+		Poller:     p,
+		Router:     router,
+	}, nil
+}
+
+func main() {
+	dataDir := flag.String("data", "./data", "Data directory for config, db, and logs")
+	flag.Parse()
+
+	app, err := initialize(*dataDir)
+	if err != nil {
+		slog.Error("failed to initialize", "error", err)
+		os.Exit(1)
+	}
+	defer app.Close()
 
 	server := &http.Server{
-		Addr:    cfg.ListenAddr,
-		Handler: router,
+		Addr:    app.Config.ListenAddr,
+		Handler: app.Router,
 	}
 
 	go func() {
-		slog.Info("server starting", "addr", cfg.ListenAddr)
+		slog.Info("server starting", "addr", app.Config.ListenAddr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("server error", "error", err)
 			os.Exit(1)
@@ -95,7 +137,4 @@ func main() {
 	<-quit
 	slog.Info("shutting down")
 	server.Close()
-	if imapClient != nil {
-		imapClient.Close()
-	}
 }

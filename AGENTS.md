@@ -48,3 +48,10 @@ docker compose up -d
 - Follow existing patterns for new files
 - Use the same Go standard library where possible
 - No deprecated packages (no go-imap v1)
+
+## Release
+1. Bump version in `cmd/mailflow/main.go` (`const version = "X.Y.Z"`)
+2. Update `CHANGELOG.md` with new version header and changes
+3. Commit: `git add -A && git commit -m "chore: release vX.Y.Z"`
+4. Tag: `git tag vX.Y.Z`
+5. Push: `git push origin main && git push --tags`
