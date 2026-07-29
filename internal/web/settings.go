@@ -2,6 +2,7 @@ package web
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,7 +16,7 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
 )
 
-func setupPage(settingsRepo *db.SettingsRepo, d *sql.DB) http.HandlerFunc {
+func setupPage(settingsRepo *db.SettingsRepo, d *sql.DB, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash, _ := settingsRepo.Get("admin_password_hash")
 		email, _ := settingsRepo.Get("imap_email")
@@ -35,7 +36,7 @@ func setupPage(settingsRepo *db.SettingsRepo, d *sql.DB) http.HandlerFunc {
 				settingsRepo.Set("imap_email", e)
 			}
 			if p := r.FormValue("imap_password"); p != "" {
-				settingsRepo.Set("imap_password", p)
+				storePassword(settingsRepo, cfg, p)
 			}
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
@@ -56,7 +57,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 				}
 			} else {
 				email, _ := settingsRepo.Get("imap_email")
-				password, _ := settingsRepo.Get("imap_password")
+				password := getPassword(settingsRepo, cfg)
 				if email != "" && password != "" {
 					cfg.IMAPEmail = email
 					cfg.IMAPPassword = password
@@ -104,7 +105,7 @@ func settingsTestIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 			email, _ = settingsRepo.Get("imap_email")
 		}
 		if password == "" {
-			password, _ = settingsRepo.Get("imap_password")
+			password = getPassword(settingsRepo, cfg)
 		}
 		if email == "" || password == "" {
 			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Email and password are required"})
@@ -122,11 +123,48 @@ func settingsTestIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 	}
 }
 
-func settingsSaveIMAP(cfg *config.Config) http.HandlerFunc {
+func encryptPassword(plain, hexKey string) string {
+	if hexKey == "" {
+		return plain
+	}
+	key, _ := hex.DecodeString(hexKey)
+	enc, err := crypto.Encrypt([]byte(plain), key)
+	if err != nil {
+		return plain
+	}
+	return string(enc)
+}
+
+func decryptPassword(encrypted, hexKey string) string {
+	if hexKey == "" {
+		return encrypted
+	}
+	key, _ := hex.DecodeString(hexKey)
+	dec, err := crypto.Decrypt([]byte(encrypted), key)
+	if err != nil {
+		return encrypted
+	}
+	return string(dec)
+}
+
+func storePassword(settingsRepo *db.SettingsRepo, cfg *config.Config, password string) {
+	if password != "" {
+		settingsRepo.Set("imap_password", encryptPassword(password, cfg.EncryptionKey))
+	}
+}
+
+func getPassword(settingsRepo *db.SettingsRepo, cfg *config.Config) string {
+	p, _ := settingsRepo.Get("imap_password")
+	return decryptPassword(p, cfg.EncryptionKey)
+}
+
+func settingsSaveIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		cfg.IMAPEmail = r.FormValue("imap_email")
-		cfg.IMAPPassword = r.FormValue("imap_password")
+		if p := r.FormValue("imap_password"); p != "" {
+			storePassword(settingsRepo, cfg, p)
+		}
 		cfg.Save()
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
@@ -188,10 +226,10 @@ func settingsSavePoll(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 	}
 }
 
-func carddavImportHandler(settingsRepo *db.SettingsRepo, contactsRepo *db.ContactsRepo) http.HandlerFunc {
+func carddavImportHandler(settingsRepo *db.SettingsRepo, cfg *config.Config, contactsRepo *db.ContactsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		email, _ := settingsRepo.Get("imap_email")
-		password, _ := settingsRepo.Get("imap_password")
+		password := getPassword(settingsRepo, cfg)
 		if email == "" || password == "" {
 			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "IMAP not configured"})
 			return

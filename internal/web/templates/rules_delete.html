@@ -3,7 +3,7 @@
 <div class="card">
     <p>Are you sure you want to delete <strong>{{.Rule.Name}}</strong>?</p>
     <div style="margin-top:16px;display:flex;gap:8px">
-        <form method="POST" action="/rules/{{.Rule.ID}}">
+        <form method="POST" action="/rules/{{.Rule.ID}}"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
             <input type="hidden" name="_method" value="DELETE">
             <button type="submit" class="btn btn-danger">Delete</button>
         </form>

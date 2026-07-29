@@ -5,7 +5,7 @@
 <div class="toast toast-error">{{.Error}}</div>
 {{end}}
 
-<form method="POST" action="{{if .Edit}}/rules/{{.Rule.ID}}{{else}}/rules{{end}}">
+<form method="POST" action="{{if .Edit}}/rules/{{.Rule.ID}}{{else}}/rules{{end}}"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
     {{if .Edit}}<input type="hidden" name="_method" value="PUT">{{end}}
     <div class="card">
         <div class="form-group">
@@ -64,13 +64,19 @@
     <div class="card" id="actions">
         {{range .Rule.Actions}}
         <div class="action-row" style="display:flex;gap:8px;margin-bottom:8px">
-            <select name="action_type" style="width:160px">
+            <select name="action_type" style="width:160px" onchange="updateActionInput(this)">
                 <option value="move_to_folder" {{if eq .Type "move_to_folder"}}selected{{end}}>Move to Folder</option>
                 <option value="mark_as_read" {{if eq .Type "mark_as_read"}}selected{{end}}>Mark as Read</option>
                 <option value="mark_as_unread" {{if eq .Type "mark_as_unread"}}selected{{end}}>Mark as Unread</option>
                 <option value="set_flag" {{if eq .Type "set_flag"}}selected{{end}}>Set Flag</option>
             </select>
-            <input type="text" name="action_value" value="{{.Value}}" placeholder="Value (optional)" list="folder-list" style="flex:1">
+            {{if eq .Type "move_to_folder"}}
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Folder name" list="folder-list" style="flex:1">
+            {{else if eq .Type "set_flag"}}
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Flag (e.g. \\Flagged)" style="flex:1">
+            {{else}}
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Value (optional)" style="display:none">
+            {{end}}
             <button type="button" class="btn" style="padding:2px 6px;font-size:0.75rem" onclick="this.closest('.action-row').remove()">×</button>
         </div>
         {{end}}
@@ -104,10 +110,23 @@ function addAction() {
     var div = document.createElement('div');
     div.className = 'action-row';
     div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
-    div.innerHTML = '<select name="action_type" style="width:160px"><option value="move_to_folder">Move to Folder</option><option value="mark_as_read">Mark as Read</option><option value="mark_as_unread">Mark as Unread</option><option value="set_flag">Set Flag</option></select>' +
-        '<input type="text" name="action_value" placeholder="Value (optional)" list="folder-list" style="flex:1">' +
+    div.innerHTML = '<select name="action_type" style="width:160px" onchange="updateActionInput(this)"><option value="move_to_folder">Move to Folder</option><option value="mark_as_read">Mark as Read</option><option value="mark_as_unread">Mark as Unread</option><option value="set_flag">Set Flag</option></select>' +
+        '<input type="text" name="action_value" placeholder="Folder name" list="folder-list" style="flex:1">' +
         '<button type="button" class="btn" style="padding:2px 6px;font-size:0.75rem" onclick="this.closest(\'.action-row\').remove()">×</button>';
     document.getElementById('actions').appendChild(div);
+}
+function updateActionInput(select) {
+    var input = select.closest('.action-row').querySelector('input');
+    input.style.display = '';
+    input.removeAttribute('list');
+    if (select.value === 'move_to_folder') {
+        input.setAttribute('list', 'folder-list');
+        input.placeholder = 'Folder name';
+    } else if (select.value === 'set_flag') {
+        input.placeholder = 'Flag (e.g. \\Flagged)';
+    } else {
+        input.style.display = 'none';
+    }
 }
 </script>
 {{end}}

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mojoaar/icloud-mailflow/internal/config"
 	"github.com/mojoaar/icloud-mailflow/internal/crypto"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 )
@@ -190,7 +191,7 @@ func TestSetupPageRedirectsWhenConfigured(t *testing.T) {
 	settingsRepo.Set("admin_password_hash", "somehash")
 	settingsRepo.Set("imap_email", "user@example.com")
 
-	h := setupPage(settingsRepo, database)
+	h := setupPage(settingsRepo, database, &config.Config{})
 	req := httptest.NewRequest("GET", "/setup", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -204,7 +205,7 @@ func TestSetupPageShowsWhenUnconfigured(t *testing.T) {
 	database := openWebTestDB(t)
 	settingsRepo := db.NewSettingsRepo(database)
 
-	h := setupPage(settingsRepo, database)
+	h := setupPage(settingsRepo, database, &config.Config{})
 	req := httptest.NewRequest("GET", "/setup", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)

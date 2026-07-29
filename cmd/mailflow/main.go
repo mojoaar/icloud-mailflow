@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"flag"
 	"log/slog"
 	"net/http"
@@ -11,13 +12,14 @@ import (
 
 	"github.com/mojoaar/icloud-mailflow/internal/config"
 	"github.com/mojoaar/icloud-mailflow/internal/contacts"
+	"github.com/mojoaar/icloud-mailflow/internal/crypto"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
 	"github.com/mojoaar/icloud-mailflow/internal/poller"
 	"github.com/mojoaar/icloud-mailflow/internal/web"
 )
 
-const version = "0.2.0"
+var version = "0.3.0"
 
 type App struct {
 	Config     *config.Config
@@ -67,14 +69,24 @@ func initialize(dataDir string) (*App, error) {
 		return nil, err
 	}
 
+	db.NewLogRepo(database).Cleanup(1000)
+
 	var imapConn *imap.IMAPClient
 	var imapClient imap.Client
 	settingsRepo := db.NewSettingsRepo(database)
 
 	imapEmail, _ := settingsRepo.Get("imap_email")
-	imapPassword, _ := settingsRepo.Get("imap_password")
+	storedPassword, _ := settingsRepo.Get("imap_password")
 
-	if imapEmail != "" && imapPassword != "" {
+	if imapEmail != "" && storedPassword != "" {
+		imapPassword := storedPassword
+		if cfg.EncryptionKey != "" {
+			if key, err := hex.DecodeString(cfg.EncryptionKey); err == nil {
+				if dec, err := crypto.Decrypt([]byte(storedPassword), key); err == nil {
+					imapPassword = string(dec)
+				}
+			}
+		}
 		cfg.IMAPEmail = imapEmail
 		cfg.IMAPPassword = imapPassword
 		imapConn = imap.New(cfg)

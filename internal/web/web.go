@@ -1,9 +1,12 @@
 package web
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -32,6 +35,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	contactsRepo := db.NewContactsRepo(d)
 
 	r.Use(authMiddleware(sessRepo))
+	r.Use(csrfMiddleware)
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == "POST" {
@@ -50,8 +54,8 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/login", loginPage(settingsRepo, sessRepo))
 	r.Get("/logout", logoutHandler(sessRepo))
 
-	r.Get("/setup", setupPage(settingsRepo, d))
-	r.Post("/setup", setupPage(settingsRepo, d))
+	r.Get("/setup", setupPage(settingsRepo, d, cfg))
+	r.Post("/setup", setupPage(settingsRepo, d, cfg))
 
 	r.Get("/dashboard", dashboardHandler(imapClient, p, rulesRepo, foldersRepo, settingsRepo, contactsRepo, cfg))
 	r.Post("/poller/tick", pollerTickHandler(p))
@@ -68,11 +72,11 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/rules/reorder", rulesReorderHandler(rulesRepo))
 
 	r.Get("/settings", settingsPage(settingsRepo, foldersRepo, cfg, imapClient, version))
-	r.Post("/settings/imap", settingsSaveIMAP(cfg))
+	r.Post("/settings/imap", settingsSaveIMAP(cfg, settingsRepo))
 	r.Post("/settings/imap/test", settingsTestIMAP(cfg, settingsRepo))
 	r.Post("/settings/password", settingsSavePassword(settingsRepo))
 	r.Post("/settings/poll", settingsSavePoll(cfg, settingsRepo))
-	r.Post("/settings/carddav-import", carddavImportHandler(settingsRepo, contactsRepo))
+	r.Post("/settings/carddav-import", carddavImportHandler(settingsRepo, cfg, contactsRepo))
 	r.Get("/settings/rules/export", rulesExportHandler(rulesRepo))
 	r.Post("/settings/rules/import", rulesImportHandler(rulesRepo))
 	r.Post("/settings/timezone", settingsSaveTimezone(settingsRepo))
@@ -83,3 +87,88 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 
 	return r
 }
+
+var csrfMiddleware = func(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" || r.Method == "HEAD" || r.Header.Get("HX-Request") == "true" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		token := r.FormValue("csrf_token")
+		cookie, _ := r.Cookie("mailflow_csrf")
+		if cookie == nil || token == "" || cookie.Value != token {
+			http.Error(w, "invalid csrf token", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func csrfToken() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
+func csrfCookie() *http.Cookie {
+	return &http.Cookie{
+		Name:     "mailflow_csrf",
+		Value:    csrfToken(),
+		Path:     "/",
+		SameSite: http.SameSiteStrictMode,
+		HttpOnly: false,
+	}
+}
+
+func csrfCookieWithToken(token string) *http.Cookie {
+	return &http.Cookie{
+		Name:     "mailflow_csrf",
+		Value:    token,
+		Path:     "/",
+		SameSite: http.SameSiteStrictMode,
+		HttpOnly: false,
+	}
+}
+
+type rateLimiter struct {
+	mu      sync.Mutex
+	entries map[string]*rateEntry
+}
+
+type rateEntry struct {
+	count    int
+	resetAt  time.Time
+}
+
+func newRateLimiter() *rateLimiter {
+	rl := &rateLimiter{entries: map[string]*rateEntry{}}
+	go func() {
+		for {
+			time.Sleep(time.Minute)
+			rl.mu.Lock()
+			now := time.Now()
+			for ip, e := range rl.entries {
+				if now.After(e.resetAt) {
+					delete(rl.entries, ip)
+				}
+			}
+			rl.mu.Unlock()
+		}
+	}()
+	return rl
+}
+
+func (rl *rateLimiter) allow(ip string, max int, window time.Duration) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	now := time.Now()
+	e, ok := rl.entries[ip]
+	if !ok || now.After(e.resetAt) {
+		rl.entries[ip] = &rateEntry{count: 1, resetAt: now.Add(window)}
+		return true
+	}
+	e.count++
+	return e.count <= max
+}
+
+var loginLimiter = newRateLimiter()

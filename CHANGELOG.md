@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0] — Security & Hardening
+
+### Security
+- IMAP password encrypted at rest with AES-256-GCM (random key stored in config.json)
+- CSRF protection on all non-HTMX POST forms (login, setup, settings, rules)
+- Session cookie set to SameSite=Strict
+- Rate limiting on login (5 attempts/minute/IP)
+- Config validation on load (port, poll interval)
+
+### Fixed
+- Build-time version injection via ldflags (`-X main.version=...`)
+- Activity log auto-cleanup on startup (keeps last 1000 entries)
+
+### Changed
+- `renderPage` now sets CSRF token cookie and embeds token in template data
+- All form templates include CSRF hidden field
+- `setupPage` accepts `*config.Config` for password encryption
+- `settingsSaveIMAP` encrypts password before storing
+
 ## [0.2.0] — Bug Fixes & Polish
 
 ### Fixed

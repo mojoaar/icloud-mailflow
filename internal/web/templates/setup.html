@@ -2,7 +2,7 @@
 <div class="card" style="max-width:500px;margin:60px auto;">
     <h1>Welcome to iCloud Mailflow</h1>
     <p style="color:var(--muted);margin-bottom:16px">Let's get you set up.</p>
-    <form method="POST" action="/setup">
+    <form method="POST" action="/setup"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label>Admin Password</label>
             <input type="password" name="password" required style="width:100%" minlength="8">

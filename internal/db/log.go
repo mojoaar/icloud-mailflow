@@ -50,3 +50,10 @@ func (r *LogRepo) ListRecent(limit int) ([]LogEntry, error) {
 	}
 	return out, rows.Err()
 }
+
+func (r *LogRepo) Cleanup(keep int) error {
+	_, err := r.DB.Exec(
+		`DELETE FROM message_log WHERE id NOT IN (SELECT id FROM message_log ORDER BY id DESC LIMIT ?)`, keep,
+	)
+	return err
+}

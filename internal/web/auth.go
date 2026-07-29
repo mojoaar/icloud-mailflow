@@ -25,7 +25,13 @@ func generateToken() (string, error) {
 func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
+			http.SetCookie(w, csrfCookie())
 			renderPage(w, r, "Login", "login", nil)
+			return
+		}
+		ip := r.RemoteAddr
+		if !loginLimiter.allow(ip, 5, time.Minute) {
+			renderPage(w, r, "Login", "login", map[string]any{"Error": "Too many attempts. Wait a minute."})
 			return
 		}
 		r.ParseForm()
@@ -43,7 +49,7 @@ func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.Ha
 			Path:     "/",
 			HttpOnly: true,
 			Secure:   false,
-			SameSite: 0,
+			SameSite: http.SameSiteStrictMode,
 			Expires:  time.Now().Add(sessionTTL),
 		})
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
