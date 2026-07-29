@@ -28,7 +28,7 @@ func Default() *Config {
 		IMAPPort:     993,
 		SourceFolder: "Processing",
 		PollInterval: 60,
-		ListenAddr:   "127.0.0.1:8080",
+		ListenAddr:   "0.0.0.0:8080",
 	}
 }
 

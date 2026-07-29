@@ -2,7 +2,7 @@ services:
   mailflow:
     image: ghcr.io/mojoaar/icloud-mailflow:latest
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8080:8080"
     volumes:
       - ./data:/data
     restart: unless-stopped
