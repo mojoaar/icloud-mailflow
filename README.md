@@ -71,6 +71,13 @@ The rule runs immediately on the next poll tick. Click **Run Poll Now** to trigg
 docker compose up -d
 ```
 
+The image is automatically built and pushed to `ghcr.io/mojoaar/icloud-mailflow` on every version tag.
+
+To build locally instead:
+```bash
+docker build -t icloud-mailflow .
+```
+
 ## Build Requirements
 
 - Go 1.22+
