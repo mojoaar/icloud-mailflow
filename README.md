@@ -71,6 +71,12 @@ The rule runs immediately on the next poll tick. Click **Run Poll Now** to trigg
 docker compose up -d
 ```
 
+Then open http://127.0.0.1:8080/setup to configure IMAP. After saving, restart the container so IMAP reconnects:
+
+```bash
+docker compose restart
+```
+
 The image is automatically built and pushed to `ghcr.io/mojoaar/icloud-mailflow` on every version tag.
 
 To build locally instead:
