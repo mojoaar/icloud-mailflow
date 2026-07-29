@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.1] — UI & Docker
+
+### Added
+- AND/OR condition toggle on rule forms (ALL vs ANY matching)
+- Docker image auto-build via GitHub Actions on tag push (ghcr.io)
+- Clear README with iCloud mail rule setup instructions and how-it-works flow
+
+### Changed
+- Activity log table layout fixed at 1200px with proper column widths
+- Navigation links hidden when logged out (only brand shows)
+- Dockerfile updated to Go 1.23
+
 ## [0.3.0] — Security & Hardening
 
 ### Security
