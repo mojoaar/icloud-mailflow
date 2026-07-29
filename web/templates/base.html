@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iCloud Mailflow — {{.Title}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/dashboard" class="brand">iCloud Mailflow</a>
+        <div class="nav-links">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/rules">Rules</a>
+            <a href="/settings">Settings</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+    <main>
+        {{.Content}}
+    </main>
+    <script src="/static/htmx.min.js"></script>
+</body>
+</html>
