@@ -21,8 +21,8 @@ func TestDefault(t *testing.T) {
 	if cfg.PollInterval != 60 {
 		t.Errorf("PollInterval = %d, want 60", cfg.PollInterval)
 	}
-	if cfg.ListenAddr != "127.0.0.1:8080" {
-		t.Errorf("ListenAddr = %q, want 127.0.0.1:8080", cfg.ListenAddr)
+	if cfg.ListenAddr != "0.0.0.0:8080" {
+		t.Errorf("ListenAddr = %q, want 0.0.0.0:8080", cfg.ListenAddr)
 	}
 }
 
@@ -146,8 +146,8 @@ func TestLoadPreservesRuntimeFields(t *testing.T) {
 	if cfg.DataDir != dir {
 		t.Errorf("DataDir = %q, want %q", cfg.DataDir, dir)
 	}
-	if cfg.ListenAddr != "127.0.0.1:8080" {
-		t.Errorf("ListenAddr = %q, want 127.0.0.1:8080", cfg.ListenAddr)
+	if cfg.ListenAddr != "0.0.0.0:8080" {
+		t.Errorf("ListenAddr = %q, want 0.0.0.0:8080", cfg.ListenAddr)
 	}
 	if cfg.AdminPass != "" {
 		t.Error("AdminPass should be empty after Load")

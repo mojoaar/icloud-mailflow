@@ -48,7 +48,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 		})
 	})
 
-	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
+	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 
 	r.Get("/login", loginPage(settingsRepo, sessRepo))
 	r.Post("/login", loginPage(settingsRepo, sessRepo))
