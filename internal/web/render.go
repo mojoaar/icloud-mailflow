@@ -10,7 +10,7 @@ import (
 //go:embed templates/*.html
 var templatesFS embed.FS
 
-//go:embed static/*
+//go:embed static
 var staticFS embed.FS
 
 type pageData struct {

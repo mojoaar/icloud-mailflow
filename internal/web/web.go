@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"io/fs"
 	"net/http"
 	"strings"
 	"sync"
@@ -48,7 +49,8 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 		})
 	})
 
-	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
+	subFS, _ := fs.Sub(staticFS, "static")
+	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(subFS))))
 
 	r.Get("/login", loginPage(settingsRepo, sessRepo))
 	r.Post("/login", loginPage(settingsRepo, sessRepo))
