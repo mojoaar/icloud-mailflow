@@ -1,0 +1,9 @@
+version: "3.8"
+services:
+  mailflow:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped

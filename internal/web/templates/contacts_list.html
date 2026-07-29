@@ -1,0 +1,9 @@
+{{define "contacts_list"}}
+{{range .Contacts}}
+<div class="contact-suggestion" style="padding:4px 8px;cursor:pointer" onclick="selectContact('{{.Email}}')">
+    {{if .Name}}<strong>{{.Name}}</strong> &lt;{{.Email}}&gt;{{else}}{{.Email}}{{end}}
+</div>
+{{else}}
+<div style="padding:4px 8px;color:var(--muted)">No contacts found</div>
+{{end}}
+{{end}}

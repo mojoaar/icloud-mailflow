@@ -1,0 +1,16 @@
+{{define "login"}}
+<div class="card" style="max-width:360px;margin:80px auto;">
+    <h1>iCloud Mailflow</h1>
+    <p style="color:var(--muted);margin-bottom:16px">Sign in to manage your rules</p>
+    {{if .Error}}
+    <div class="toast toast-error" style="position:static;margin-bottom:12px">{{.Error}}</div>
+    {{end}}
+    <form method="POST" action="/login">
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" required style="width:100%">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
+    </form>
+</div>
+{{end}}

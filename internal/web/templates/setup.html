@@ -1,0 +1,22 @@
+{{define "setup"}}
+<div class="card" style="max-width:500px;margin:60px auto;">
+    <h1>Welcome to iCloud Mailflow</h1>
+    <p style="color:var(--muted);margin-bottom:16px">Let's get you set up.</p>
+    <form method="POST" action="/setup">
+        <div class="form-group">
+            <label>Admin Password</label>
+            <input type="password" name="password" required style="width:100%" minlength="8">
+        </div>
+        <div class="form-group">
+            <label>iCloud Email</label>
+            <input type="email" name="imap_email" required style="width:100%" placeholder="you@icloud.com">
+        </div>
+        <div class="form-group">
+            <label>App-Specific Password</label>
+            <input type="password" name="imap_password" required style="width:100%">
+            <small style="color:var(--muted)">Generate at appleid.apple.com → Sign-In and Security → App-Specific Passwords</small>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Start Using Mailflow</button>
+    </form>
+</div>
+{{end}}

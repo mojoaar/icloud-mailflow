@@ -1,0 +1,100 @@
+{{define "rules_form"}}
+<h1>{{if .New}}New Rule{{else}}Edit Rule{{end}}</h1>
+
+{{if .Error}}
+<div class="toast toast-error">{{.Error}}</div>
+{{end}}
+
+<form method="POST" action="{{if .Edit}}/rules/{{.Rule.ID}}{{else}}/rules{{end}}">
+    {{if .Edit}}<input type="hidden" name="_method" value="PUT">{{end}}
+    <div class="card">
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" name="name" value="{{.Rule.Name}}" required style="width:100%">
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <input type="text" name="description" value="{{.Rule.Description}}" style="width:100%">
+        </div>
+        <div style="display:flex;gap:16px">
+            <div class="form-group">
+                <label>Priority</label>
+                <input type="number" name="priority" value="{{.Rule.Priority}}" style="width:80px">
+            </div>
+            <div class="form-group">
+                <label>&nbsp;</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                    <input type="checkbox" name="enabled" {{if .Rule.Enabled}}checked{{end}}>
+                    Enabled
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <h2>Conditions</h2>
+    <div class="card" id="conditions">
+        {{range $gi, $group := .Rule.Groups}}
+        {{range $ci, $cond := $group.Conditions}}
+        <div class="condition-row" style="display:flex;gap:8px;margin-bottom:8px">
+            <select name="cond_field">
+                {{range $.Fields}}
+                <option value="{{.value}}" {{if eq $cond.Field .value}}selected{{end}}>{{.label}}</option>
+                {{end}}
+            </select>
+            <select name="cond_op" style="width:140px">
+                <option value="contains" {{if eq $cond.Operator "contains"}}selected{{end}}>contains</option>
+                <option value="not_contains" {{if eq $cond.Operator "not_contains"}}selected{{end}}>doesn't contain</option>
+                <option value="equals" {{if eq $cond.Operator "equals"}}selected{{end}}>equals</option>
+                <option value="not_equals" {{if eq $cond.Operator "not_equals"}}selected{{end}}>doesn't equal</option>
+                <option value="starts_with" {{if eq $cond.Operator "starts_with"}}selected{{end}}>starts with</option>
+                <option value="ends_with" {{if eq $cond.Operator "ends_with"}}selected{{end}}>ends with</option>
+                <option value="matches_regex" {{if eq $cond.Operator "matches_regex"}}selected{{end}}>matches regex</option>
+                <option value="exists" {{if eq $cond.Operator "exists"}}selected{{end}}>exists</option>
+                <option value="not_exists" {{if eq $cond.Operator "not_exists"}}selected{{end}}>doesn't exist</option>
+            </select>
+            <input type="text" name="cond_value" value="{{$cond.Value}}" placeholder="value" style="flex:1">
+        </div>
+        {{end}}
+        {{end}}
+    </div>
+    <button type="button" class="btn" onclick="addCondition()" style="margin-top:8px">+ Add Condition</button>
+
+    <h2 style="margin-top:24px">Actions</h2>
+    <div class="card" id="actions">
+        {{range .Rule.Actions}}
+        <div class="action-row" style="display:flex;gap:8px;margin-bottom:8px">
+            <select name="action_type" style="width:160px">
+                <option value="move_to_folder" {{if eq .Type "move_to_folder"}}selected{{end}}>Move to Folder</option>
+            </select>
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Folder name" style="flex:1">
+        </div>
+        {{end}}
+    </div>
+    <button type="button" class="btn" onclick="addAction()" style="margin-top:8px">+ Add Action</button>
+
+    <div style="margin-top:24px;display:flex;gap:8px">
+        <button type="submit" class="btn btn-primary">Save Rule</button>
+        <a href="/rules" class="btn">Cancel</a>
+    </div>
+</form>
+
+<script>
+function addCondition() {
+    var div = document.createElement('div');
+    div.className = 'condition-row';
+    div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
+    div.innerHTML = '<select name="cond_field">{{range .Fields}}<option value="{{.value}}">{{.label}}</option>{{end}}</select>' +
+        '<select name="cond_op" style="width:140px"><option value="contains">contains</option><option value="not_contains">doesn\'t contain</option><option value="equals">equals</option><option value="not_equals">doesn\'t equal</option><option value="starts_with">starts with</option><option value="ends_with">ends with</option><option value="matches_regex">matches regex</option><option value="exists">exists</option><option value="not_exists">doesn\'t exist</option></select>' +
+        '<input type="text" name="cond_value" placeholder="value" style="flex:1">';
+    document.getElementById('conditions').appendChild(div);
+}
+function addAction() {
+    var div = document.createElement('div');
+    div.className = 'action-row';
+    div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
+    div.innerHTML = '<select name="action_type" style="width:160px"><option value="move_to_folder">Move to Folder</option></select>' +
+        '<input type="text" name="action_value" placeholder="Folder name" style="flex:1">';
+    document.getElementById('actions').appendChild(div);
+}
+</script>
+{{end}}

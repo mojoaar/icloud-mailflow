@@ -1,0 +1,56 @@
+{{define "settings"}}
+<h1>Settings</h1>
+
+<div class="card">
+    <h2>IMAP Connection</h2>
+    <form method="POST" action="/settings/imap">
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="imap_email" value="{{.IMAPEmail}}" style="width:100%">
+        </div>
+        <div class="form-group">
+            <label>App-Specific Password</label>
+            <input type="password" name="imap_password" placeholder="Leave blank to keep current" style="width:100%">
+        </div>
+        <button type="submit" class="btn btn-primary">Save IMAP Settings</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Admin Password</h2>
+    <form method="POST" action="/settings/password">
+        <div class="form-group">
+            <label>New Password</label>
+            <input type="password" name="password" required minlength="8" style="width:100%">
+        </div>
+        <button type="submit" class="btn btn-primary">Update Password</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Polling</h2>
+    <form method="POST" action="/settings/poll">
+        <div class="form-group">
+            <label>Source Folder (where rules run on new mail)</label>
+            <select name="source_folder" style="width:100%">
+                {{range .Folders}}
+                <option value="{{.Name}}" {{if eq $.SourceFolder .Name}}selected{{end}}>{{.Name}}</option>
+                {{end}}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Poll Interval (seconds)</label>
+            <input type="number" name="poll_interval" value="{{.PollInterval}}" min="10" style="width:120px">
+        </div>
+        <button type="submit" class="btn btn-primary">Save Poll Settings</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Server</h2>
+    <table>
+        <tr><td>Listen Address</td><td>{{.ListenAddr}}</td></tr>
+        <tr><td>Folders</td><td>{{len .Folders}} synced</td></tr>
+    </table>
+</div>
+{{end}}
