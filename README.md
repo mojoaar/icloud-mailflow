@@ -101,6 +101,19 @@ To build locally instead:
 docker build -t icloud-mailflow .
 ```
 
+You can also deploy without cloning the repo — just point your `docker-compose.yml` at the pre-built image:
+
+```yaml
+services:
+  mailflow:
+    image: ghcr.io/mojoaar/icloud-mailflow:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    command: -data=/data
+```
+
 ## Demo
 
 A demo database with sample data (rules, contacts, activity log) is available for testing and screenshots:
