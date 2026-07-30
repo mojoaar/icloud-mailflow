@@ -12,9 +12,15 @@ Automated iCloud mail sorting using IMAP rules.
 - **Rules Export/Import** — backup and restore rule configurations as JSON
 - **Activity Log** — see every rule match and action result with timestamps
 - **Stats Dashboard** — rule hit counts, top senders, actions breakdown, daily volume
+- **Docs Page** — full usage guide and API reference with curl examples and syntax highlighting
+- **Light/Dark Theme** — toggle in the nav bar, respects OS preference on first visit
+- **JetBrains Mono Font** — optional monospace font, toggle in Settings → Regional
 - **Timezone Support** — display activity log in your local timezone
 - **Folder Auto-Create** — source folder is created on iCloud if it doesn't exist
 - **Test Connection** — verify IMAP credentials before saving
+- **Configurable Polling** — adjustable batch size, interval, and on/off toggle
+- **Log Retention** — configure how many activity entries to keep
+- **Server Metrics** — uptime, memory, and server time in Settings
 
 ### Security
 - IMAP password encrypted at rest with AES-256-GCM
@@ -93,16 +99,26 @@ To build locally instead:
 docker build -t icloud-mailflow .
 ```
 
+## Demo
+
+A demo database with sample data (rules, contacts, activity log) is available for testing and screenshots:
+
+```bash
+rm -f demo/mailflow.db* && bash scripts/demo.sh && go run ./cmd/mailflow/ -data=./demo
+```
+
+Then open http://localhost:8080/dashboard and log in with password `demo123`.
+
 ## Build Requirements
 
-- Go 1.22+
+- Go 1.25+
 - No CGO (pure Go SQLite via modernc.org/sqlite)
 
 ## Stack
 
 | Component   | Technology                                                |
 | ----------- | --------------------------------------------------------- |
-| Language    | Go 1.22+                                                  |
+| Language    | Go 1.25+                                                  |
 | HTTP Router | chi v5                                                    |
 | Database    | SQLite (modernc.org/sqlite)                                |
 | IMAP        | go-imap v2                                                |
@@ -132,6 +148,28 @@ Using the iCloud web mail client (mail.icloud.com) while Mailflow is polling may
 - Set a longer poll interval (300s+ recommended) in Settings
 - Disable polling via the toggle in Settings while actively using iCloud web mail
 - Use separate browsers for iCloud web and Mailflow
+
+## Credits
+
+### Go Libraries
+
+| Library | Use | License |
+| ------- | --- | ------- |
+| [go-imap v2](https://github.com/emersion/go-imap) | IMAP client | MIT |
+| [go-webdav](https://github.com/emersion/go-webdav) | CardDAV client | MIT |
+| [go-vcard](https://github.com/emersion/go-vcard) | vCard parsing | MIT |
+| [chi v5](https://github.com/go-chi/chi) | HTTP router | MIT |
+| [x/crypto](https://pkg.go.dev/golang.org/x/crypto) | bcrypt password hashing | BSD-3-Clause |
+| [modernc.org/sqlite](https://gitlab.com/cznic/sqlite) | SQLite driver (no CGO) | BSD-3-Clause |
+
+### Frontend Assets
+
+| Asset | Use | License |
+| ----- | --- | ------- |
+| [Lucide Icons](https://lucide.dev) | SVG icons throughout the UI | ISC |
+| [JetBrains Mono](https://www.jetbrains.com/lp/mono/) | Monospace font (optional, toggled in Settings) | OFL-1.1 |
+| [highlight.js](https://highlightjs.org) | Syntax highlighting on the Docs page | BSD-3-Clause |
+| [HTMX](https://htmx.org) | Frontend interactivity without JavaScript frameworks | 0BSD |
 
 ## License
 
