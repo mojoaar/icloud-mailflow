@@ -123,18 +123,22 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 </table>
 </div>
 
-<div class="card" id="api">
-<h2>API Reference</h2>
-<p style="color:var(--muted)">Base URL: <code>http://127.0.0.1:8080</code>. All endpoints require session cookie (login first).</p>
+<h2 id="api" style="margin-top:32px">API Reference</h2>
+<p style="color:var(--muted)">Base URL: <code>http://127.0.0.1:8080</code>. All endpoints require session cookie from <code>POST /login</code>.</p>
 
-<h3><span class="method-badge method-get">GET</span> GET /api/contacts?q=</h3>
+<div class="card" style="margin-top:16px">
+<h3><span class="method-badge method-get">GET</span> GET /api/contacts?q=&lt;query&gt;</h3>
 <p style="color:var(--muted)">Search contacts by email or name.</p>
 <pre><code>curl 'http://127.0.0.1:8080/api/contacts?q=alice' -b "mailflow_session=TOKEN"</code></pre>
+</div>
 
+<div class="card">
 <h3><span class="method-badge method-get">GET</span> GET /api/folders</h3>
 <p style="color:var(--muted)">Sync folders from IMAP and return the list.</p>
 <pre><code>curl http://127.0.0.1:8080/api/folders -b "mailflow_session=TOKEN"</code></pre>
+</div>
 
+<div class="card">
 <h3><span class="method-badge method-post">POST</span> POST /poller/tick</h3>
 <p style="color:var(--muted)">Trigger a manual poll cycle.</p>
 <pre><code># curl
@@ -151,31 +155,43 @@ http.Post("http://127.0.0.1:8080/poller/tick","",nil)
 
 # PowerShell
 Invoke-RestMethod http://127.0.0.1:8080/poller/tick -Method POST -WebSession $s</code></pre>
+</div>
 
+<div class="card">
 <h3><span class="method-badge method-post">POST</span> POST /contacts/seed</h3>
-<p style="color:var(--muted)">Seed contacts from all synced folders.</p>
+<p style="color:var(--muted)">Seed contacts from all synced IMAP folders.</p>
 <pre><code>curl -X POST http://127.0.0.1:8080/contacts/seed -b "mailflow_session=TOKEN"</code></pre>
+</div>
 
+<div class="card">
 <h3><span class="method-badge method-get">GET</span> GET /settings/rules/export</h3>
 <p style="color:var(--muted)">Download all rules as JSON (excludes catch-all).</p>
 <pre><code>curl http://127.0.0.1:8080/settings/rules/export -b "mailflow_session=TOKEN" -o rules.json</code></pre>
+</div>
 
+<div class="card">
 <h3><span class="method-badge method-post">POST</span> POST /settings/rules/import</h3>
 <p style="color:var(--muted)">Import rules from a JSON file.</p>
 <pre><code>curl -X POST http://127.0.0.1:8080/settings/rules/import -b "mailflow_session=TOKEN" -F "rules_file=@rules.json"</code></pre>
+</div>
 
+<div class="card">
 <h3><span class="method-badge method-post">POST</span> POST /settings/carddav-import</h3>
 <p style="color:var(--muted)">Import contacts from iCloud address book.</p>
 <pre><code>curl -X POST http://127.0.0.1:8080/settings/carddav-import -b "mailflow_session=TOKEN"</code></pre>
+</div>
 
+<div class="card">
 <h3><span class="method-badge method-post">POST</span> POST /activity/delete</h3>
 <p style="color:var(--muted)">Clear all activity logs.</p>
 <pre><code>curl -X POST http://127.0.0.1:8080/activity/delete -b "mailflow_session=TOKEN"</code></pre>
+</div>
 
+<div class="card">
 <h3><span class="method-badge method-post">POST</span> POST /login</h3>
 <p style="color:var(--muted)">Authenticate. Returns <code>mailflow_session</code> cookie. Rate limited: 5/min/IP.</p>
 <pre><code>curl -X POST http://127.0.0.1:8080/login -d "password=YOUR_PASSWORD" -c cookies.txt
-# Use the cookie:
+# Use the cookie for subsequent requests:
 curl http://127.0.0.1:8080/poller/tick -b cookies.txt</code></pre>
 </div>
 

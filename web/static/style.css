@@ -12,6 +12,9 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
 html { overflow-y: scroll; }
 
 body {
