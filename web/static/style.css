@@ -31,7 +31,10 @@ nav {
 nav .brand {
     font-weight: 700;
     font-size: 1.1rem;
-    color: var(--accent);
+    background: linear-gradient(135deg, var(--accent), #79c0ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     text-decoration: none;
 }
 
