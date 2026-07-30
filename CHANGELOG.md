@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.2] — Light Theme & Demo
+
+### Added
+- Light/dark theme toggle with OS preference detection (moon icon in nav)
+- Demo data script (`scripts/demo.sh`) for screenshots and testing
+
+### Fixed
+- Dynamic host in docs URLs (shows actual server host, not internal bind)
+- How It Works card missing closing `</div>`
+- nil guard on CreateFolder when IMAP not connected
+- Demo script: added table migrations and clearer login instructions
+- Ignored demo WAL files in git
+
 ## [0.4.1] — Stats & Documentation
 
 ### Added
