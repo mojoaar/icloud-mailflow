@@ -27,7 +27,7 @@ func Default() *Config {
 		IMAPServer:   "imap.mail.me.com",
 		IMAPPort:     993,
 		SourceFolder: "Processing",
-		PollInterval: 60,
+		PollInterval: 300,
 		ListenAddr:   "0.0.0.0:8080",
 	}
 }
@@ -71,8 +71,8 @@ func (c *Config) Validate() error {
 	if c.IMAPPort < 1 || c.IMAPPort > 65535 {
 		return fmt.Errorf("invalid IMAP port: %d", c.IMAPPort)
 	}
-	if c.PollInterval < 10 {
-		return fmt.Errorf("poll interval too low: %d (min 10)", c.PollInterval)
+	if c.PollInterval < 60 {
+		return fmt.Errorf("poll interval too low: %d (min 60)", c.PollInterval)
 	}
 	if c.ListenAddr == "" {
 		return fmt.Errorf("listen address is required")

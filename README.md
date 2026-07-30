@@ -29,7 +29,7 @@ Incoming mail → iCloud Rule → "Processing" folder → Mailflow poller → Ma
 ```
 
 1. Create an iCloud mail rule that moves all incoming mail to a "Processing" folder (see below)
-2. Mailflow polls the Processing folder every 60 seconds (processes 50 messages per poll, configurable in Settings)
+2. Mailflow polls the Processing folder every 300 seconds (5 minutes, configurable in Settings)
 3. Each message is checked against your rules (first match wins)
 4. Matched actions execute: move to folder, mark as read, etc.
 5. Unmatched messages fall through to the catch-all rule
@@ -115,6 +115,14 @@ internal/
   poller/         — periodic email polling
   web/            — chi router, auth, handlers, templates
 ```
+
+## Known Issues
+
+### iCloud Web Session Expiry
+Using the iCloud web mail client (mail.icloud.com) while Mailflow is polling may cause the web session to expire. This is Apple's session management, not a bug. Workarounds:
+- Set a longer poll interval (300s+ recommended) in Settings
+- Disable polling via the toggle in Settings while actively using iCloud web mail
+- Use separate browsers for iCloud web and Mailflow
 
 ## License
 

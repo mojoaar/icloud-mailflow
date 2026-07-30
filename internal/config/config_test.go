@@ -18,8 +18,8 @@ func TestDefault(t *testing.T) {
 	if cfg.SourceFolder != "Processing" {
 		t.Errorf("SourceFolder = %q, want Processing", cfg.SourceFolder)
 	}
-	if cfg.PollInterval != 60 {
-		t.Errorf("PollInterval = %d, want 60", cfg.PollInterval)
+	if cfg.PollInterval != 300 {
+		t.Errorf("PollInterval = %d, want 300", cfg.PollInterval)
 	}
 	if cfg.ListenAddr != "0.0.0.0:8080" {
 		t.Errorf("ListenAddr = %q, want 0.0.0.0:8080", cfg.ListenAddr)
