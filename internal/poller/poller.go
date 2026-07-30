@@ -103,6 +103,7 @@ func (p *Poller) process() error {
 		return fmt.Errorf("list rules: %w", err)
 	}
 
+	var stuckUID uint32
 	for processed := 0; processed < p.batchSize; processed++ {
 		uids, err := p.imapClient.SearchMessages(p.source, 1)
 		if err != nil {
@@ -112,6 +113,9 @@ func (p *Poller) process() error {
 			return nil
 		}
 		for _, uid := range uids {
+			if uint32(uid) == stuckUID {
+				return nil
+			}
 			msg, err := p.imapClient.FetchMessage(uint32(uid))
 			if err != nil {
 				slog.Warn("poller failed to fetch message", "uid", uid, "error", err)
@@ -126,14 +130,11 @@ func (p *Poller) process() error {
 				continue
 			}
 			if matched != nil {
+				stuckUID = 0
 				slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
 				p.executeActions(matched, uint32(uid), msg)
 			} else {
-				from := ""
-				if len(msg.From) > 0 {
-					from = msg.From[0].Email
-				}
-				slog.Info("poller unmatched", "uid", uid, "from", from, "subj", msg.Subject)
+				stuckUID = uint32(uid)
 			}
 		}
 	}
