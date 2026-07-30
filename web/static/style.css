@@ -139,6 +139,18 @@ input:focus, select:focus, textarea:focus {
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } }
 
+footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+footer a {
+    color: var(--accent);
+    text-decoration: none;
+}
+footer a:hover { text-decoration: underline; }
+
 tr[draggable] { cursor: grab; }
 .row-dragging { opacity: 0.3; }
 .row-drag-over { border-top: 2px solid var(--accent) !important; }

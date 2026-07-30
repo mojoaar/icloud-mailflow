@@ -18,9 +18,12 @@ type pageData struct {
 	Content   template.HTML
 	CSRFToken string
 	ShowNav   bool
+	Version   string
 }
 
 var tmpl *template.Template
+
+var appVersion string
 
 func init() {
 	tmpl = template.Must(template.New("").ParseFS(templatesFS, "templates/*.html"))
@@ -44,6 +47,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 		Content:   template.HTML(buf.String()),
 		CSRFToken: token,
 		ShowNav:   pageName != "login" && pageName != "setup",
+		Version:   appVersion,
 	}
 	if err := tmpl.ExecuteTemplate(w, "base.html", pd); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

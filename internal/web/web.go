@@ -21,6 +21,7 @@ import (
 )
 
 func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *contacts.Collector, logRepo *db.LogRepo, version string, p *poller.Poller) http.Handler {
+	appVersion = version
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
