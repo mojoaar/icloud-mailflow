@@ -70,11 +70,16 @@ func initialize(dataDir string) (*App, error) {
 		return nil, err
 	}
 
-	db.NewLogRepo(database).Cleanup(1000)
-
 	var imapConn *imap.IMAPClient
 	var imapClient imap.Client
 	settingsRepo := db.NewSettingsRepo(database)
+	logKeep := 1000
+	if v, _ := settingsRepo.Get("log_keep"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			logKeep = n
+		}
+	}
+	db.NewLogRepo(database).Cleanup(logKeep)
 
 	imapEmail, _ := settingsRepo.Get("imap_email")
 	storedPassword, _ := settingsRepo.Get("imap_password")

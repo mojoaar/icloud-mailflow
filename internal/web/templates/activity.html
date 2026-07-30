@@ -1,6 +1,15 @@
 {{define "activity"}}
 <h1>Activity Log</h1>
 
+{{if .Entries}}
+<div style="margin-bottom:16px">
+    <button class="btn btn-danger" hx-post="/activity/delete" hx-target="body" hx-swap="none"
+        hx-confirm="Clear all activity logs?">
+        <i data-lucide="trash-2" data-size="14"></i> Clear Logs
+    </button>
+</div>
+{{end}}
+
 {{if not .Entries}}
 <div class="card">
     <p style="color:var(--muted)">No activity yet. Messages will appear here when rules process mail.</p>

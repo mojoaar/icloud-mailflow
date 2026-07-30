@@ -87,6 +87,10 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		if pollBatch == "" {
 			pollBatch = "50"
 		}
+		logKeep, _ := settingsRepo.Get("log_keep")
+		if logKeep == "" {
+			logKeep = "1000"
+		}
 		timezone, _ := settingsRepo.Get("timezone")
 		pollingEnabled, _ := settingsRepo.Get("polling_enabled")
 		monoFont, _ := settingsRepo.Get("font_mono")
@@ -102,6 +106,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"PollingActive": pollingEnabled != "false",
 			"Contacts":     contactsCount,
 			"MonoFont":     monoFont != "false",
+			"LogKeep":      logKeep,
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}
@@ -235,6 +240,9 @@ func settingsSavePoll(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 		settingsRepo.Set("poll_interval", strconv.Itoa(cfg.PollInterval))
 		if b := r.FormValue("poll_batch"); b != "" {
 			settingsRepo.Set("poll_batch", b)
+		}
+		if k := r.FormValue("log_keep"); k != "" {
+			settingsRepo.Set("log_keep", k)
 		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}

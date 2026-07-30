@@ -23,3 +23,14 @@ func activityHandler(repo *db.LogRepo, settingsRepo *db.SettingsRepo) http.Handl
 		renderPage(w, r, "Activity", "activity", map[string]any{"Entries": entries})
 	}
 }
+
+func activityDeleteHandler(repo *db.LogRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := repo.DeleteAll(); err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+			return
+		}
+		w.Header().Set("HX-Refresh", "true")
+		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Activity log cleared"})
+	}
+}
