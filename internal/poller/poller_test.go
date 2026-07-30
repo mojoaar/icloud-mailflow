@@ -44,7 +44,12 @@ func (m *trackedMock) SearchMessages(folder string, limit int) ([]goimap.UID, er
 	m.mu.Lock()
 	m.searchFolders = append(m.searchFolders, folder)
 	m.mu.Unlock()
-	return m.searchUIDs, m.searchErr
+	if len(m.searchUIDs) > 0 {
+		uid := m.searchUIDs[0]
+		m.searchUIDs = m.searchUIDs[1:]
+		return []goimap.UID{uid}, m.searchErr
+	}
+	return nil, m.searchErr
 }
 
 func (m *trackedMock) FetchMessage(uid uint32) (*imap.Message, error) {

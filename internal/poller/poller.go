@@ -98,35 +98,37 @@ func (p *Poller) process() error {
 	}
 	defer p.processing.Store(false)
 	p.lastTick.Store(time.Now().UnixNano())
-	uids, err := p.imapClient.SearchMessages(p.source, p.batchSize)
-	if err != nil {
-		return fmt.Errorf("search: %w", err)
-	}
-	if len(uids) == 0 {
-		return nil
-	}
-	slog.Debug("poller found messages", "count", len(uids), "folder", p.source)
 	ruleList, err := p.rulesRepo.List()
 	if err != nil {
 		return fmt.Errorf("list rules: %w", err)
 	}
-	for _, uid := range uids {
-		msg, err := p.imapClient.FetchMessage(uint32(uid))
+
+	for processed := 0; processed < p.batchSize; processed++ {
+		uids, err := p.imapClient.SearchMessages(p.source, 1)
 		if err != nil {
-			slog.Warn("poller failed to fetch message", "uid", uid, "error", err)
-			continue
+			return fmt.Errorf("search: %w", err)
 		}
-		if p.collector != nil {
-			p.collector.CollectFromMessage(msg)
+		if len(uids) == 0 {
+			return nil
 		}
-		matched, err := rules.Match(ruleList, msg)
-		if err != nil {
-			slog.Error("rule matching error", "uid", msg.UID, "error", err)
-			continue
-		}
-		if matched != nil {
-			slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
-			p.executeActions(matched, uint32(uid), msg)
+		for _, uid := range uids {
+			msg, err := p.imapClient.FetchMessage(uint32(uid))
+			if err != nil {
+				slog.Warn("poller failed to fetch message", "uid", uid, "error", err)
+				continue
+			}
+			if p.collector != nil {
+				p.collector.CollectFromMessage(msg)
+			}
+			matched, err := rules.Match(ruleList, msg)
+			if err != nil {
+				slog.Error("rule matching error", "uid", msg.UID, "error", err)
+				continue
+			}
+			if matched != nil {
+				slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
+				p.executeActions(matched, uint32(uid), msg)
+			}
 		}
 	}
 	return nil
