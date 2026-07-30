@@ -112,7 +112,6 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"ServerTime":   time.Now().Format("2006-01-02 15:04:05 MST"),
 			"Uptime":       time.Since(startTime).Truncate(time.Second).String(),
 			"Memory":       getMemoryMB(),
-			"Goroutines":   runtime.NumGoroutine(),
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}
