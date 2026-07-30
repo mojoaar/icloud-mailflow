@@ -103,6 +103,9 @@ func (p *Poller) process() error {
 	if err != nil {
 		return fmt.Errorf("list rules: %w", err)
 	}
+	if len(ruleList) > 0 && len(ruleList[0].Groups) > 0 {
+		slog.Info("poller rules check", "first_rule", ruleList[0].Name, "groups", len(ruleList[0].Groups), "conditions", len(ruleList[0].Groups[0].Conditions))
+	}
 
 	for processed := 0; processed < p.batchSize; processed++ {
 		uids, err := p.imapClient.SearchMessages(p.source, 1)
