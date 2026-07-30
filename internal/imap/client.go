@@ -47,9 +47,8 @@ type Client interface {
 }
 
 type IMAPClient struct {
-	cfg            *config.Config
-	client         *imapclient.Client
-	selectedFolder string
+	cfg    *config.Config
+	client *imapclient.Client
 }
 
 func New(cfg *config.Config) *IMAPClient {
@@ -103,7 +102,6 @@ func (c *IMAPClient) ListFolders() ([]Folder, error) {
 }
 
 func (c *IMAPClient) SelectFolder(name string) (*goimap.SelectData, error) {
-	c.selectedFolder = name
 	return c.client.Select(name, nil).Wait()
 }
 
@@ -166,40 +164,13 @@ func (c *IMAPClient) FetchMessages(uids []goimap.UID) ([]*Message, error) {
 }
 
 func (c *IMAPClient) MoveMessage(uid uint32, dest string) (uint32, error) {
-	if c.selectedFolder != "" {
-		if _, err := c.SelectFolder(c.selectedFolder); err != nil {
-			return uid, fmt.Errorf("reselect before move: %w", err)
-		}
-	}
 	seqSet := goimap.UIDSetNum(goimap.UID(uid))
-	data, err := c.client.Copy(seqSet, dest).Wait()
+	data, err := c.client.Move(seqSet, dest).Wait()
 	if err != nil {
-		return uid, fmt.Errorf("copy uid %d to %s: %w", uid, dest, err)
+		return uid, fmt.Errorf("move uid %d to %s: %w", uid, dest, err)
 	}
-	storeFlags := &goimap.StoreFlags{
-		Op:    goimap.StoreFlagsAdd,
-		Flags: []goimap.Flag{goimap.FlagDeleted},
-	}
-	msgs, err := c.client.Store(seqSet, storeFlags, nil).Collect()
-	if err != nil {
-		return uid, fmt.Errorf("store deleted uid %d: %w", uid, err)
-	}
-	deleted := false
-	for _, m := range msgs {
-		for _, f := range m.Flags {
-			if f == goimap.FlagDeleted {
-				deleted = true
-			}
-		}
-	}
-	if !deleted {
-		return uid, fmt.Errorf("failed to mark uid %d as deleted", uid)
-	}
-	if err := c.client.Expunge().Close(); err != nil {
-		return uid, fmt.Errorf("expunge: %w", err)
-	}
-	if len(data.DestUIDs) > 0 {
-		return uint32(data.DestUIDs[0].Start), nil
+	if uidSet, ok := data.DestUIDs.(goimap.UIDSet); ok && len(uidSet) > 0 {
+		return uint32(uidSet[0].Start), nil
 	}
 	return uid, nil
 }
