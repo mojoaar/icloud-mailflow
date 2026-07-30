@@ -3,7 +3,7 @@
 <h1 style="margin:0">Activity Log</h1>
 {{if .Entries}}
 <button class="btn btn-danger" hx-post="/activity/delete" hx-target="body" hx-swap="none"
-    hx-confirm="Clear all activity logs?">
+    hx-confirm="Clear all activity logs? This will also reset your stats. Are you sure?">
     <i data-lucide="trash-2" data-size="14"></i> Clear Logs
 </button>
 {{end}}
