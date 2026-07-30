@@ -12,6 +12,7 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **Email Contact Collection** — automatically extract contacts from processed messages
 - **Contact Autocomplete** — contacts suggest in rule condition value inputs
 - **Rules Export/Import** — backup and restore rule configurations as JSON
+- **Scheduled Rules Backup** — email backups of rules as JSON attachments with configurable frequency (daily/weekly/monthly) and recipient
 - **Activity Log** — see every rule match and action result with timestamps
 - **Stats Dashboard** — rule hit counts, top senders, actions breakdown, daily volume
 - **Docs Page** — full usage guide and API reference with curl examples and syntax highlighting
@@ -165,6 +166,7 @@ internal/
   contacts/       — contact collector from email headers
   carddav/        — iCloud CardDAV contacts importer
   poller/         — periodic email polling
+  smtp/           — SMTP MIME multipart email sender
   web/            — chi router, auth, handlers, templates
 ```
 

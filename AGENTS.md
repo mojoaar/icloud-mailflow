@@ -41,6 +41,7 @@ docker compose up -d
 - `internal/contacts/` - email contact collector
 - `internal/carddav/` - iCloud CardDAV contacts importer
 - `internal/poller/` - periodic email polling
+- `internal/smtp/` - SMTP MIME multipart email sender
 - `internal/crypto/` - AES encrypt/decrypt + bcrypt hashing
 - `internal/web/` - chi router, auth, handlers, embedded templates
 
@@ -50,6 +51,7 @@ docker compose up -d
 - Use the same Go standard library where possible
 - No deprecated packages (no go-imap v1)
 - Action execution MUST preserve declared order — never reorder `mark_as_read` before `move_to_folder`. iCloud requires `\Seen` flag on a message before allowing MOVE/delete operations. Two-pass execution (moves first, flags second) breaks this. Always execute actions sequentially in declared order.
+- When adding a new feature or package, always update documentation: README.md features list + architecture tree, docs.html reference + API endpoints, and AGENTS.md architecture section.
 
 ## iCloud IMAP Constraints
 

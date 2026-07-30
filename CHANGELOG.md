@@ -8,6 +8,8 @@
 - Backup settings card with enabled toggle, frequency select (daily/weekly/monthly, default weekly), recipient input
 - "Backup Now" button for manual backups outside the schedule
 - `internal/smtp/` package — MIME multipart email sender using `net/smtp.SendMail`
+- **Rules search by condition value** — search now matches email addresses and domains in rule conditions, not just name/description
+- Documentation convention in AGENTS.md — new features/packages must update README, docs, and AGENTS.md
 
 ### Changed
 - Backup schedule checked after each poll tick — persists `last_backup` timestamp to DB across restarts

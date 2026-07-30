@@ -138,6 +138,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
 <tr><td>Admin Password</td><td>Change password (leave blank to keep current)</td></tr>
 <tr><td>Polling</td><td>Source folder, poll interval, messages per poll, log retention, enable/disable, refresh folders</td></tr>
 <tr><td>Rules</td><td>Export/import rules as JSON</td></tr>
+<tr><td>Backup</td><td>Scheduled rules backup via email — enabled toggle, frequency (daily/weekly/monthly), recipient, Backup Now button</td></tr>
 <tr><td>iCloud Contacts</td><td>Import from iCloud address book (CardDAV)</td></tr>
 <tr><td>Regional</td><td>Timezone, font (System Default / JetBrains Mono)</td></tr>
 <tr><td>Server</td><td>Listen address, contacts, folders, time, uptime, memory, version</td></tr>
@@ -226,6 +227,17 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
 <div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/font</h3>
 <p class="muted">Set UI font (default or mono).</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/font -b cookies.txt -d "font=mono"</code></pre></div></div>
+
+<h3 style="margin-top:24px;color:var(--muted)">Backup</h3>
+
+<div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /settings/backup/save</h3>
+<p class="muted">Save backup settings (enabled, frequency, recipient).</p>
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/backup/save -b cookies.txt \
+  -d "backup_enabled=true&backup_frequency=weekly&backup_recipient=user@icloud.com"</code></pre></div></div>
+
+<div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/backup/now</h3>
+<p class="muted">Trigger an immediate rules backup to the configured recipient.</p>
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/backup/now -b cookies.txt</code></pre></div></div>
 
 <h3 style="margin-top:24px;color:var(--muted)">Contacts &amp; Folders</h3>
 

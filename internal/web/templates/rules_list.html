@@ -7,7 +7,7 @@
 
 {{if .Rules}}
 <div style="margin-top:12px;margin-bottom:8px">
-    <input type="text" id="rule-search" placeholder="Search rules by name or description..." style="width:100%" autocomplete="off">
+    <input type="text" id="rule-search" placeholder="Search rules by name, description, or condition value..." style="width:100%" autocomplete="off">
 </div>
 <div class="card" class="mt-2">
     <table>
@@ -23,7 +23,7 @@
         <thead><tr><th></th><th>Priority</th><th>Name</th><th>Status</th><th>Conditions</th><th>Actions</th><th style="white-space:nowrap"></th></tr></thead>
         <tbody id="rules-tbody">
         {{range .Rules}}
-        <tr draggable="true" data-rule-id="{{.ID}}" data-search="{{.Name}} {{.Description}}">
+        <tr draggable="true" data-rule-id="{{.ID}}" data-search="{{.Name}} {{.Description}}{{range .Groups}}{{range .Conditions}} {{.Value}}{{end}}{{end}}">
             <td style="cursor:grab;color:var(--muted)"><i data-lucide="grip-vertical" data-size="14"></i></td>
             <td>{{.Priority}}</td>
             <td><strong>{{.Name}}</strong>{{if .Description}}<br><small class="muted">{{.Description}}</small>{{end}}</td>
