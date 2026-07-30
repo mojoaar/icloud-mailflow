@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.2] — Docker & Root Fix
+
+### Fixed
+- Root path `/` redirects to `/dashboard` (was 404)
+- CSS broken in Docker — embedded static files with `fs.Sub`
+- `SeedFromFolder` nil-guard prevents panic when IMAP not connected
+- Docker build with `golang:alpine` + `GOTOOLCHAIN=auto` (no dependency downgrades)
+- Default listen address `0.0.0.0:8080` for Docker compatibility
+
+### Changed
+- CSRF disabled on login/setup pages (pre-auth, no session)
+- Login rate limiting removed CSRF dependency
+
 ## [0.3.1] — UI & Docker
 
 ### Added

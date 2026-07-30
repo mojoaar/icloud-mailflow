@@ -52,6 +52,10 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	subFS, _ := fs.Sub(staticFS, "static")
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(subFS))))
 
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	})
+
 	r.Get("/login", loginPage(settingsRepo, sessRepo))
 	r.Post("/login", loginPage(settingsRepo, sessRepo))
 	r.Get("/logout", logoutHandler(sessRepo))
