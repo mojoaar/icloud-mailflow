@@ -103,8 +103,8 @@ func initialize(dataDir string) (*App, error) {
 			slog.Warn("imap connection failed, server will start without mail processing", "error", err)
 			imapConn = nil
 		}
-		imapClient = imapConn
-		if imapClient != nil {
+		if imapConn != nil {
+			imapClient = imapConn
 			imapClient.CreateFolder(cfg.SourceFolder)
 		}
 	}
