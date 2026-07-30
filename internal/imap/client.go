@@ -165,12 +165,23 @@ func (c *IMAPClient) FetchMessages(uids []goimap.UID) ([]*Message, error) {
 
 func (c *IMAPClient) MoveMessage(uid uint32, dest string) (uint32, error) {
 	seqSet := goimap.UIDSetNum(goimap.UID(uid))
-	data, err := c.client.Move(seqSet, dest).Wait()
+	data, err := c.client.Copy(seqSet, dest).Wait()
 	if err != nil {
-		return uid, err
+		return uid, fmt.Errorf("copy uid %d to %s: %w", uid, dest, err)
 	}
-	if uidSet, ok := data.DestUIDs.(goimap.UIDSet); ok && len(uidSet) > 0 {
-		return uint32(uidSet[0].Start), nil
+	storeFlags := &goimap.StoreFlags{
+		Op:     goimap.StoreFlagsAdd,
+		Silent: true,
+		Flags:  []goimap.Flag{goimap.FlagDeleted},
+	}
+	if err := c.client.Store(seqSet, storeFlags, nil).Close(); err != nil {
+		return uid, fmt.Errorf("store deleted uid %d: %w", uid, err)
+	}
+	if err := c.client.UIDExpunge(goimap.UIDSetNum(goimap.UID(uid))).Close(); err != nil {
+		return uid, fmt.Errorf("expunge uid %d: %w", uid, err)
+	}
+	if len(data.DestUIDs) > 0 {
+		return uint32(data.DestUIDs[0].Start), nil
 	}
 	return uid, nil
 }
