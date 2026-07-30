@@ -108,7 +108,6 @@ func (p *Poller) process() error {
 		if err != nil {
 			return fmt.Errorf("search: %w", err)
 		}
-		slog.Info("poller searching", "iteration", processed+1, "found", len(uids))
 		if len(uids) == 0 {
 			return nil
 		}
@@ -169,7 +168,7 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 				slog.Warn("move_to_folder action has empty value, skipping", "uid", effectiveUID, "rule", rule.Name)
 				continue
 			}
-			newUID, err := p.imapClient.MoveMessage(effectiveUID, action.Value)
+			newUID, err := p.tryMoveMessage(effectiveUID, action.Value)
 			if err != nil {
 				slog.Error("move failed", "uid", effectiveUID, "dest", action.Value, "error", err)
 				logAction(effectiveUID, action, "error")
@@ -208,4 +207,28 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 			slog.Warn("unknown action type", "type", action.Type)
 		}
 	}
+}
+
+func (p *Poller) tryMoveMessage(uid uint32, dest string) (uint32, error) {
+	newUID, err := p.imapClient.MoveMessage(uid, dest)
+	if err != nil {
+		return newUID, err
+	}
+	uids, _ := p.imapClient.SearchMessages(p.source, 1)
+	for _, v := range uids {
+		if uint32(v) == uid {
+			slog.Warn("move verification failed, reconnecting and retrying", "uid", uid, "dest", dest)
+			if connector, ok := p.imapClient.(*imap.IMAPClient); ok {
+				if recoverr := connector.Reconnect(); recoverr != nil {
+					return newUID, fmt.Errorf("reconnect: %w", recoverr)
+				}
+			}
+			newUID, err = p.imapClient.MoveMessage(uid, dest)
+			if err != nil {
+				return newUID, err
+			}
+			return newUID, nil
+		}
+	}
+	return newUID, nil
 }
