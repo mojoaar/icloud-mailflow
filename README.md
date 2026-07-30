@@ -23,6 +23,14 @@ Automated iCloud mail sorting using IMAP rules.
 - bcrypt hashed admin password
 - SameSite=Strict session cookies
 
+## Screenshots
+
+| Dashboard | Rules | Activity |
+| --------- | ----- | -------- |
+| ![Dashboard](docs/screenshots/dashboard.webp) | ![Rules](docs/screenshots/rules.webp) | ![Activity](docs/screenshots/activity.webp) |
+| **Settings** | **Stats** | **Docs** |
+| ![Settings](docs/screenshots/settings.webp) | ![Stats](docs/screenshots/stats.webp) | ![Docs](docs/screenshots/docs.webp) |
+
 ## How It Works
 
 ```

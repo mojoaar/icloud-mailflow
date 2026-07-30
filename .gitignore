@@ -4,6 +4,8 @@
 
 # Data directory (SQLite DB + config)
 /data
+/demo/mailflow.db
+/demo/config.json
 
 # IDE
 .idea/
