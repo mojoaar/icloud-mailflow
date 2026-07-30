@@ -50,6 +50,15 @@ docker compose up -d
 - No deprecated packages (no go-imap v1)
 - Action execution MUST preserve declared order — never reorder `mark_as_read` before `move_to_folder`. iCloud requires `\Seen` flag on a message before allowing MOVE/delete operations. Two-pass execution (moves first, flags second) breaks this. Always execute actions sequentially in declared order.
 
+## iCloud IMAP Constraints
+
+iCloud's IMAP implementation has non-standard behavior that must be accounted for:
+
+- **`\Seen` required before MOVE**: iCloud blocks MOVE operations on unread messages. Always apply `mark_as_read`/`\Seen` BEFORE any `move_to_folder` action. Single-pass execution preserves declared action order — never reorder moves before flags.
+- **`STORE \Deleted` is blocked**: iCloud silently rejects `STORE +Flags \Deleted`. Do not use COPY+STORE+EXPUNGE. Use `UID MOVE` with `\Seen` applied first.
+- **Query result cap**: All IMAP queries (`UIDSearch`, `UID FETCH`) return at most ~1 result per call regardless of criteria or range. Process messages in a loop — call `SearchMessages(source, 1)` repeatedly until the folder is empty or batch limit is reached.
+- **Seen/unseen**: `UIDSearch` with empty criteria returns only unseen messages by default. `UID FETCH 1:*` returns all messages. Use `UIDSearch` for automated polling (natural deduplication via `\Seen`) and `UID FETCH 1:*` when all messages must be processed (manual run).
+
 ## Release
 1. Bump version in `cmd/mailflow/main.go` (`const version = "X.Y.Z"`)
 2. Update `CHANGELOG.md` with new version header and changes
