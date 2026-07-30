@@ -1,24 +1,18 @@
 {{define "docs"}}
-<div class="docs-layout">
-<nav class="docs-sidebar">
-    <strong style="color:var(--muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">Sections</strong>
-    <a href="#getting-started">Getting Started</a>
-    <a href="#how-it-works">How It Works</a>
-    <a href="#rules">Rules &amp; Conditions</a>
-    <a href="#actions">Actions</a>
-    <a href="#contacts">Contacts</a>
-    <a href="#activity">Activity Log</a>
-    <a href="#settings">Settings</a>
-    <a href="#api-health">API — Health</a>
-    <a href="#api-poll">API — Poll</a>
-    <a href="#api-contacts">API — Contacts</a>
-    <a href="#api-folders">API — Folders</a>
-    <a href="#api-rules">API — Rules</a>
-    <a href="#api-login">API — Login</a>
-</nav>
-<div class="docs-content">
-
 <h1>Documentation</h1>
+
+<div class="card" style="margin-bottom:24px">
+<p style="color:var(--muted)">Quick navigation:</p>
+<a href="#getting-started" style="margin-right:16px;color:var(--accent)">Getting Started</a>
+<a href="#how-it-works" style="margin-right:16px;color:var(--accent)">How It Works</a>
+<a href="#rules" style="margin-right:16px;color:var(--accent)">Rules</a>
+<a href="#actions" style="margin-right:16px;color:var(--accent)">Actions</a>
+<a href="#contacts" style="margin-right:16px;color:var(--accent)">Contacts</a>
+<a href="#activity" style="margin-right:16px;color:var(--accent)">Activity</a>
+<a href="#settings" style="margin-right:16px;color:var(--accent)">Settings</a>
+<a href="#api" style="color:var(--accent)">API</a>
+</p>
+</div>
 
 <div class="card" id="getting-started">
 <h2>Getting Started</h2>
@@ -42,8 +36,7 @@
 
 <h3>4. Docker</h3>
 <pre><code>docker compose up -d
-# After setup → restart so IMAP reconnects
-docker compose restart</code></pre>
+docker compose restart  # after setup → IMAP reconnects</code></pre>
 </div>
 
 <div class="card" id="how-it-works">
@@ -130,59 +123,39 @@ docker compose restart</code></pre>
 </table>
 </div>
 
-<h2 style="margin-top:48px">API Reference</h2>
-<p style="color:var(--muted);margin-bottom:24px">Base URL: <code>http://127.0.0.1:8080</code>. All endpoints require session cookie (login first).</p>
+<div class="card" id="api">
+<h2>API Reference</h2>
+<p style="color:var(--muted)">Base URL: <code>http://127.0.0.1:8080</code>. All endpoints require session cookie (login first).</p>
 
-<div class="card" id="api-health">
-<h3><span class="method-badge method-get">GET</span> GET /</h3>
-<p style="color:var(--muted)">Health check — redirects to dashboard if authenticated, login if not.</p>
-<pre><code># curl
-curl http://127.0.0.1:8080/ -b "mailflow_session=TOKEN"
+<h3><span class="method-badge method-get">GET</span> GET /api/contacts?q=</h3>
+<p style="color:var(--muted)">Search contacts by email or name.</p>
+<pre><code>curl 'http://127.0.0.1:8080/api/contacts?q=alice' -b "mailflow_session=TOKEN"</code></pre>
 
-# Python
-import requests
-r = requests.get('http://127.0.0.1:8080/', cookies={'mailflow_session': 'TOKEN'})
+<h3><span class="method-badge method-get">GET</span> GET /api/folders</h3>
+<p style="color:var(--muted)">Sync folders from IMAP and return the list.</p>
+<pre><code>curl http://127.0.0.1:8080/api/folders -b "mailflow_session=TOKEN"</code></pre>
 
-# PowerShell
-Invoke-WebRequest -Uri http://127.0.0.1:8080/ -WebSession $session</code></pre>
-</div>
-
-<div class="card" id="api-poll">
 <h3><span class="method-badge method-post">POST</span> POST /poller/tick</h3>
-<p style="color:var(--muted)">Trigger a manual poll cycle immediately.</p>
+<p style="color:var(--muted)">Trigger a manual poll cycle.</p>
 <pre><code># curl
 curl -X POST http://127.0.0.1:8080/poller/tick -b "mailflow_session=TOKEN"
 
 # Python
-requests.post('http://127.0.0.1:8080/poller/tick', cookies={'mailflow_session': 'TOKEN'})
+import requests; requests.post('http://127.0.0.1:8080/poller/tick', cookies={'mailflow_session':'TOKEN'})
 
-# JavaScript (fetch)
+# JavaScript
 fetch('/poller/tick', {method:'POST',credentials:'same-origin'})
 
 # Go
-http.Post("http://127.0.0.1:8080/poller/tick","application/x-www-form-urlencoded",nil)
+http.Post("http://127.0.0.1:8080/poller/tick","",nil)
 
 # PowerShell
-Invoke-RestMethod http://127.0.0.1:8080/poller/tick -Method POST -WebSession $session</code></pre>
-</div>
-
-<div class="card" id="api-contacts">
-<h3><span class="method-badge method-get">GET</span> GET /api/contacts?q=</h3>
-<p style="color:var(--muted)">Search collected contacts by email or name.</p>
-<pre><code>curl 'http://127.0.0.1:8080/api/contacts?q=alice' -b "mailflow_session=TOKEN"</code></pre>
+Invoke-RestMethod http://127.0.0.1:8080/poller/tick -Method POST -WebSession $s</code></pre>
 
 <h3><span class="method-badge method-post">POST</span> POST /contacts/seed</h3>
-<p style="color:var(--muted)">Seed contacts from all synced IMAP folders.</p>
+<p style="color:var(--muted)">Seed contacts from all synced folders.</p>
 <pre><code>curl -X POST http://127.0.0.1:8080/contacts/seed -b "mailflow_session=TOKEN"</code></pre>
-</div>
 
-<div class="card" id="api-folders">
-<h3><span class="method-badge method-get">GET</span> GET /api/folders</h3>
-<p style="color:var(--muted)">Sync folders from IMAP and return the list.</p>
-<pre><code>curl http://127.0.0.1:8080/api/folders -b "mailflow_session=TOKEN"</code></pre>
-</div>
-
-<div class="card" id="api-rules">
 <h3><span class="method-badge method-get">GET</span> GET /settings/rules/export</h3>
 <p style="color:var(--muted)">Download all rules as JSON (excludes catch-all).</p>
 <pre><code>curl http://127.0.0.1:8080/settings/rules/export -b "mailflow_session=TOKEN" -o rules.json</code></pre>
@@ -190,34 +163,20 @@ Invoke-RestMethod http://127.0.0.1:8080/poller/tick -Method POST -WebSession $se
 <h3><span class="method-badge method-post">POST</span> POST /settings/rules/import</h3>
 <p style="color:var(--muted)">Import rules from a JSON file.</p>
 <pre><code>curl -X POST http://127.0.0.1:8080/settings/rules/import -b "mailflow_session=TOKEN" -F "rules_file=@rules.json"</code></pre>
-</div>
 
-<div class="card" id="api-login">
+<h3><span class="method-badge method-post">POST</span> POST /settings/carddav-import</h3>
+<p style="color:var(--muted)">Import contacts from iCloud address book.</p>
+<pre><code>curl -X POST http://127.0.0.1:8080/settings/carddav-import -b "mailflow_session=TOKEN"</code></pre>
+
+<h3><span class="method-badge method-post">POST</span> POST /activity/delete</h3>
+<p style="color:var(--muted)">Clear all activity logs.</p>
+<pre><code>curl -X POST http://127.0.0.1:8080/activity/delete -b "mailflow_session=TOKEN"</code></pre>
+
 <h3><span class="method-badge method-post">POST</span> POST /login</h3>
-<p style="color:var(--muted)">Authenticate. Returns <code>mailflow_session</code> cookie. Rate limited: 5 attempts/min/IP.</p>
+<p style="color:var(--muted)">Authenticate. Returns <code>mailflow_session</code> cookie. Rate limited: 5/min/IP.</p>
 <pre><code>curl -X POST http://127.0.0.1:8080/login -d "password=YOUR_PASSWORD" -c cookies.txt
-# Use the cookie for subsequent requests:
+# Use the cookie:
 curl http://127.0.0.1:8080/poller/tick -b cookies.txt</code></pre>
 </div>
 
-</div>
-</div>
-
-<script>
-(function(){
-    var links = document.querySelectorAll('.docs-sidebar a');
-    var sections = [];
-    links.forEach(function(a){ var el = document.querySelector(a.getAttribute('href')); if(el) sections.push({link:a,el:el}); });
-    var obs = new IntersectionObserver(function(entries){
-        entries.forEach(function(e){
-            if(e.isIntersecting){
-                links.forEach(function(l){l.classList.remove('active')});
-                var active = sections.find(function(s){return s.el===e.target});
-                if(active) active.link.classList.add('active');
-            }
-        });
-    },{rootMargin:'-80px 0px -50% 0px'});
-    sections.forEach(function(s){obs.observe(s.el)});
-})();
-</script>
 {{end}}
