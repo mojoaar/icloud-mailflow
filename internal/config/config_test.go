@@ -104,7 +104,7 @@ func TestSaveAndLoadRoundTrip(t *testing.T) {
 	cfg.IMAPEmail = "user@example.com"
 	cfg.IMAPPassword = "secret"
 	cfg.SourceFolder = "Inbox"
-	cfg.PollInterval = 30
+	cfg.PollInterval = 120
 
 	if err := cfg.Save(); err != nil {
 		t.Fatalf("Save: %v", err)
