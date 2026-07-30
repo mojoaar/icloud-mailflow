@@ -1,6 +1,8 @@
 services:
   mailflow:
     image: ghcr.io/mojoaar/icloud-mailflow:latest
+    environment:
+      - TZ=Europe/Copenhagen
     ports:
       - "8080:8080"
     volumes:
