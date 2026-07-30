@@ -108,6 +108,7 @@ func (p *Poller) process() error {
 		if err != nil {
 			return fmt.Errorf("search: %w", err)
 		}
+		slog.Info("poller searching", "iteration", processed+1, "found", len(uids))
 		if len(uids) == 0 {
 			return nil
 		}
