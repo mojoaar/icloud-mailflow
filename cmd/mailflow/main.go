@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/mojoaar/icloud-mailflow/internal/config"
 	"github.com/mojoaar/icloud-mailflow/internal/contacts"
@@ -44,6 +45,7 @@ func (a *App) Close() {
 }
 
 func initialize(dataDir string) (*App, error) {
+	startTime := time.Now()
 	if err := os.MkdirAll(dataDir, 0700); err != nil {
 		return nil, err
 	}
@@ -122,7 +124,7 @@ func initialize(dataDir string) (*App, error) {
 		}
 	}
 
-	router := web.New(cfg, database, imapClient, contactsCollector, logRepo, version, p)
+	router := web.New(cfg, database, imapClient, contactsCollector, logRepo, version, startTime, p)
 
 	return &App{
 		Config:     cfg,

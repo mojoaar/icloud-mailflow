@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"runtime"
 	"strconv"
+	"time"
 
 	"github.com/mojoaar/icloud-mailflow/internal/carddav"
 	"github.com/mojoaar/icloud-mailflow/internal/config"
@@ -107,6 +109,10 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"Contacts":     contactsCount,
 			"MonoFont":     monoFont != "false",
 			"LogKeep":      logKeep,
+			"ServerTime":   time.Now().Format("2006-01-02 15:04:05 MST"),
+			"Uptime":       time.Since(startTime).Truncate(time.Second).String(),
+			"Memory":       getMemoryMB(),
+			"Goroutines":   runtime.NumGoroutine(),
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}
@@ -412,4 +418,10 @@ func settingsSaveFont(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
+}
+
+func getMemoryMB() string {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	return fmt.Sprintf("%d MB", m.Alloc/1024/1024)
 }

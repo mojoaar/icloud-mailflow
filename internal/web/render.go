@@ -5,6 +5,7 @@ import (
 	"embed"
 	"html/template"
 	"net/http"
+	"time"
 )
 
 //go:embed templates/*.html
@@ -26,6 +27,7 @@ var tmpl *template.Template
 
 var appVersion string
 var useMonoFont bool
+var startTime time.Time
 
 func init() {
 	tmpl = template.Must(template.New("").ParseFS(templatesFS, "templates/*.html"))

@@ -20,8 +20,9 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/poller"
 )
 
-func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *contacts.Collector, logRepo *db.LogRepo, version string, p *poller.Poller) http.Handler {
+func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *contacts.Collector, logRepo *db.LogRepo, version string, st time.Time, p *poller.Poller) http.Handler {
 	appVersion = version
+	startTime = st
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
