@@ -24,6 +24,7 @@ func dashboardHandler(imapClient imap.Client, p *poller.Poller, rulesRepo *db.Ru
 			folders = []db.Folder{}
 		}
 		contactsCount, _ := contactsRepo.Count()
+		totalProcessed, _ := db.NewStatsRepo(rulesRepo.DB).TotalProcessed()
 		status := "disconnected"
 		if imapClient != nil {
 			status = "connected"
@@ -66,6 +67,7 @@ func dashboardHandler(imapClient imap.Client, p *poller.Poller, rulesRepo *db.Ru
 			"IMAPEmail":    imapEmail,
 			"PollingActive": pollingActive,
 			"NextPoll":     nextPoll,
+			"Processed":    totalProcessed,
 		}
 		renderPage(w, r, "Dashboard", "dashboard", data)
 	}
