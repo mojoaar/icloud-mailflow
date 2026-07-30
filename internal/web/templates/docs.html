@@ -19,7 +19,7 @@
 
 <h3>1. iCloud Mail Rule</h3>
 <p style="color:var(--muted)">Create a rule on iCloud to route all incoming mail to the Processing folder:</p>
-<ol style="margin-left:1.5em">
+<ol style="margin-left:2em">
 <li>Go to <a href="https://www.icloud.com/mail" target="_blank">icloud.com/mail</a></li>
 <li>Settings gear ⚙ → <strong>Rules</strong> → <strong>Add a Rule</strong></li>
 <li>If a message → <strong>is addressed to</strong> → leave address empty</li>
@@ -42,7 +42,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 <div class="card" id="how-it-works">
 <h2>How It Works</h2>
 <pre><code>Incoming mail → iCloud Rule → "Processing" folder → Mailflow poller → Match rules → Execute actions</code></pre>
-<ol style="margin-left:1.5em">
+<ol style="margin-left:2em">
 <li>iCloud rule moves all incoming mail to the Processing folder</li>
 <li>Mailflow polls Processing every 300s (configurable, default 50 messages/poll)</li>
 <li>Each message is checked against your rules in priority order (lowest first)</li>

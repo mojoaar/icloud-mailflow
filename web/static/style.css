@@ -129,7 +129,7 @@ input[type="file"] {
 
 pre { max-width:100%; overflow-x:auto; }
 
-.card h3 ~ p, .card h3 ~ ol, .card h3 ~ ul, .card h3 ~ pre { margin-left:16px; }
+.card h3 ~ p, .card h3 ~ ol, .card h3 ~ ul, .card h3 ~ pre { margin-left:24px; }
 
 .docs-layout { display:flex; gap:24px; align-items:flex-start; }
 .docs-sidebar { width:220px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
