@@ -63,7 +63,7 @@
             <input type="number" name="poll_batch" value="{{.PollBatch}}" min="1" max="200" style="width:120px">
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-            <button type="submit" class="btn btn-primary"><i data-lucide="save"></i> Save Poll Settings</button>
+            <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save Poll Settings</button>
             <button type="button" class="btn {{if .PollingActive}}btn-danger{{end}}"
                 hx-post="/settings/poll/toggle" hx-target="#poll-toggle-toast" hx-swap="innerHTML">
                 {{if .PollingActive}}Disable Polling{{else}}Enable Polling{{end}}
@@ -77,11 +77,11 @@
     <h2>Rules</h2>
     <p style="color:var(--muted);margin-bottom:12px">Export or import your rule configurations.</p>
     <div style="display:flex;gap:8px;align-items:center">
-        <a href="/settings/rules/export" class="btn" download><i data-lucide="upload"></i> Export</a>
+        <a href="/settings/rules/export" class="btn" download><i data-lucide="upload" data-size="14"></i> Export</a>
         <form hx-encoding="multipart/form-data" hx-post="/settings/rules/import"
             hx-target="#rules-import-toast" hx-swap="innerHTML" style="display:flex;gap:8px;align-items:center;margin:0">
             <input type="file" name="rules_file" accept=".json" style="font-size:0.85rem">
-            <button type="submit" class="btn"><i data-lucide="download"></i> Import</button>
+            <button type="submit" class="btn"><i data-lucide="download" data-size="14"></i> Import</button>
         </form>
     </div>
     <div id="rules-import-toast" style="margin-top:8px"></div>

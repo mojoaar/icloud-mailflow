@@ -49,9 +49,8 @@ nav .brand {
 .nav-links a:hover { color: var(--accent); }
 
 .nav-icon { width: 16px; height: 16px; vertical-align: -3px; }
-.btn i[data-lucide] { display: inline-block; width: 14px; height: 14px; }
-.btn i[data-lucide] svg { width: 100% !important; height: 100% !important; }
-td i[data-lucide] { width: 14px; height: 14px; vertical-align: -3px; }
+.btn i[data-lucide] { display: inline-flex; vertical-align: -2px; }
+td i[data-lucide] { display: inline-flex; vertical-align: -3px; }
 
 main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 
