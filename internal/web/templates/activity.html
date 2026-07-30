@@ -1,5 +1,5 @@
 {{define "activity"}}
-<div style="display:flex;justify-content:space-between;align-items:center">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
 <h1 style="margin:0">Activity Log</h1>
 {{if .Entries}}
 <button class="btn btn-danger" hx-post="/activity/delete" hx-target="body" hx-swap="none"
