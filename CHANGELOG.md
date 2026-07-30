@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.1] — Stats & Documentation
+
+### Added
+- Stats dashboard (`/stats`) — rule hit counts (bar chart), top senders, actions breakdown, daily volume
+- Messages processed count on Dashboard status table
+- Documentation page (`/docs`) with full usage guide and API reference
+- API reference covers all 21 endpoints with curl examples and syntax highlighting (highlight.js)
+- Configurable log retention in Settings (default 1000 entries)
+- Server metrics in Settings → Server (time, uptime, memory)
+- Clear activity logs button with confirmation
+- Link to docs in navigation
+- Link to stats in footer
+
+### Changed
+- Global link color now visible on dark background
+- Docs page: linear layout with indented sub-content
+- Code blocks in dark sub-containers for visual separation
+- Export/Import on same line with left/right alignment
+- Refresh button renamed to "Refresh folders"
+- Removed icons from cramped Edit/Del buttons
+
 ## [0.4.0] — UI Polish & Features
 
 ### Added

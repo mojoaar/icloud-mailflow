@@ -21,7 +21,7 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/web"
 )
 
-var version = "0.4.0"
+var version = "0.4.1"
 
 type App struct {
 	Config     *config.Config
