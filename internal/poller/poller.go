@@ -105,7 +105,7 @@ func (p *Poller) process() error {
 	}
 	slog.Debug("rules loaded", "count", len(ruleList))
 
-	var stuckUID uint32
+	skipUIDs := map[uint32]bool{}
 	for processed := 0; processed < p.batchSize; processed++ {
 		uids, err := p.imapClient.SearchMessages(p.source, 1)
 		if err != nil {
@@ -116,11 +116,17 @@ func (p *Poller) process() error {
 			slog.Debug("folder empty, tick complete")
 			return nil
 		}
+		remaining := uids[:0]
 		for _, uid := range uids {
-			if uint32(uid) == stuckUID {
-				slog.Debug("stuck uid, exiting loop", "uid", stuckUID)
-				return nil
+			if !skipUIDs[uint32(uid)] {
+				remaining = append(remaining, uid)
 			}
+		}
+		if len(remaining) == 0 {
+			slog.Debug("all remaining uids unmatched, exiting")
+			return nil
+		}
+		for _, uid := range remaining {
 			msg, err := p.imapClient.FetchMessage(uint32(uid))
 			if err != nil {
 				slog.Warn("poller failed to fetch message", "uid", uid, "error", err)
@@ -136,12 +142,11 @@ func (p *Poller) process() error {
 				continue
 			}
 			if matched != nil {
-				stuckUID = 0
 				slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
 				p.executeActions(matched, uint32(uid), msg)
 			} else {
-				stuckUID = uint32(uid)
-				slog.Debug("no rule matched", "uid", uid)
+				skipUIDs[uint32(uid)] = true
+				slog.Debug("no rule matched, skipping", "uid", uid)
 			}
 		}
 	}

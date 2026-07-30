@@ -1,12 +1,17 @@
 # Changelog
 
-## [0.4.4] — iCloud IMAP Fixes
+## [0.5.0] — Skip-list + DEBUG Logging
 
 ### Fixed
+- **Skip-list for unmatched messages** — when a message has no matching rule, it's added to a skip list and filtered from subsequent search results. Other messages in the folder continue processing instead of being blocked.
 - **Single-pass action execution** — `mark_as_read` now executes BEFORE `move_to_folder` in declared order. iCloud requires `\Seen` flag before allowing MOVE operations.
 - **Poll loop** — calls `SearchMessages(source, 1)` repeatedly until folder is empty or batch limit reached. iCloud caps all IMAP queries to ~1 result per call.
-- **Stuck message detection** — breaks poll loop when same UID appears twice (no matching rule exists). Prevents unmatched messages from blocking the queue.
 - **iCloud IMAP constraints** documented in AGENTS.md — `\Seen` before MOVE, no `STORE \Deleted`, query result caps, UIDSearch seen/unseen behavior.
+
+### Added
+- `LOG_LEVEL=debug` environment variable for verbose logging in Docker
+- `slog.Debug` traces for every condition evaluation, poller state, rule matching
+- Client-side search filter for rules list
 
 ### Performance
 - Foreign keys enabled on SQLite — `ON DELETE CASCADE` now works
@@ -14,16 +19,14 @@
 - Poller mutex replaced with atomic counter — `LastTick()` no longer blocks
 - Regex compiled once on load instead of per-evaluation
 
-### Added
-- `LOG_LEVEL=debug` environment variable for verbose logging in Docker
-- Client-side search filter for rules list
-- 21 new tests — coverage `db` 60%→73%, `web` 27%→45%
-
 ### Changed
 - ~50 inline styles consolidated into 5 CSS utility classes
 - Dead code removed, license updated (2026), funding link added
 - Screenshots added to README
 - HTMX 1.9.10→2.0.10, highlight.js 11.9.0→11.11.2
+- 21 new tests — coverage `db` 60%→73%, `web` 27%→45%
+
+## [0.4.4] — iCloud IMAP Fixes (superseded by 0.5.0)
 
 ## [0.4.3] — Performance & Reliability
 
