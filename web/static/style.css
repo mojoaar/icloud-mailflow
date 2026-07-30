@@ -127,6 +127,8 @@ input[type="file"] {
     font-size: 0.85rem;
 }
 
+pre { max-width:100%; overflow-x:auto; }
+
 .docs-layout { display:flex; gap:24px; align-items:flex-start; }
 .docs-sidebar { width:220px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
 .docs-sidebar a { display:block; padding:6px 8px; color:var(--text); text-decoration:none; font-size:0.85rem; border-radius:4px; }
