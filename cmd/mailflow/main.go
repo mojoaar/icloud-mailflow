@@ -138,6 +138,9 @@ func initialize(dataDir string) (*App, error) {
 }
 
 func main() {
+	if os.Getenv("LOG_LEVEL") == "debug" {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
 	dataDir := flag.String("data", "./data", "Data directory for config, db, and logs")
 	flag.Parse()
 

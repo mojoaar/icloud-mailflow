@@ -96,6 +96,8 @@ docker compose restart
 
 The image is automatically built and pushed to `ghcr.io/mojoaar/icloud-mailflow` on every version tag.
 
+Set `LOG_LEVEL=debug` in `docker-compose.yml` to enable verbose logging (rule matching, IMAP commands, poller state). Useful for troubleshooting.
+
 To build locally instead:
 ```bash
 docker build -t icloud-mailflow .

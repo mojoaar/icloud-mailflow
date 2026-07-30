@@ -1,10 +1,29 @@
 # Changelog
 
-## [0.4.4] — iCloud MOVE Fix
+## [0.4.4] — iCloud IMAP Fixes
 
 ### Fixed
-- Replaced broken iCloud `UID MOVE` with `UID COPY + STORE \Deleted + EXPUNGE` — messages now actually move out of the Processing folder instead of silently staying. Uses plain `EXPUNGE` (no UIDPLUS required), adds folder re-select before each move to prevent session state drift.
-- **Single-pass action execution** — `mark_as_read` now executes BEFORE `move_to_folder` in declared order. iCloud requires `\Seen` flag before allowing MOVE. Two-pass (moves first, flags second) was breaking this critical ordering.
+- **Single-pass action execution** — `mark_as_read` now executes BEFORE `move_to_folder` in declared order. iCloud requires `\Seen` flag before allowing MOVE operations.
+- **Poll loop** — calls `SearchMessages(source, 1)` repeatedly until folder is empty or batch limit reached. iCloud caps all IMAP queries to ~1 result per call.
+- **Stuck message detection** — breaks poll loop when same UID appears twice (no matching rule exists). Prevents unmatched messages from blocking the queue.
+- **iCloud IMAP constraints** documented in AGENTS.md — `\Seen` before MOVE, no `STORE \Deleted`, query result caps, UIDSearch seen/unseen behavior.
+
+### Performance
+- Foreign keys enabled on SQLite — `ON DELETE CASCADE` now works
+- 3 database indexes added (`condition_groups.rule_id`, `conditions.group_id`, `actions.rule_id`)
+- Poller mutex replaced with atomic counter — `LastTick()` no longer blocks
+- Regex compiled once on load instead of per-evaluation
+
+### Added
+- `LOG_LEVEL=debug` environment variable for verbose logging in Docker
+- Client-side search filter for rules list
+- 21 new tests — coverage `db` 60%→73%, `web` 27%→45%
+
+### Changed
+- ~50 inline styles consolidated into 5 CSS utility classes
+- Dead code removed, license updated (2026), funding link added
+- Screenshots added to README
+- HTMX 1.9.10→2.0.10, highlight.js 11.9.0→11.11.2
 
 ## [0.4.3] — Performance & Reliability
 

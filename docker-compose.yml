@@ -3,6 +3,7 @@ services:
     image: ghcr.io/mojoaar/icloud-mailflow:latest
     environment:
       - TZ=Europe/Copenhagen
+      # - LOG_LEVEL=debug  # uncomment for verbose logging
     ports:
       - "8080:8080"
     volumes:
