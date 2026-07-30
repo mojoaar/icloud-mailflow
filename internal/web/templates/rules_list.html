@@ -13,7 +13,7 @@
             <col style="width:100px">
             <col style="width:120px">
             <col style="width:100px">
-            <col style="width:185px">
+            <col style="width:145px">
         </colgroup>
         <thead><tr><th></th><th>Priority</th><th>Name</th><th>Status</th><th>Conditions</th><th>Actions</th><th></th></tr></thead>
         <tbody id="rules-tbody">
@@ -26,8 +26,8 @@
             <td>{{if .Groups}}{{$op := (index .Groups 0).Operator}}{{if eq $op "OR"}}{{len (index .Groups 0).Conditions}} ANY{{else}}{{len (index .Groups 0).Conditions}} ALL{{end}}{{else}}-{{end}}</td>
             <td>{{len .Actions}}</td>
             <td>
-                <a href="/rules/{{.ID}}/edit" class="btn" style="font-size:0.8rem"><i data-lucide="pencil" data-size="14"></i> Edit</a>
-                <a href="/rules/{{.ID}}/delete" class="btn btn-danger" style="font-size:0.8rem"><i data-lucide="trash-2" data-size="14"></i> Del</a>
+                <a href="/rules/{{.ID}}/edit" class="btn" style="font-size:0.8rem">Edit</a>
+                <a href="/rules/{{.ID}}/delete" class="btn btn-danger" style="font-size:0.8rem">Del</a>
             </td>
         </tr>
         {{end}}
