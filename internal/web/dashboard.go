@@ -46,7 +46,13 @@ func dashboardHandler(imapClient imap.Client, p *poller.Poller, rulesRepo *db.Ru
 			if sec == 0 {
 				sec = cfg.PollInterval
 			}
-			nextPoll = p.LastTick().Add(time.Duration(sec) * time.Second).Format("15:04")
+			t := p.LastTick().Add(time.Duration(sec) * time.Second)
+			if tz, _ := settingsRepo.Get("timezone"); tz != "" && tz != "UTC" {
+				if loc, err := time.LoadLocation(tz); err == nil {
+					t = t.In(loc)
+				}
+			}
+			nextPoll = t.Format("15:04")
 		}
 
 		data := map[string]any{
