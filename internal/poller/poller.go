@@ -19,6 +19,7 @@ type Poller struct {
 	collector  *contacts.Collector
 	logRepo    *db.LogRepo
 	interval   time.Duration
+	lastTick   time.Time
 	batchSize  int
 	source     string
 	stopCh     chan struct{}
@@ -63,6 +64,12 @@ func (p *Poller) Tick() error {
 	return p.process()
 }
 
+func (p *Poller) LastTick() time.Time {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.lastTick
+}
+
 func (p *Poller) loop() {
 	defer p.wg.Done()
 	ticker := time.NewTicker(p.interval)
@@ -85,6 +92,7 @@ func (p *Poller) loop() {
 func (p *Poller) process() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	p.lastTick = time.Now()
 	uids, err := p.imapClient.SearchMessages(p.source, p.batchSize)
 	if err != nil {
 		return fmt.Errorf("search: %w", err)

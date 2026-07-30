@@ -9,6 +9,13 @@
 </div>
 {{end}}
 
+{{if and (not .PollingActive) .Configured}}
+<div class="card" style="border-color:var(--red)">
+    <h2>Polling Disabled</h2>
+    <p style="color:var(--muted)">Mail processing is paused. Rules are not running until polling is re-enabled in <a href="/settings" style="color:var(--accent)">Settings</a>.</p>
+</div>
+{{end}}
+
 <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <h2 style="margin:0">Status</h2>
@@ -31,6 +38,8 @@
         <tr><td>Rules</td><td>{{len .Rules}}</td></tr>
         <tr><td>Contacts</td><td>{{.Contacts}}</td></tr>
         <tr><td>Folders</td><td>{{len .Folders}}</td></tr>
+        <tr><td>Polling</td><td>{{if .PollingActive}}Active{{else}}Disabled{{end}}</td></tr>
+        {{if .PollingActive}}<tr><td>Next Poll</td><td>{{if .NextPoll}}{{.NextPoll}}{{else}}Soon{{end}}</td></tr>{{end}}
     </table>
 </div>
 

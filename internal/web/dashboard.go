@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/mojoaar/icloud-mailflow/internal/config"
 	"github.com/mojoaar/icloud-mailflow/internal/contacts"
@@ -37,6 +38,16 @@ func dashboardHandler(imapClient imap.Client, p *poller.Poller, rulesRepo *db.Ru
 		if pollInterval == "" {
 			pollInterval = strconv.Itoa(cfg.PollInterval)
 		}
+		pollingEnabled, _ := settingsRepo.Get("polling_enabled")
+		pollingActive := pollingEnabled != "false"
+		nextPoll := ""
+		if p != nil && !p.LastTick().IsZero() {
+			sec, _ := strconv.Atoi(pollInterval)
+			if sec == 0 {
+				sec = cfg.PollInterval
+			}
+			nextPoll = p.LastTick().Add(time.Duration(sec) * time.Second).Format("15:04")
+		}
 
 		data := map[string]any{
 			"Rules":        rules,
@@ -47,6 +58,8 @@ func dashboardHandler(imapClient imap.Client, p *poller.Poller, rulesRepo *db.Ru
 			"SourceFolder": sourceFolder,
 			"PollInterval": pollInterval,
 			"IMAPEmail":    imapEmail,
+			"PollingActive": pollingActive,
+			"NextPoll":     nextPoll,
 		}
 		renderPage(w, r, "Dashboard", "dashboard", data)
 	}
