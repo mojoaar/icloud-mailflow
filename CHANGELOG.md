@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.4.0] — UI Polish & Features
+
+### Added
+- Lucide icons throughout the UI (nav, buttons, drag handle)
+- JetBrains Mono font with toggle in Settings → Regional
+- Favicon (SVG + PNG + Apple touch icon)  
+- Footer with author, GitHub, MIT license, version, copyright
+- Brand gradient text header
+- Polling enable/disable toggle on Settings
+- Dashboard polling status + next poll time display
+- Contacts count in Settings → Server section
+- Configurable poll batch size (messages per poll)
+- Known Issues section in README (iCloud web session conflict)
+
+### Changed
+- Default condition operator: OR (was AND)
+- Default poll interval: 300s (was 60s)
+- Listen address shows actual host (not internal bind)
+- Export/Import buttons on same line with left/right alignment
+- Refresh button renamed to "Refresh folders"
+- Admin password placeholder: "Leave blank to keep current"
+
+### Fixed
+- Forced scrollbar prevents layout bounce
+- Seed contacts nil-guard (prevents crash when IMAP not connected)
+- Static CSS embedded via `//go:embed` + `fs.Sub` (works in Docker)
+- Action value input adapts to action type (hidden for mark_as_read/mark_as_unread)
+- Condition/action rows have remove (×) buttons
+- Docker build: `golang:alpine` + `GOTOOLCHAIN=auto`
+
 ## [0.3.2] — Docker & Root Fix
 
 ### Fixed
