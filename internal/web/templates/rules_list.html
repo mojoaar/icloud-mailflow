@@ -6,6 +6,9 @@
 </div>
 
 {{if .Rules}}
+<div style="margin-top:12px;margin-bottom:8px">
+    <input type="text" id="rule-search" placeholder="Search rules by name or description..." style="width:100%" autocomplete="off">
+</div>
 <div class="card" class="mt-2">
     <table>
         <colgroup>
@@ -20,7 +23,7 @@
         <thead><tr><th></th><th>Priority</th><th>Name</th><th>Status</th><th>Conditions</th><th>Actions</th><th style="white-space:nowrap"></th></tr></thead>
         <tbody id="rules-tbody">
         {{range .Rules}}
-        <tr draggable="true" data-rule-id="{{.ID}}">
+        <tr draggable="true" data-rule-id="{{.ID}}" data-search="{{.Name}} {{.Description}}">
             <td style="cursor:grab;color:var(--muted)"><i data-lucide="grip-vertical" data-size="14"></i></td>
             <td>{{.Priority}}</td>
             <td><strong>{{.Name}}</strong>{{if .Description}}<br><small class="muted">{{.Description}}</small>{{end}}</td>
@@ -48,6 +51,32 @@
     var tbody = document.getElementById('rules-tbody');
     if (!tbody) return;
     var dragRow = null;
+
+    var searchInput = document.getElementById('rule-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            var query = this.value.toLowerCase();
+            var rows = tbody.querySelectorAll('tr[draggable]');
+            var found = false;
+            rows.forEach(function(r) {
+                var text = (r.getAttribute('data-search') || '').toLowerCase();
+                var match = !query || text.indexOf(query) !== -1;
+                r.style.display = match ? '' : 'none';
+                if (match) found = true;
+            });
+            var noResults = document.getElementById('no-results');
+            if (query && !found) {
+                if (!noResults) {
+                    noResults = document.createElement('tr');
+                    noResults.id = 'no-results';
+                    noResults.innerHTML = '<td colspan="7" style="text-align:center;color:var(--muted);padding:32px">No matching rules found</td>';
+                    tbody.appendChild(noResults);
+                }
+            } else if (noResults) {
+                noResults.remove();
+            }
+        });
+    }
 
     tbody.addEventListener('dragstart', function(e) {
         var tr = e.target.closest('tr[draggable]');
