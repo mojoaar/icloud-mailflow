@@ -108,7 +108,7 @@ func (c *IMAPClient) SearchMessages(folder string, limit int) ([]goimap.UID, err
 	if _, err := c.SelectFolder(folder); err != nil {
 		return nil, fmt.Errorf("select %s: %w", folder, err)
 	}
-	criteria := &goimap.SearchCriteria{}
+	criteria := &goimap.SearchCriteria{NotFlag: []goimap.Flag{goimap.FlagSeen}}
 	data, err := c.client.UIDSearch(criteria, &goimap.SearchOptions{}).Wait()
 	if err != nil {
 		return nil, fmt.Errorf("search: %w", err)
