@@ -9,12 +9,12 @@
 <div class="card">
     <table>
         <colgroup>
-            <col style="width:160px">
+            <col style="width:185px">
             <col>
             <col style="width:180px">
             <col style="width:130px">
             <col style="width:150px">
-            <col style="width:80px">
+            <col style="width:65px">
         </colgroup>
         <thead>
             <tr>
@@ -34,7 +34,7 @@
             <td>{{.FromAddr}}</td>
             <td>{{.RuleName}}</td>
             <td>{{.ActionType}}{{if .ActionValue}} → {{.ActionValue}}{{end}}</td>
-            <td>{{if eq .Status "success"}}<span class="badge badge-on"><i data-lucide="check" data-size="14"></i> ok</span>{{else}}<span class="badge badge-off"><i data-lucide="alert-triangle" data-size="14"></i> error</span>{{end}}</td>
+            <td>{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>
         </tr>
         {{end}}
         </tbody>
