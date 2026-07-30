@@ -37,6 +37,6 @@
     <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script>lucide.createIcons();document.body.addEventListener('htmx:afterSettle',()=>{lucide.createIcons();document.querySelectorAll('pre code').forEach(hljs.highlightElement)})</script>
+    <script>lucide.createIcons();document.body.addEventListener('htmx:afterSettle',()=>{lucide.createIcons();hljs.highlightAll()});hljs.highlightAll()</script>
 </body>
 </html>
