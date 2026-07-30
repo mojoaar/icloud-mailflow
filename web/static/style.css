@@ -82,6 +82,7 @@ th { color: var(--muted); font-weight: 600; }
     border-radius: var(--radius);
     color: var(--text);
     font-size: 0.85rem;
+    font-family: inherit;
     cursor: pointer;
     text-decoration: none;
 }
