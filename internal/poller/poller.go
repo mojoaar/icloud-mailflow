@@ -130,6 +130,8 @@ func (p *Poller) process() error {
 			if matched != nil {
 				slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
 				p.executeActions(matched, uint32(uid), msg)
+			} else {
+				slog.Info("poller no match", "uid", uid, "subject", msg.Subject, "rules", len(ruleList), "err", err)
 			}
 		}
 	}
