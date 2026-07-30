@@ -1,68 +1,70 @@
 {{define "docs"}}
-<style>
-.docs h2 { margin-top:32px; padding-bottom:8px; border-bottom:1px solid var(--border); }
-.docs h3 { margin-top:24px; }
-.docs pre { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:12px; overflow-x:auto; font-size:0.85rem; margin:8px 0 16px; }
-.docs code { background:var(--bg); padding:1px 5px; border-radius:3px; font-size:0.85rem; }
-.docs pre code { background:none; padding:0; }
-.docs .toc { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:24px; }
-.docs .toc a { display:block; padding:4px 0; color:var(--accent); font-size:0.9rem; }
-</style>
-<div class="docs">
+<div class="docs-layout">
+<nav class="docs-sidebar">
+    <strong style="color:var(--muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">Sections</strong>
+    <a href="#getting-started">Getting Started</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="#rules">Rules &amp; Conditions</a>
+    <a href="#actions">Actions</a>
+    <a href="#contacts">Contacts</a>
+    <a href="#activity">Activity Log</a>
+    <a href="#settings">Settings</a>
+    <a href="#api-health">API — Health</a>
+    <a href="#api-poll">API — Poll</a>
+    <a href="#api-contacts">API — Contacts</a>
+    <a href="#api-folders">API — Folders</a>
+    <a href="#api-rules">API — Rules</a>
+    <a href="#api-login">API — Login</a>
+</nav>
+<div class="docs-content">
+
 <h1>Documentation</h1>
 
-<div class="toc">
-<strong style="color:var(--muted)">Sections</strong>
-<a href="#getting-started">Getting Started</a>
-<a href="#how-it-works">How It Works</a>
-<a href="#rules">Rules</a>
-<a href="#actions">Actions</a>
-<a href="#contacts">Contacts</a>
-<a href="#activity-log">Activity Log</a>
-<a href="#settings">Settings</a>
-<a href="#api-reference">API Reference</a>
-</div>
-
-<h2 id="getting-started">Getting Started</h2>
+<div class="card" id="getting-started" style="margin-top:0">
+<h2>Getting Started</h2>
 
 <h3>1. iCloud Mail Rule</h3>
-<p>Create a rule on iCloud to route all incoming mail to a "Processing" folder:</p>
-<ol>
+<p style="color:var(--muted)">Create a rule on iCloud to route all incoming mail to the Processing folder:</p>
+<ol style="margin-left:1.5em">
 <li>Go to <a href="https://www.icloud.com/mail" target="_blank">icloud.com/mail</a></li>
 <li>Settings gear ⚙ → <strong>Rules</strong> → <strong>Add a Rule</strong></li>
-<li>"If a message" → <strong>is addressed to</strong> → leave address field empty (matches all)</li>
-<li>"Then" → <strong>Move to Folder</strong> → <strong>New Folder...</strong> → enter <strong>Processing</strong></li>
-<li>Click <strong>Done</strong> → <strong>Done</strong></li>
+<li>If a message → <strong>is addressed to</strong> → leave address empty</li>
+<li>Then → <strong>Move to Folder</strong> → <strong>New Folder…</strong> → enter <strong>Processing</strong></li>
+<li>Click <strong>Done</strong> twice</li>
 </ol>
 
 <h3>2. App-Specific Password</h3>
-<p>Generate at <a href="https://appleid.apple.com" target="_blank">appleid.apple.com</a> → Sign-In and Security → App-Specific Passwords.</p>
+<p style="color:var(--muted)">Generate at <a href="https://appleid.apple.com" target="_blank">appleid.apple.com</a> → Sign-In &amp; Security → App-Specific Passwords.</p>
 
-<h3>3. Start Mailflow</h3>
+<h3>3. Start the App</h3>
 <pre><code>go run ./cmd/mailflow/ -data=./data</code></pre>
-<p>Open <code>http://127.0.0.1:8080/setup</code> → configure admin password + iCloud credentials.</p>
+<p>Open <code>http://127.0.0.1:8080/setup</code> → configure admin password + iCloud email + app password.</p>
 
 <h3>4. Docker</h3>
-<pre><code>docker compose up -d</code></pre>
-<p>Then <code>docker compose restart</code> after first-run setup so IMAP reconnects.</p>
+<pre><code>docker compose up -d
+# After setup → restart so IMAP reconnects
+docker compose restart</code></pre>
+</div>
 
-<h2 id="how-it-works">How It Works</h2>
+<div class="card" id="how-it-works">
+<h2>How It Works</h2>
 <pre><code>Incoming mail → iCloud Rule → "Processing" folder → Mailflow poller → Match rules → Execute actions</code></pre>
-<ol>
-<li>iCloud rule moves all mail to Processing folder</li>
-<li>Mailflow polls Processing every 300s (configurable)</li>
-<li>Each message is checked against rules in priority order (first match wins)</li>
-<li>Matched actions execute: move, mark as read, set flags</li>
-<li>Unmatched messages go to the catch-all rule</li>
-<li>Contacts are auto-collected from processed messages</li>
+<ol style="margin-left:1.5em">
+<li>iCloud rule moves all incoming mail to the Processing folder</li>
+<li>Mailflow polls Processing every 300s (configurable, default 50 messages/poll)</li>
+<li>Each message is checked against your rules in priority order (lowest first)</li>
+<li>First matching rule's actions execute — if none match, the catch-all handles it</li>
+<li>Contacts are auto-collected from message headers (From, To, Cc)</li>
 </ol>
+</div>
 
-<h2 id="rules">Rules</h2>
-<p>Rules match messages by conditions and execute actions. Rules are checked in priority order — lowest number runs first.</p>
+<div class="card" id="rules">
+<h2>Rules &amp; Conditions</h2>
+<p style="color:var(--muted)">Rules are checked in priority order — lowest number runs first. Reorder via drag &amp; drop.</p>
 
-<h3>Conditions</h3>
+<h3>Condition Fields</h3>
 <table>
-<tr><th>Field</th><th>Description</th><th>Example</th></tr>
+<tr><th>Field</th><th>Matches</th><th>Example</th></tr>
 <tr><td><code>from</code></td><td>Sender email</td><td><code>equals alice@example.com</code></td></tr>
 <tr><td><code>to</code></td><td>Recipient email</td><td><code>contains @work.com</code></td></tr>
 <tr><td><code>cc</code></td><td>CC email</td><td><code>contains @team.com</code></td></tr>
@@ -71,118 +73,151 @@
 </table>
 
 <h3>Operators</h3>
-<table>
-<tr><th>Operator</th><th>Description</th></tr>
-<tr><td><code>equals</code></td><td>Exact match (case-insensitive)</td></tr>
-<tr><td><code>not_equals</code></td><td>Does not equal</td></tr>
-<tr><td><code>contains</code></td><td>String contains</td></tr>
-<tr><td><code>not_contains</code></td><td>Does not contain</td></tr>
-<tr><td><code>starts_with</code></td><td>Starts with</td></tr>
-<tr><td><code>ends_with</code></td><td>Ends with</td></tr>
-<tr><td><code>matches_regex</code></td><td>Regular expression match</td></tr>
-<tr><td><code>exists</code></td><td>Field is present</td></tr>
-<tr><td><code>not_exists</code></td><td>Field is absent</td></tr>
-</table>
+<p><code>equals</code> · <code>not_equals</code> · <code>contains</code> · <code>not_contains</code> · <code>starts_with</code> · <code>ends_with</code> · <code>matches_regex</code> · <code>exists</code> · <code>not_exists</code></p>
 
 <h3>Match Logic</h3>
-<ul>
-<li><strong>ANY</strong> (OR): Rule matches if any ONE condition is true</li>
-<li><strong>ALL</strong> (AND): Rule matches only if ALL conditions are true</li>
-<li>Default is ANY — changeable per rule</li>
+<ul style="margin-left:1.5em">
+<li><strong>ANY</strong> (OR): Rule fires if any ONE condition is true — <em>default for new rules</em></li>
+<li><strong>ALL</strong> (AND): Rule fires only if <em>every</em> condition matches</li>
 </ul>
+</div>
 
-<h3>Drag & Drop Reorder</h3>
-<p>Grab the ⋮⋮ handle on any rule and drag to reorder. Priority numbers update automatically.</p>
-
-<h2 id="actions">Actions</h2>
+<div class="card" id="actions">
+<h2>Actions</h2>
 <table>
-<tr><th>Action</th><th>Description</th><th>Value</th></tr>
-<tr><td><code>move_to_folder</code></td><td>Move message to folder</td><td>Folder name (autocomplete from IMAP)</td></tr>
-<tr><td><code>mark_as_read</code></td><td>Set \Seen flag</td><td>None</td></tr>
-<tr><td><code>mark_as_unread</code></td><td>Remove \Seen flag</td><td>None</td></tr>
-<tr><td><code>set_flag</code></td><td>Set IMAP flag</td><td>Flag name (e.g. <code>\Flagged</code>, <code>$Junk</code>)</td></tr>
+<tr><th>Action</th><th>What it does</th><th>Value</th></tr>
+<tr><td><code>move_to_folder</code></td><td>Move message to folder</td><td>Folder name</td></tr>
+<tr><td><code>mark_as_read</code></td><td>Set \Seen on message</td><td>None</td></tr>
+<tr><td><code>mark_as_unread</code></td><td>Remove \Seen</td><td>None</td></tr>
+<tr><td><code>set_flag</code></td><td>Set IMAP flag</td><td>e.g. <code>\Flagged</code>, <code>$Junk</code></td></tr>
 </table>
-<p>Multiple actions execute in order. Moves are processed first so flags apply to the destination folder.</p>
+<p style="color:var(--muted);font-size:0.85rem">Multiple actions execute in declaration order. Moves run first so flags apply in the destination folder.</p>
+</div>
 
-<h2 id="contacts">Contacts</h2>
-<p>Contacts are collected automatically from processed messages (From/To/Cc headers).</p>
-<ul>
-<li><strong>Seed Contacts</strong>: Bulk import from all synced IMAP folders (200 newest per folder)</li>
-<li><strong>iCloud Contacts</strong>: Import from iCloud address book via CardDAV (Settings → iCloud Contacts)</li>
-<li><strong>Contact count</strong>: Shown on Dashboard and Settings → Server</li>
-<li>Contacts autocomplete in rule condition value fields</li>
+<div class="card" id="contacts">
+<h2>Contacts</h2>
+<p style="color:var(--muted)">Collected automatically from processed messages. Seed from all folders via Dashboard.</p>
+<ul style="margin-left:1.5em">
+<li><strong>Seed Contacts</strong> — Bulk import across all IMAP folders (newest 200 each)</li>
+<li><strong>iCloud Contacts</strong> — Import address book via CardDAV (Settings)</li>
+<li><strong>Autocomplete</strong> — Contacts suggest in rule condition value inputs</li>
+<li><strong>Count</strong> — Shown on Dashboard and Settings → Server</li>
 </ul>
+</div>
 
-<h2 id="activity-log">Activity Log</h2>
-<p>Every rule match and action execution is logged:</p>
-<ul>
-<li>View at <code>/activity</code></li>
-<li>Shows timestamp, subject, sender, rule, action, status</li>
+<div class="card" id="activity">
+<h2>Activity Log</h2>
+<p style="color:var(--muted)">Every rule match and action execution is logged. View at <code>/activity</code>.</p>
+<ul style="margin-left:1.5em">
+<li>Shows timestamp, subject, sender, rule, action, and status</li>
 <li>Timezone-adjustable in Settings → Regional</li>
 <li>Clear logs with "Clear Logs" button</li>
-<li>Auto-cleaned on startup (default 1000 entries, configurable)</li>
+<li>Auto-cleaned on startup (default 1000 entries, configurable in Settings)</li>
 </ul>
+</div>
 
-<h2 id="settings">Settings</h2>
+<div class="card" id="settings">
+<h2>Settings Reference</h2>
 <table>
 <tr><th>Section</th><th>Options</th></tr>
 <tr><td>IMAP Connection</td><td>Email, app-specific password, test connection</td></tr>
-<tr><td>Admin Password</td><td>Change password (leave blank = keep current)</td></tr>
+<tr><td>Admin Password</td><td>Change password (leave blank to keep current)</td></tr>
 <tr><td>Polling</td><td>Source folder, poll interval, messages per poll, log retention, enable/disable, refresh folders</td></tr>
 <tr><td>Rules</td><td>Export/import rules as JSON</td></tr>
-<tr><td>iCloud Contacts</td><td>Import contacts from iCloud address book</td></tr>
+<tr><td>iCloud Contacts</td><td>Import from iCloud address book (CardDAV)</td></tr>
 <tr><td>Regional</td><td>Timezone, font (System Default / JetBrains Mono)</td></tr>
-<tr><td>Server</td><td>Listen address, contacts, folders, server time, uptime, memory, version</td></tr>
+<tr><td>Server</td><td>Listen address, contacts, folders, time, uptime, memory, version</td></tr>
 </table>
-
-<h2 id="api-reference">API Reference</h2>
-<p>All API endpoints require authentication (session cookie from login). Base URL: <code>http://127.0.0.1:8080</code></p>
-
-<h3>Health Check</h3>
-<p><code class="get">GET</code> <code>/</code> — Redirects to dashboard (200 if authenticated, 303 to login if not).</p>
-
-<h3>Manual Poll</h3>
-<p><code class="post">POST</code> <code>/poller/tick</code> — Trigger a poll cycle immediately.</p>
-<pre><code>curl -X POST http://127.0.0.1:8080/poller/tick -b "mailflow_session=TOKEN"</code></pre>
-<pre><code>// JavaScript (fetch)
-fetch('/poller/tick', { method: 'POST', credentials: 'same-origin' })</code></pre>
-<pre><code># Python
-import requests
-r = requests.post('http://127.0.0.1:8080/poller/tick', cookies={'mailflow_session': 'TOKEN'})</code></pre>
-<pre><code># Go
-resp, _ := http.Post("http://127.0.0.1:8080/poller/tick", "", nil)
-resp.Request.AddCookie(&http.Cookie{Name: "mailflow_session", Value: "TOKEN"})</code></pre>
-<pre><code># PowerShell
-Invoke-RestMethod -Uri http://127.0.0.1:8080/poller/tick -Method POST -WebSession $session</code></pre>
-
-<h3>Contacts Search</h3>
-<p><code class="get">GET</code> <code>/api/contacts?q=&lt;query&gt;</code></p>
-<pre><code>curl http://127.0.0.1:8080/api/contacts?q=alice -b "mailflow_session=TOKEN"</code></pre>
-
-<h3>Folders List</h3>
-<p><code class="get">GET</code> <code>/api/folders</code> — Syncs folders from IMAP and returns list.</p>
-<pre><code>curl http://127.0.0.1:8080/api/folders -b "mailflow_session=TOKEN"</code></pre>
-
-<h3>Seed Contacts</h3>
-<p><code class="post">POST</code> <code>/contacts/seed</code> — Seed contacts from all synced folders.</p>
-<pre><code>curl -X POST http://127.0.0.1:8080/contacts/seed -b "mailflow_session=TOKEN"</code></pre>
-
-<h3>Rules CRUD</h3>
-<p><code class="get">GET</code> <code>/settings/rules/export</code> — Download all rules as JSON (excludes catch-all).</p>
-<pre><code>curl http://127.0.0.1:8080/settings/rules/export -b "mailflow_session=TOKEN" -o rules.json</code></pre>
-<p><code class="post">POST</code> <code>/settings/rules/import</code> — Import rules from JSON file.</p>
-<pre><code>curl -X POST http://127.0.0.1:8080/settings/rules/import -b "mailflow_session=TOKEN" -F "rules_file=@rules.json"</code></pre>
-
-<h3>iCloud Contacts Import</h3>
-<p><code class="post">POST</code> <code>/settings/carddav-import</code></p>
-<pre><code>curl -X POST http://127.0.0.1:8080/settings/carddav-import -b "mailflow_session=TOKEN"</code></pre>
-
-<h3>Clear Activity Log</h3>
-<p><code class="post">POST</code> <code>/activity/delete</code></p>
-<pre><code>curl -X POST http://127.0.0.1:8080/activity/delete -b "mailflow_session=TOKEN"</code></pre>
-
-<h3>Login (get session token)</h3>
-<p><code class="post">POST</code> <code>/login</code> — Returns <code>mailflow_session</code> cookie.</p>
-<pre><code>curl -X POST http://127.0.0.1:8080/login -d "password=YOUR_ADMIN_PASSWORD" -c cookies.txt</code></pre>
 </div>
+
+<h2 style="margin-top:48px">API Reference</h2>
+<p style="color:var(--muted);margin-bottom:24px">Base URL: <code>http://127.0.0.1:8080</code>. All endpoints require session cookie (login first).</p>
+
+<div class="card" id="api-health">
+<h3><span class="method-badge method-get">GET</span> GET /</h3>
+<p style="color:var(--muted)">Health check — redirects to dashboard if authenticated, login if not.</p>
+<pre><code># curl
+curl http://127.0.0.1:8080/ -b "mailflow_session=TOKEN"
+
+# Python
+import requests
+r = requests.get('http://127.0.0.1:8080/', cookies={'mailflow_session': 'TOKEN'})
+
+# PowerShell
+Invoke-WebRequest -Uri http://127.0.0.1:8080/ -WebSession $session</code></pre>
+</div>
+
+<div class="card" id="api-poll">
+<h3><span class="method-badge method-post">POST</span> POST /poller/tick</h3>
+<p style="color:var(--muted)">Trigger a manual poll cycle immediately.</p>
+<pre><code># curl
+curl -X POST http://127.0.0.1:8080/poller/tick -b "mailflow_session=TOKEN"
+
+# Python
+requests.post('http://127.0.0.1:8080/poller/tick', cookies={'mailflow_session': 'TOKEN'})
+
+# JavaScript (fetch)
+fetch('/poller/tick', {method:'POST',credentials:'same-origin'})
+
+# Go
+http.Post("http://127.0.0.1:8080/poller/tick","application/x-www-form-urlencoded",nil)
+
+# PowerShell
+Invoke-RestMethod http://127.0.0.1:8080/poller/tick -Method POST -WebSession $session</code></pre>
+</div>
+
+<div class="card" id="api-contacts">
+<h3><span class="method-badge method-get">GET</span> GET /api/contacts?q=</h3>
+<p style="color:var(--muted)">Search collected contacts by email or name.</p>
+<pre><code>curl 'http://127.0.0.1:8080/api/contacts?q=alice' -b "mailflow_session=TOKEN"</code></pre>
+
+<h3><span class="method-badge method-post">POST</span> POST /contacts/seed</h3>
+<p style="color:var(--muted)">Seed contacts from all synced IMAP folders.</p>
+<pre><code>curl -X POST http://127.0.0.1:8080/contacts/seed -b "mailflow_session=TOKEN"</code></pre>
+</div>
+
+<div class="card" id="api-folders">
+<h3><span class="method-badge method-get">GET</span> GET /api/folders</h3>
+<p style="color:var(--muted)">Sync folders from IMAP and return the list.</p>
+<pre><code>curl http://127.0.0.1:8080/api/folders -b "mailflow_session=TOKEN"</code></pre>
+</div>
+
+<div class="card" id="api-rules">
+<h3><span class="method-badge method-get">GET</span> GET /settings/rules/export</h3>
+<p style="color:var(--muted)">Download all rules as JSON (excludes catch-all).</p>
+<pre><code>curl http://127.0.0.1:8080/settings/rules/export -b "mailflow_session=TOKEN" -o rules.json</code></pre>
+
+<h3><span class="method-badge method-post">POST</span> POST /settings/rules/import</h3>
+<p style="color:var(--muted)">Import rules from a JSON file.</p>
+<pre><code>curl -X POST http://127.0.0.1:8080/settings/rules/import -b "mailflow_session=TOKEN" -F "rules_file=@rules.json"</code></pre>
+</div>
+
+<div class="card" id="api-login">
+<h3><span class="method-badge method-post">POST</span> POST /login</h3>
+<p style="color:var(--muted)">Authenticate. Returns <code>mailflow_session</code> cookie. Rate limited: 5 attempts/min/IP.</p>
+<pre><code>curl -X POST http://127.0.0.1:8080/login -d "password=YOUR_PASSWORD" -c cookies.txt
+# Use the cookie for subsequent requests:
+curl http://127.0.0.1:8080/poller/tick -b cookies.txt</code></pre>
+</div>
+
+</div>
+</div>
+
+<script>
+(function(){
+    var links = document.querySelectorAll('.docs-sidebar a');
+    var sections = [];
+    links.forEach(function(a){ var el = document.querySelector(a.getAttribute('href')); if(el) sections.push({link:a,el:el}); });
+    var obs = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+            if(e.isIntersecting){
+                links.forEach(function(l){l.classList.remove('active')});
+                var active = sections.find(function(s){return s.el===e.target});
+                if(active) active.link.classList.add('active');
+            }
+        });
+    },{rootMargin:'-80px 0px -50% 0px'});
+    sections.forEach(function(s){obs.observe(s.el)});
+})();
+</script>
 {{end}}
