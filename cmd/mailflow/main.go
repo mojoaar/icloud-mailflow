@@ -104,7 +104,9 @@ func initialize(dataDir string) (*App, error) {
 			imapConn = nil
 		}
 		imapClient = imapConn
-		imapClient.CreateFolder(cfg.SourceFolder)
+		if imapClient != nil {
+			imapClient.CreateFolder(cfg.SourceFolder)
+		}
 	}
 
 	contactsRepo := db.NewContactsRepo(database)
