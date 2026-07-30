@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, expires_at TEXT NOT
 CREATE TABLE IF NOT EXISTS message_log (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL DEFAULT (datetime('now')), uid INTEGER NOT NULL, subject TEXT NOT NULL DEFAULT '', from_addr TEXT NOT NULL DEFAULT '', rule_name TEXT NOT NULL DEFAULT '', action_type TEXT NOT NULL DEFAULT '', action_value TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'success');
 
 -- Settings
-INSERT INTO settings VALUES ('admin_password_hash','$2a$10$KxP1ZxyoB3kFpN8jVq3R5uRr7mW4tL2sH6yA1bB8cD0eF','2026-07-30 10:00:00');
+INSERT INTO settings VALUES ('admin_password_hash','$2a$10$904EaalZHdSk1KnDCVp/iOiYbGdeLDop7TZcO3.6VvoYHncAQHp6e','2026-07-30 10:00:00');
 INSERT INTO settings VALUES ('imap_email','user@icloud.com','2026-07-30 10:00:00');
 INSERT INTO settings VALUES ('imap_password','app-password-encrypted','2026-07-30 10:00:00');
 INSERT INTO settings VALUES ('source_folder','Processing','2026-07-30 10:00:00');
@@ -33,7 +33,7 @@ INSERT INTO settings VALUES ('font_mono','true','2026-07-30 10:00:00');
 INSERT INTO settings VALUES ('polling_enabled','true','2026-07-30 10:00:00');
 
 -- Sessions
-INSERT INTO sessions VALUES ('demo-session-token-abc123','2099-12-31 23:59:59');
+INSERT INTO sessions VALUES ('demo-session-token-abc123','2099-12-31T23:59:59Z');
 
 -- Folders
 INSERT INTO folders VALUES (1,'INBOX','INBOX','','2026-07-30 10:00:00');
@@ -172,10 +172,10 @@ echo "Start the demo:"
 echo "  go run ./cmd/mailflow/ -data=./demo"
 echo ""
 echo "Login options:"
-echo "  1. Set this cookie in your browser (F12 → Application → Cookies → 127.0.0.1):"
+echo "  1. Set this cookie in your browser (F12 → Application → Cookies → localhost):"
 echo "     mailflow_session = demo-session-token-abc123"
 echo "  2. Or use this curl command to set it:"
-echo "     curl -c /tmp/cookies.txt -X POST http://127.0.0.1:8080/login -d 'password='"
+echo "     curl -c /tmp/cookies.txt -X POST http://127.0.0.1:8080/login -d 'password=demo123'"
 echo "     (then open browser with that cookie)"
 echo ""
 echo "Demo password: demo123 (pre-authenticated via session token)"
