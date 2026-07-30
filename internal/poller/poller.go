@@ -128,6 +128,12 @@ func (p *Poller) process() error {
 			if matched != nil {
 				slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
 				p.executeActions(matched, uint32(uid), msg)
+			} else {
+				from := ""
+				if len(msg.From) > 0 {
+					from = msg.From[0].Email
+				}
+				slog.Info("poller unmatched", "uid", uid, "from", from, "subj", msg.Subject)
 			}
 		}
 	}
