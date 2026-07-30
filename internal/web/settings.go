@@ -45,8 +45,9 @@ func setupPage(settingsRepo *db.SettingsRepo, d *sql.DB, cfg *config.Config) htt
 	}
 }
 
-func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cfg *config.Config, imapClient imap.Client, version string) http.HandlerFunc {
+func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cfg *config.Config, imapClient imap.Client, version string, contactsRepo *db.ContactsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		contactsCount, _ := contactsRepo.Count()
 		folders, _ := foldersRepo.List()
 		if len(folders) == 0 {
 			if imapClient != nil {
@@ -98,6 +99,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"Version":      version,
 			"Timezone":     timezone,
 			"PollingActive": pollingEnabled != "false",
+			"Contacts":     contactsCount,
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}

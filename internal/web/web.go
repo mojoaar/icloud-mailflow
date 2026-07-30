@@ -78,7 +78,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Delete("/rules/{id}", rulesDeleteHandler(rulesRepo))
 	r.Post("/rules/reorder", rulesReorderHandler(rulesRepo))
 
-	r.Get("/settings", settingsPage(settingsRepo, foldersRepo, cfg, imapClient, version))
+	r.Get("/settings", settingsPage(settingsRepo, foldersRepo, cfg, imapClient, version, contactsRepo))
 	r.Post("/settings/imap", settingsSaveIMAP(cfg, settingsRepo))
 	r.Post("/settings/imap/test", settingsTestIMAP(cfg, settingsRepo))
 	r.Post("/settings/password", settingsSavePassword(settingsRepo))
