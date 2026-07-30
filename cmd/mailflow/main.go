@@ -112,7 +112,9 @@ func initialize(dataDir string) (*App, error) {
 			}
 		}
 		p = poller.NewPoller(imapClient, rulesRepo, contactsCollector, logRepo, batchSize, cfg.PollInterval, cfg.SourceFolder)
-		p.Start()
+		if v, _ := settingsRepo.Get("polling_enabled"); v != "false" {
+			p.Start()
+		}
 	}
 
 	router := web.New(cfg, database, imapClient, contactsCollector, logRepo, version, p)

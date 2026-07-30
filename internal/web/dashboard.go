@@ -86,3 +86,30 @@ func seedContactsHandler(collector *contacts.Collector, foldersRepo *db.FoldersR
 		}
 	}
 }
+
+func settingsTogglePolling(settingsRepo *db.SettingsRepo, p *poller.Poller) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		enabled, _ := settingsRepo.Get("polling_enabled")
+		if enabled == "false" {
+			settingsRepo.Set("polling_enabled", "true")
+			if p != nil {
+				p.Start()
+			}
+		} else {
+			settingsRepo.Set("polling_enabled", "false")
+			if p != nil {
+				p.Stop()
+			}
+		}
+		w.Header().Set("HX-Refresh", "true")
+		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Polling " + getPollingLabel(settingsRepo)})
+	}
+}
+
+func getPollingLabel(settingsRepo *db.SettingsRepo) string {
+	v, _ := settingsRepo.Get("polling_enabled")
+	if v == "false" {
+		return "disabled"
+	}
+	return "enabled"
+}

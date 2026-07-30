@@ -87,6 +87,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			pollBatch = "50"
 		}
 		timezone, _ := settingsRepo.Get("timezone")
+		pollingEnabled, _ := settingsRepo.Get("polling_enabled")
 		data := map[string]any{
 			"Folders":      folders,
 			"IMAPEmail":    imapEmail,
@@ -96,6 +97,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"ListenAddr":   cfg.ListenAddr,
 			"Version":      version,
 			"Timezone":     timezone,
+			"PollingActive": pollingEnabled != "false",
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}

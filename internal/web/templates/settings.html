@@ -62,7 +62,14 @@
             <label>Messages Per Poll</label>
             <input type="number" name="poll_batch" value="{{.PollBatch}}" min="1" max="200" style="width:120px">
         </div>
-        <button type="submit" class="btn btn-primary">Save Poll Settings</button>
+        <div style="display:flex;gap:8px;align-items:center">
+            <button type="submit" class="btn btn-primary">Save Poll Settings</button>
+            <button type="button" class="btn {{if .PollingActive}}btn-danger{{end}}"
+                hx-post="/settings/poll/toggle" hx-target="#poll-toggle-toast" hx-swap="innerHTML">
+                {{if .PollingActive}}Disable Polling{{else}}Enable Polling{{end}}
+            </button>
+        </div>
+        <div id="poll-toggle-toast" style="margin-top:8px"></div>
     </form>
 </div>
 

@@ -83,6 +83,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/settings/password", settingsSavePassword(settingsRepo))
 	r.Post("/settings/poll", settingsSavePoll(cfg, settingsRepo))
 	r.Post("/settings/carddav-import", carddavImportHandler(settingsRepo, cfg, contactsRepo))
+	r.Post("/settings/poll/toggle", settingsTogglePolling(settingsRepo, p))
 	r.Get("/settings/rules/export", rulesExportHandler(rulesRepo))
 	r.Post("/settings/rules/import", rulesImportHandler(rulesRepo))
 	r.Post("/settings/timezone", settingsSaveTimezone(settingsRepo))
