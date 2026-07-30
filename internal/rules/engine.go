@@ -2,6 +2,7 @@ package rules
 
 import (
 	"fmt"
+	"log/slog"
 	"mime"
 	"strings"
 
@@ -84,31 +85,33 @@ func evalCondition(c db.Condition, msg *imap.Message) (bool, error) {
 
 	val := getFieldValue(c.Field, msg)
 
+	var ok bool
 	switch c.Operator {
 	case "exists":
-		return val != "", nil
+		ok = val != ""
 	case "not_exists":
-		return val == "", nil
+		ok = val == ""
 	case "equals":
-		return strings.EqualFold(val, c.Value), nil
+		ok = strings.EqualFold(val, c.Value)
 	case "not_equals":
-		return !strings.EqualFold(val, c.Value), nil
+		ok = !strings.EqualFold(val, c.Value)
 	case "contains":
-		return strings.Contains(strings.ToLower(val), strings.ToLower(c.Value)), nil
+		ok = strings.Contains(strings.ToLower(val), strings.ToLower(c.Value))
 	case "not_contains":
-		return !strings.Contains(strings.ToLower(val), strings.ToLower(c.Value)), nil
+		ok = !strings.Contains(strings.ToLower(val), strings.ToLower(c.Value))
 	case "starts_with":
-		return strings.HasPrefix(strings.ToLower(val), strings.ToLower(c.Value)), nil
+		ok = strings.HasPrefix(strings.ToLower(val), strings.ToLower(c.Value))
 	case "ends_with":
-		return strings.HasSuffix(strings.ToLower(val), strings.ToLower(c.Value)), nil
+		ok = strings.HasSuffix(strings.ToLower(val), strings.ToLower(c.Value))
 	case "matches_regex":
 		if c.CompiledRegex == nil {
-			return false, nil
+			ok = false
+		} else {
+			ok = c.CompiledRegex.MatchString(val)
 		}
-		return c.CompiledRegex.MatchString(val), nil
-	default:
-		return false, nil
 	}
+	slog.Debug("condition evaluated", "field", c.Field, "op", c.Operator, "expected", c.Value, "actual", val, "match", ok)
+	return ok, nil
 }
 
 func getFieldValue(field string, msg *imap.Message) string {

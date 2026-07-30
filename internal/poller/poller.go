@@ -98,10 +98,12 @@ func (p *Poller) process() error {
 	}
 	defer p.processing.Store(false)
 	p.lastTick.Store(time.Now().UnixNano())
+	slog.Debug("poller tick start", "source", p.source)
 	ruleList, err := p.rulesRepo.List()
 	if err != nil {
 		return fmt.Errorf("list rules: %w", err)
 	}
+	slog.Debug("rules loaded", "count", len(ruleList))
 
 	var stuckUID uint32
 	for processed := 0; processed < p.batchSize; processed++ {
@@ -109,11 +111,14 @@ func (p *Poller) process() error {
 		if err != nil {
 			return fmt.Errorf("search: %w", err)
 		}
+		slog.Debug("search result", "found", len(uids))
 		if len(uids) == 0 {
+			slog.Debug("folder empty, tick complete")
 			return nil
 		}
 		for _, uid := range uids {
 			if uint32(uid) == stuckUID {
+				slog.Debug("stuck uid, exiting loop", "uid", stuckUID)
 				return nil
 			}
 			msg, err := p.imapClient.FetchMessage(uint32(uid))
@@ -121,6 +126,7 @@ func (p *Poller) process() error {
 				slog.Warn("poller failed to fetch message", "uid", uid, "error", err)
 				continue
 			}
+			slog.Debug("fetched message", "uid", uid, "subj", msg.Subject)
 			if p.collector != nil {
 				p.collector.CollectFromMessage(msg)
 			}
@@ -135,6 +141,7 @@ func (p *Poller) process() error {
 				p.executeActions(matched, uint32(uid), msg)
 			} else {
 				stuckUID = uint32(uid)
+				slog.Debug("no rule matched", "uid", uid)
 			}
 		}
 	}
