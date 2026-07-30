@@ -89,6 +89,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		}
 		timezone, _ := settingsRepo.Get("timezone")
 		pollingEnabled, _ := settingsRepo.Get("polling_enabled")
+		monoFont, _ := settingsRepo.Get("font_mono")
 		data := map[string]any{
 			"Folders":      folders,
 			"IMAPEmail":    imapEmail,
@@ -100,6 +101,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"Timezone":     timezone,
 			"PollingActive": pollingEnabled != "false",
 			"Contacts":     contactsCount,
+			"MonoFont":     monoFont == "true",
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}
@@ -386,6 +388,20 @@ func settingsSaveTimezone(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		settingsRepo.Set("timezone", r.FormValue("timezone"))
+		http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	}
+}
+
+func settingsSaveFont(settingsRepo *db.SettingsRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		if r.FormValue("font") == "mono" {
+			settingsRepo.Set("font_mono", "true")
+			useMonoFont = true
+		} else {
+			settingsRepo.Set("font_mono", "")
+			useMonoFont = false
+		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
 }

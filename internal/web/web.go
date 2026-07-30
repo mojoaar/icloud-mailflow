@@ -30,6 +30,9 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Use(middleware.Timeout(30 * time.Second))
 
 	settingsRepo := db.NewSettingsRepo(d)
+	if v, _ := settingsRepo.Get("font_mono"); v == "true" {
+		useMonoFont = true
+	}
 	sessRepo := db.NewSessionsRepo(d)
 	rulesRepo := db.NewRulesRepo(d)
 	foldersRepo := db.NewFoldersRepo(d)
@@ -88,6 +91,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Get("/settings/rules/export", rulesExportHandler(rulesRepo))
 	r.Post("/settings/rules/import", rulesImportHandler(rulesRepo))
 	r.Post("/settings/timezone", settingsSaveTimezone(settingsRepo))
+	r.Post("/settings/font", settingsSaveFont(settingsRepo))
 
 	r.Get("/api/contacts", contactsSearchHandler(db.NewContactsRepo(d)))
 	r.Get("/api/folders", foldersListHandler(imapClient, foldersRepo))

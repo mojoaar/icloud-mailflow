@@ -19,11 +19,13 @@ type pageData struct {
 	CSRFToken string
 	ShowNav   bool
 	Version   string
+	MonoFont  bool
 }
 
 var tmpl *template.Template
 
 var appVersion string
+var useMonoFont bool
 
 func init() {
 	tmpl = template.Must(template.New("").ParseFS(templatesFS, "templates/*.html"))
@@ -48,6 +50,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 		CSRFToken: token,
 		ShowNav:   pageName != "login" && pageName != "setup",
 		Version:   appVersion,
+		MonoFont:  useMonoFont,
 	}
 	if err := tmpl.ExecuteTemplate(w, "base.html", pd); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
