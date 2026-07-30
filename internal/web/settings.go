@@ -94,7 +94,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"SourceFolder": sourceFolder,
 			"PollInterval": pollInterval,
 			"PollBatch":    pollBatch,
-			"ListenAddr":   cfg.ListenAddr,
+			"ListenAddr":   r.Host,
 			"Version":      version,
 			"Timezone":     timezone,
 			"PollingActive": pollingEnabled != "false",
