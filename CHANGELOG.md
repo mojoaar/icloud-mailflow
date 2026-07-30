@@ -3,7 +3,8 @@
 ## [0.4.4] — iCloud MOVE Fix
 
 ### Fixed
-- Replaced broken iCloud `UID MOVE` with `UID COPY + STORE \Deleted + EXPUNGE` — messages now actually move out of the Processing folder instead of silently staying. Uses non-silent STORE to verify `\Deleted` flag was applied, and plain `EXPUNGE` (no UIDPLUS required) to expunge.
+- Replaced broken iCloud `UID MOVE` with `UID COPY + STORE \Deleted + EXPUNGE` — messages now actually move out of the Processing folder instead of silently staying. Uses plain `EXPUNGE` (no UIDPLUS required), adds folder re-select before each move to prevent session state drift.
+- **Single-pass action execution** — `mark_as_read` now executes BEFORE `move_to_folder` in declared order. iCloud requires `\Seen` flag before allowing MOVE. Two-pass (moves first, flags second) was breaking this critical ordering.
 
 ## [0.4.3] — Performance & Reliability
 
