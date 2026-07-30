@@ -34,7 +34,7 @@
             <td>{{.FromAddr}}</td>
             <td>{{.RuleName}}</td>
             <td>{{.ActionType}}{{if .ActionValue}} → {{.ActionValue}}{{end}}</td>
-            <td>{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>
+            <td>{{if eq .Status "success"}}<span class="badge badge-on"><i data-lucide="check"></i> ok</span>{{else}}<span class="badge badge-off"><i data-lucide="alert-triangle"></i> error</span>{{end}}</td>
         </tr>
         {{end}}
         </tbody>

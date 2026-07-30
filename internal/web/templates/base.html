@@ -17,11 +17,11 @@
         <a href="/dashboard" class="brand">iCloud Mailflow</a>
         {{if .ShowNav}}
         <div class="nav-links">
-            <a href="/dashboard">Dashboard</a>
-            <a href="/activity">Activity</a>
-            <a href="/rules">Rules</a>
-            <a href="/settings">Settings</a>
-            <a href="/logout">Logout</a>
+            <a href="/dashboard"><i data-lucide="layout-dashboard" class="nav-icon"></i> Dashboard</a>
+            <a href="/activity"><i data-lucide="list" class="nav-icon"></i> Activity</a>
+            <a href="/rules"><i data-lucide="git-branch" class="nav-icon"></i> Rules</a>
+            <a href="/settings"><i data-lucide="settings" class="nav-icon"></i> Settings</a>
+            <a href="/logout"><i data-lucide="log-out" class="nav-icon"></i> Logout</a>
         </div>
         {{end}}
     </nav>
@@ -33,5 +33,7 @@
         v{{.Version}} · © 2026
     </footer>
     <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>lucide.createIcons();document.body.addEventListener('htmx:afterSettle',()=>lucide.createIcons())</script>
 </body>
 </html>

@@ -48,6 +48,10 @@ nav .brand {
 }
 .nav-links a:hover { color: var(--accent); }
 
+.nav-icon { width: 16px; height: 16px; vertical-align: -3px; }
+.btn i[data-lucide] { width: 14px; height: 14px; vertical-align: -2px; }
+td i[data-lucide] { width: 14px; height: 14px; vertical-align: -3px; }
+
 main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 
 h1 { font-size: 1.5rem; margin-bottom: 16px; }
