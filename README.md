@@ -107,11 +107,13 @@ You can also deploy without cloning the repo — just point your `docker-compose
 services:
   mailflow:
     image: ghcr.io/mojoaar/icloud-mailflow:latest
+    environment:
+      - TZ=Europe/Copenhagen
     ports:
       - "8080:8080"
     volumes:
       - ./data:/data
-    command: -data=/data
+    restart: unless-stopped
 ```
 
 ## Demo
