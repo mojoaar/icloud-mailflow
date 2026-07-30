@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log/slog"
-	"slices"
 	"strings"
 
 	goimap "github.com/emersion/go-imap/v2"
@@ -109,22 +108,12 @@ func (c *IMAPClient) SearchMessages(folder string, limit int) ([]goimap.UID, err
 	if _, err := c.SelectFolder(folder); err != nil {
 		return nil, fmt.Errorf("select %s: %w", folder, err)
 	}
-	seqSet := goimap.UIDSet{{Start: 1, Stop: 0}}
-	opts := &goimap.FetchOptions{Flags: true}
-	raw, err := c.client.Fetch(seqSet, opts).Collect()
+	criteria := &goimap.SearchCriteria{}
+	data, err := c.client.UIDSearch(criteria, &goimap.SearchOptions{}).Wait()
 	if err != nil {
-		return nil, fmt.Errorf("fetch uids: %w", err)
+		return nil, fmt.Errorf("search: %w", err)
 	}
-	uids := make([]goimap.UID, len(raw))
-	for i, m := range raw {
-		uids[i] = m.UID
-	}
-	slices.SortFunc(uids, func(a, b goimap.UID) int {
-		if a > b {
-			return -1
-		}
-		return 1
-	})
+	uids := data.AllUIDs()
 	if limit > 0 && len(uids) > limit {
 		uids = uids[:limit]
 	}

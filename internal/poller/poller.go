@@ -110,11 +110,12 @@ func (p *Poller) process() error {
 	if err != nil {
 		return fmt.Errorf("list rules: %w", err)
 	}
-	msgs, err := p.imapClient.FetchMessages(uids)
-	if err != nil {
-		return fmt.Errorf("fetch messages: %w", err)
-	}
-	for _, msg := range msgs {
+	for _, uid := range uids {
+		msg, err := p.imapClient.FetchMessage(uint32(uid))
+		if err != nil {
+			slog.Warn("poller failed to fetch message", "uid", uid, "error", err)
+			continue
+		}
 		if p.collector != nil {
 			p.collector.CollectFromMessage(msg)
 		}
@@ -124,8 +125,8 @@ func (p *Poller) process() error {
 			continue
 		}
 		if matched != nil {
-			slog.Debug("rule matched", "uid", msg.UID, "rule", matched.Name)
-			p.executeActions(matched, msg.UID, msg)
+			slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
+			p.executeActions(matched, uint32(uid), msg)
 		}
 	}
 	return nil

@@ -197,7 +197,7 @@ func TestProcessSearchError(t *testing.T) {
 	}
 }
 
-func TestProcessFetchErrorReturnsError(t *testing.T) {
+func TestProcessFetchErrorContinues(t *testing.T) {
 	rulesRepo, contactsRepo := openPollerTestDB(t)
 	testRule(t, rulesRepo, "move-to-trash", true, "Trash")
 
@@ -208,8 +208,8 @@ func TestProcessFetchErrorReturnsError(t *testing.T) {
 	collector := contacts.NewCollector(contactsRepo, mock)
 	p := NewPoller(mock, rulesRepo, collector, nil, 50, 60, "INBOX")
 
-	if err := p.process(); err == nil {
-		t.Fatal("process should return error on batch fetch failure")
+	if err := p.process(); err != nil {
+		t.Fatalf("process should not return error on fetch failure: %v", err)
 	}
 
 	mock.mu.Lock()
