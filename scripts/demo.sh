@@ -9,6 +9,17 @@ DB=$DEMO/mailflow.db
 rm -f $DB
 
 sqlite3 $DB <<'SQL'
+-- Tables (matching db/migrate.go)
+CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS folders (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, path TEXT NOT NULL UNIQUE, flags TEXT NOT NULL DEFAULT '[]', synced_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS contacts (email TEXT PRIMARY KEY, name TEXT NOT NULL DEFAULT '', first_at TEXT NOT NULL DEFAULT (datetime('now')), last_at TEXT NOT NULL DEFAULT (datetime('now')), count INTEGER NOT NULL DEFAULT 1);
+CREATE TABLE IF NOT EXISTS rules (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', priority INTEGER NOT NULL DEFAULT 0, enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL DEFAULT (datetime('now')), updated_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS condition_groups (id INTEGER PRIMARY KEY AUTOINCREMENT, rule_id INTEGER NOT NULL REFERENCES rules(id) ON DELETE CASCADE, parent_id INTEGER REFERENCES condition_groups(id) ON DELETE CASCADE, logic_operator TEXT NOT NULL DEFAULT 'AND');
+CREATE TABLE IF NOT EXISTS conditions (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL REFERENCES condition_groups(id) ON DELETE CASCADE, field TEXT NOT NULL, operator TEXT NOT NULL, value TEXT NOT NULL DEFAULT '');
+CREATE TABLE IF NOT EXISTS actions (id INTEGER PRIMARY KEY AUTOINCREMENT, rule_id INTEGER NOT NULL REFERENCES rules(id) ON DELETE CASCADE, type TEXT NOT NULL, value TEXT NOT NULL DEFAULT '');
+CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, expires_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS message_log (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL DEFAULT (datetime('now')), uid INTEGER NOT NULL, subject TEXT NOT NULL DEFAULT '', from_addr TEXT NOT NULL DEFAULT '', rule_name TEXT NOT NULL DEFAULT '', action_type TEXT NOT NULL DEFAULT '', action_value TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'success');
+
 -- Settings
 INSERT INTO settings VALUES ('admin_password_hash','$2a$10$KxP1ZxyoB3kFpN8jVq3R5uRr7mW4tL2sH6yA1bB8cD0eF','2026-07-30 10:00:00');
 INSERT INTO settings VALUES ('imap_email','user@icloud.com','2026-07-30 10:00:00');
@@ -157,5 +168,14 @@ SQL
 
 echo "Demo data created at $DEMO/"
 echo ""
-echo "Run: go run ./cmd/mailflow/ -data=./demo"
-echo "Login with session token in cookie: mailflow_session=demo-session-token-abc123"
+echo "Start the demo:"
+echo "  go run ./cmd/mailflow/ -data=./demo"
+echo ""
+echo "Login options:"
+echo "  1. Set this cookie in your browser (F12 → Application → Cookies → 127.0.0.1):"
+echo "     mailflow_session = demo-session-token-abc123"
+echo "  2. Or use this curl command to set it:"
+echo "     curl -c /tmp/cookies.txt -X POST http://127.0.0.1:8080/login -d 'password='"
+echo "     (then open browser with that cookie)"
+echo ""
+echo "Demo password: demo123 (pre-authenticated via session token)"
