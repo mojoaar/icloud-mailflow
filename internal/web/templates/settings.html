@@ -102,7 +102,7 @@
     <form method="POST" action="/settings/timezone"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label>Timezone</label>
-            <select name="timezone" style="width:100%">
+            <select name="timezone" style="width:100%" onchange="this.form.submit()">
                 <option value="UTC" {{if eq .Timezone "UTC"}}selected{{end}}>UTC</option>
                 <option value="Europe/Copenhagen" {{if eq .Timezone "Europe/Copenhagen"}}selected{{end}}>Europe/Copenhagen</option>
                 <option value="Europe/London" {{if eq .Timezone "Europe/London"}}selected{{end}}>Europe/London</option>
@@ -115,17 +115,15 @@
                 <option value="Australia/Sydney" {{if eq .Timezone "Australia/Sydney"}}selected{{end}}>Australia/Sydney</option>
             </select>
         </div>
-        <button type="submit" class="btn btn-primary">Save</button>
     </form>
     <form method="POST" action="/settings/font" style="margin-top:12px"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label>Font</label>
-            <select name="font" style="width:100%">
+            <select name="font" style="width:100%" onchange="this.form.submit()">
                 <option value="default" {{if not .MonoFont}}selected{{end}}>System Default</option>
                 <option value="mono" {{if .MonoFont}}selected{{end}}>JetBrains Mono</option>
             </select>
         </div>
-        <button type="submit" class="btn btn-primary">Save</button>
     </form>
 </div>
 

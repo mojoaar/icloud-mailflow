@@ -28,7 +28,7 @@ func rulesNewHandler(foldersRepo *db.FoldersRepo, contactsRepo *db.ContactsRepo)
 	return func(w http.ResponseWriter, r *http.Request) {
 		folders, _ := foldersRepo.List()
 		contacts, _ := contactsRepo.ListAll()
-		data := map[string]any{"Rule": &db.Rule{Enabled: true}, "New": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts, "CondOperator": "AND"}
+		data := map[string]any{"Rule": &db.Rule{Enabled: true}, "New": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts, "CondOperator": "OR"}
 		renderPage(w, r, "New Rule", "rules_form", data)
 	}
 }
@@ -53,7 +53,7 @@ func rulesCreateHandler(repo *db.RulesRepo) http.HandlerFunc {
 		parseConditions(r, rule)
 		parseActions(r, rule)
 		if err := repo.Create(rule); err != nil {
-			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "New": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": "AND"})
+			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "New": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": "OR"})
 			return
 		}
 		repo.EnsureCatchAll()
@@ -164,8 +164,8 @@ func parseConditions(r *http.Request, rule *db.Rule) {
 		return
 	}
 	operator := r.FormValue("cond_operator")
-	if operator != "OR" {
-		operator = "AND"
+	if operator == "" {
+		operator = "OR"
 	}
 	group := db.ConditionGroup{Operator: operator}
 	for i := range fields {
