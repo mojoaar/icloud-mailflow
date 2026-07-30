@@ -42,7 +42,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
 
 <div class="card" id="how-it-works">
 <h2>How It Works</h2>
-<pre><code>Incoming mail → iCloud Rule → "Processing" folder → Mailflow poller → Match rules → Execute actions</code></pre></div>
+    <pre><code>Incoming mail → iCloud Rule → "Processing" folder → Mailflow poller → Match rules → Execute actions</code></pre>
 <ol style="margin-left:2em">
 <li>iCloud rule moves all incoming mail to the Processing folder</li>
 <li>Mailflow polls Processing every 300s (configurable, default 50 messages/poll)</li>
