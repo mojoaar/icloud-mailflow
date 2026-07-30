@@ -76,11 +76,15 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		imapEmail, _ := settingsRepo.Get("imap_email")
 		sourceFolder, _ := settingsRepo.Get("source_folder")
 		pollInterval, _ := settingsRepo.Get("poll_interval")
+		pollBatch, _ := settingsRepo.Get("poll_batch")
 		if sourceFolder == "" {
 			sourceFolder = cfg.SourceFolder
 		}
 		if pollInterval == "" {
 			pollInterval = strconv.Itoa(cfg.PollInterval)
+		}
+		if pollBatch == "" {
+			pollBatch = "50"
 		}
 		timezone, _ := settingsRepo.Get("timezone")
 		data := map[string]any{
@@ -88,6 +92,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"IMAPEmail":    imapEmail,
 			"SourceFolder": sourceFolder,
 			"PollInterval": pollInterval,
+			"PollBatch":    pollBatch,
 			"ListenAddr":   cfg.ListenAddr,
 			"Version":      version,
 			"Timezone":     timezone,
@@ -222,6 +227,9 @@ func settingsSavePoll(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 		cfg.Save()
 		settingsRepo.Set("source_folder", cfg.SourceFolder)
 		settingsRepo.Set("poll_interval", strconv.Itoa(cfg.PollInterval))
+		if b := r.FormValue("poll_batch"); b != "" {
+			settingsRepo.Set("poll_batch", b)
+		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
 }

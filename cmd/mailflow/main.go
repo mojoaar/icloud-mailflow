@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/mojoaar/icloud-mailflow/internal/config"
@@ -104,7 +105,13 @@ func initialize(dataDir string) (*App, error) {
 
 	var p *poller.Poller
 	if imapClient != nil {
-		p = poller.NewPoller(imapClient, rulesRepo, contactsCollector, logRepo, cfg.PollInterval, cfg.SourceFolder)
+		batchSize := 50
+		if v, _ := settingsRepo.Get("poll_batch"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n > 0 {
+				batchSize = n
+			}
+		}
+		p = poller.NewPoller(imapClient, rulesRepo, contactsCollector, logRepo, batchSize, cfg.PollInterval, cfg.SourceFolder)
 		p.Start()
 	}
 

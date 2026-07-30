@@ -29,7 +29,7 @@ Incoming mail → iCloud Rule → "Processing" folder → Mailflow poller → Ma
 ```
 
 1. Create an iCloud mail rule that moves all incoming mail to a "Processing" folder (see below)
-2. Mailflow polls the Processing folder every 60 seconds
+2. Mailflow polls the Processing folder every 60 seconds (processes 50 messages per poll, configurable in Settings)
 3. Each message is checked against your rules (first match wins)
 4. Matched actions execute: move to folder, mark as read, etc.
 5. Unmatched messages fall through to the catch-all rule

@@ -58,6 +58,10 @@
             <label>Poll Interval (seconds)</label>
             <input type="number" name="poll_interval" value="{{.PollInterval}}" min="10" style="width:120px">
         </div>
+        <div class="form-group">
+            <label>Messages Per Poll</label>
+            <input type="number" name="poll_batch" value="{{.PollBatch}}" min="1" max="200" style="width:120px">
+        </div>
         <button type="submit" class="btn btn-primary">Save Poll Settings</button>
     </form>
 </div>

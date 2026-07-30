@@ -19,21 +19,23 @@ type Poller struct {
 	collector  *contacts.Collector
 	logRepo    *db.LogRepo
 	interval   time.Duration
+	batchSize  int
 	source     string
 	stopCh     chan struct{}
 	wg         sync.WaitGroup
 	running    bool
 }
 
-func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, intervalSec int, source string) *Poller {
+func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, batchSize int, intervalSec int, source string) *Poller {
 	return &Poller{
 		imapClient: imapClient,
-		rulesRepo: rulesRepo,
-		collector: collector,
-		logRepo:  logRepo,
-		interval: time.Duration(intervalSec) * time.Second,
-		source:   source,
-		stopCh:   make(chan struct{}),
+		rulesRepo:  rulesRepo,
+		collector:  collector,
+		logRepo:    logRepo,
+		batchSize:  batchSize,
+		interval:   time.Duration(intervalSec) * time.Second,
+		source:     source,
+		stopCh:     make(chan struct{}),
 	}
 }
 
@@ -83,7 +85,7 @@ func (p *Poller) loop() {
 func (p *Poller) process() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	uids, err := p.imapClient.SearchMessages(p.source, 50)
+	uids, err := p.imapClient.SearchMessages(p.source, p.batchSize)
 	if err != nil {
 		return fmt.Errorf("search: %w", err)
 	}
