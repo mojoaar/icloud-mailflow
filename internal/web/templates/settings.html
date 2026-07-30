@@ -29,7 +29,7 @@
     <form method="POST" action="/settings/password"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label>New Password</label>
-            <input type="password" name="password" required minlength="8" style="width:100%">
+            <input type="password" name="password" placeholder="Leave blank to keep current" style="width:100%">
         </div>
         <button type="submit" class="btn btn-primary">Update Password</button>
     </form>
