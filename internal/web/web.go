@@ -74,6 +74,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Get("/activity", activityHandler(logRepo, settingsRepo))
 	r.Post("/activity/delete", activityDeleteHandler(logRepo))
 	r.Get("/docs", docsHandler())
+	r.Get("/stats", statsHandler(db.NewStatsRepo(d)))
 
 	r.Get("/rules", rulesListHandler(rulesRepo))
 	r.Get("/rules/new", rulesNewHandler(foldersRepo, contactsRepo))

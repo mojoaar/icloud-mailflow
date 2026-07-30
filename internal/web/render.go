@@ -30,7 +30,14 @@ var useMonoFont bool
 var startTime time.Time
 
 func init() {
-	tmpl = template.Must(template.New("").ParseFS(templatesFS, "templates/*.html"))
+	tmpl = template.Must(template.New("").Funcs(template.FuncMap{
+		"percent": func(val, max int) int {
+			if max == 0 {
+				return 0
+			}
+			return val * 100 / max
+		},
+	}).ParseFS(templatesFS, "templates/*.html"))
 }
 
 func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName string, data any) {

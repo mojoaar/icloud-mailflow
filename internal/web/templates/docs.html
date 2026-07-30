@@ -9,6 +9,7 @@
 <a href="#actions" style="margin-right:16px;color:var(--accent)">Actions</a>
 <a href="#contacts" style="margin-right:16px;color:var(--accent)">Contacts</a>
 <a href="#activity" style="margin-right:16px;color:var(--accent)">Activity</a>
+<a href="#stats" style="margin-right:16px;color:var(--accent)">Stats</a>
 <a href="#settings" style="margin-right:16px;color:var(--accent)">Settings</a>
 <a href="#api" style="color:var(--accent)">API</a>
 </p>
@@ -107,6 +108,19 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
 <li>Clear logs with "Clear Logs" button</li>
 <li>Auto-cleaned on startup (default 1000 entries, configurable in Settings)</li>
 </ul>
+</div>
+
+<div class="card" id="stats">
+<h2>Stats Dashboard</h2>
+<p style="color:var(--muted)">Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, and daily volume charts. All data is aggregated from the activity log.</p>
+<ul style="margin-left:1.5em">
+<li><strong>Rule Hits</strong> — How many times each rule matched (bar chart)</li>
+<li><strong>Top Senders</strong> — Most frequent email addresses</li>
+<li><strong>Actions Breakdown</strong> — move_to_folder vs mark_as_read vs set_flag vs mark_as_unread</li>
+<li><strong>Daily Volume</strong> — Messages processed per day over the last 7 days</li>
+<li><strong>Total Processed</strong> — Lifetime count at the top</li>
+</ul>
+<p style="color:var(--muted);margin-top:8px">Also accessible from the footer link on every page.</p>
 </div>
 
 <div class="card" id="settings">

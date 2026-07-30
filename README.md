@@ -11,6 +11,7 @@ Automated iCloud mail sorting using IMAP rules.
 - **Contact Autocomplete** — contacts suggest in rule condition value inputs
 - **Rules Export/Import** — backup and restore rule configurations as JSON
 - **Activity Log** — see every rule match and action result with timestamps
+- **Stats Dashboard** — rule hit counts, top senders, actions breakdown, daily volume
 - **Timezone Support** — display activity log in your local timezone
 - **Folder Auto-Create** — source folder is created on iCloud if it doesn't exist
 - **Test Connection** — verify IMAP credentials before saving
