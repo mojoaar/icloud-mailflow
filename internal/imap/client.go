@@ -79,14 +79,6 @@ func (c *IMAPClient) Close() error {
 	return c.client.Close()
 }
 
-func (c *IMAPClient) Reconnect() error {
-	if c.client != nil {
-		c.client.Close()
-	}
-	c.client = nil
-	return c.Connect()
-}
-
 func (c *IMAPClient) ListFolders() ([]Folder, error) {
 	items, err := c.client.List("", "*", nil).Collect()
 	if err != nil {
