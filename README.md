@@ -173,4 +173,4 @@ Using the iCloud web mail client (mail.icloud.com) while Mailflow is polling may
 
 ## License
 
-MIT
+MIT — see [CHANGELOG.md](CHANGELOG.md) for release history.
