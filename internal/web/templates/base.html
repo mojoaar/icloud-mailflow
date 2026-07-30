@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme:light)').matches)document.documentElement.setAttribute('data-theme','light')})();
+    </script>
     <title>iCloud Mailflow — {{.Title}}</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
@@ -24,6 +27,9 @@
             <a href="/docs"><i data-lucide="book-open" class="nav-icon"></i> Docs</a>
             <a href="/settings"><i data-lucide="settings" class="nav-icon"></i> Settings</a>
             <a href="/logout"><i data-lucide="log-out" class="nav-icon"></i> Logout</a>
+            <a href="#" style="font-size:0.85rem;padding:0" onclick="var t=document.documentElement.getAttribute('data-theme')==='light'?'':'light';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);return false" title="Toggle theme">
+                <i data-lucide="moon" class="nav-icon"></i>
+            </a>
         </div>
         {{end}}
     </nav>
