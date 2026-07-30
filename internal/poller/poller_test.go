@@ -562,7 +562,7 @@ func TestProcessLogsActions(t *testing.T) {
 	}
 }
 
-func TestExecuteActionsFlagOnDestUID(t *testing.T) {
+func TestExecuteActionsDeclaredOrder(t *testing.T) {
 	mock := &trackedMock{}
 	p := &Poller{imapClient: mock}
 
@@ -579,8 +579,31 @@ func TestExecuteActionsFlagOnDestUID(t *testing.T) {
 	if len(mock.moveCalls) != 1 || mock.moveCalls[0].UID != 10 {
 		t.Fatalf("expected MoveMessage on uid 10, got %v", mock.moveCalls)
 	}
+	if len(mock.setFlagsCalls) != 1 || mock.setFlagsCalls[0].UID != 10 {
+		t.Fatalf("expected SetFlags on source uid 10 (before move), got %v", mock.setFlagsCalls)
+	}
+	mock.mu.Unlock()
+}
+
+func TestExecuteActionsFlagAfterMoveOnDestUID(t *testing.T) {
+	mock := &trackedMock{}
+	p := &Poller{imapClient: mock}
+
+	rule := &db.Rule{
+		Name: "test",
+		Actions: []db.Action{
+			{Type: "move_to_folder", Value: "Archive"},
+			{Type: "mark_as_read"},
+		},
+	}
+	p.executeActions(rule, 10, nil)
+
+	mock.mu.Lock()
+	if len(mock.moveCalls) != 1 || mock.moveCalls[0].UID != 10 {
+		t.Fatalf("expected MoveMessage on uid 10, got %v", mock.moveCalls)
+	}
 	if len(mock.setFlagsCalls) != 1 || mock.setFlagsCalls[0].UID != 110 {
-		t.Fatalf("expected SetFlags on dest uid 110, got %v", mock.setFlagsCalls)
+		t.Fatalf("expected SetFlags on dest uid 110 (after move), got %v", mock.setFlagsCalls)
 	}
 	mock.mu.Unlock()
 }

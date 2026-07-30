@@ -159,34 +159,32 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 	destFolder := ""
 
 	for _, action := range rule.Actions {
-		if action.Type != "move_to_folder" {
-			continue
-		}
-		if action.Value == "" {
-			slog.Warn("move_to_folder action has empty value, skipping", "uid", effectiveUID, "rule", rule.Name)
-			continue
-		}
-		newUID, err := p.imapClient.MoveMessage(effectiveUID, action.Value)
-		if err != nil {
-			slog.Error("move failed", "uid", effectiveUID, "dest", action.Value, "error", err)
-			logAction(effectiveUID, action, "error")
-		} else {
-			logAction(effectiveUID, action, "success")
-			effectiveUID = newUID
-			destFolder = action.Value
-		}
-	}
-
-	if destFolder != "" {
-		p.imapClient.SelectMailbox(destFolder)
-	}
-
-	for _, action := range rule.Actions {
 		switch action.Type {
 		case "move_to_folder":
+			if action.Value == "" {
+				slog.Warn("move_to_folder action has empty value, skipping", "uid", effectiveUID, "rule", rule.Name)
+				continue
+			}
+			newUID, err := p.imapClient.MoveMessage(effectiveUID, action.Value)
+			if err != nil {
+				slog.Error("move failed", "uid", effectiveUID, "dest", action.Value, "error", err)
+				logAction(effectiveUID, action, "error")
+			} else {
+				logAction(effectiveUID, action, "success")
+				effectiveUID = newUID
+				destFolder = action.Value
+				p.imapClient.SelectMailbox(destFolder)
+			}
 		case "mark_as_read":
 			if err := p.imapClient.SetFlags(effectiveUID, []string{"\\Seen"}); err != nil {
 				slog.Error("mark as read failed", "uid", effectiveUID, "error", err)
+				logAction(effectiveUID, action, "error")
+			} else {
+				logAction(effectiveUID, action, "success")
+			}
+		case "mark_as_unread":
+			if err := p.imapClient.RemoveFlags(effectiveUID, []string{"\\Seen"}); err != nil {
+				slog.Error("mark as unread failed", "uid", effectiveUID, "error", err)
 				logAction(effectiveUID, action, "error")
 			} else {
 				logAction(effectiveUID, action, "success")
@@ -198,13 +196,6 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 			}
 			if err := p.imapClient.SetFlags(effectiveUID, []string{action.Value}); err != nil {
 				slog.Error("set flag failed", "uid", effectiveUID, "flag", action.Value, "error", err)
-				logAction(effectiveUID, action, "error")
-			} else {
-				logAction(effectiveUID, action, "success")
-			}
-		case "mark_as_unread":
-			if err := p.imapClient.RemoveFlags(effectiveUID, []string{"\\Seen"}); err != nil {
-				slog.Error("mark as unread failed", "uid", effectiveUID, "error", err)
 				logAction(effectiveUID, action, "error")
 			} else {
 				logAction(effectiveUID, action, "success")

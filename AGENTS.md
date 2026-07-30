@@ -48,6 +48,7 @@ docker compose up -d
 - Follow existing patterns for new files
 - Use the same Go standard library where possible
 - No deprecated packages (no go-imap v1)
+- Action execution MUST preserve declared order — never reorder `mark_as_read` before `move_to_folder`. iCloud requires `\Seen` flag on a message before allowing MOVE/delete operations. Two-pass execution (moves first, flags second) breaks this. Always execute actions sequentially in declared order.
 
 ## Release
 1. Bump version in `cmd/mailflow/main.go` (`const version = "X.Y.Z"`)
