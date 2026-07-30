@@ -55,16 +55,7 @@ func (m *mockIMAPClient) ListFolders() ([]imap.Folder, error) {
 
 func openWebTestDB(t *testing.T) *sql.DB {
 	t.Helper()
-	database, err := db.Open(":memory:")
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
-	if err := db.Migrate(database); err != nil {
-		database.Close()
-		t.Fatalf("Migrate: %v", err)
-	}
-	t.Cleanup(func() { database.Close() })
-	return database
+	return db.NewTestDB(t)
 }
 
 func serveHandler(h http.HandlerFunc, req *http.Request) *httptest.ResponseRecorder {

@@ -142,28 +142,11 @@ pre { max-width:100%; overflow-x:auto; }
 
 .card h3 ~ p, .card h3 ~ ol, .card h3 ~ ul, .card h3 ~ pre { margin-left:24px; }
 
-.docs-layout { display:flex; gap:24px; align-items:flex-start; }
-.docs-sidebar { width:220px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
-.docs-sidebar a { display:block; padding:6px 8px; color:var(--text); text-decoration:none; font-size:0.85rem; border-radius:4px; }
-.docs-sidebar a:hover, .docs-sidebar a.active { background:var(--border); color:var(--accent); }
-.docs-content { min-width:0; flex:1; }
-.docs-content h1 { margin-top:0; }
-.docs-content h2 { margin-top:32px; padding-bottom:8px; border-bottom:1px solid var(--border); }
-.docs-content h2:first-child { margin-top:0; }
-.docs-content h3 { margin-top:24px; }
-.docs-content pre { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:12px; overflow-x:auto; font-size:0.85rem; margin:8px 0 16px; max-height:400px; }
-.docs-content code { background:var(--bg); padding:1px 5px; border-radius:3px; font-size:0.85rem; }
-.docs-content pre code { background:none; padding:0; }
 .method-badge { display:inline-block; padding:1px 6px; border-radius:3px; font-size:0.7rem; font-weight:700; margin-right:4px; vertical-align:middle; }
 .method-get { background:#033a16; color:var(--green); }
 .method-post { background:#033a16; color:var(--accent); }
 .method-put { background:#3d2a00; color:#d29922; }
 .method-delete { background:#490202; color:var(--red); }
-
-@media (max-width:768px) {
-    .docs-layout { flex-direction:column; }
-    .docs-sidebar { position:static; width:100%; }
-}
 
 .form-group { margin-bottom: 12px; }
 .form-group label {
@@ -204,3 +187,10 @@ footer a:hover { text-decoration: underline; }
 tr[draggable] { cursor: grab; }
 .row-dragging { opacity: 0.3; }
 .row-drag-over { border-top: 2px solid var(--accent) !important; }
+
+.muted { color: var(--muted); }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-row { display: flex; gap: 8px; align-items: center; }
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }

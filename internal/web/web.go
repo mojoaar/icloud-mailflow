@@ -121,20 +121,12 @@ var csrfMiddleware = func(next http.Handler) http.Handler {
 	})
 }
 
-func csrfToken() string {
+func csrfToken() (string, error) {
 	b := make([]byte, 16)
-	rand.Read(b)
-	return hex.EncodeToString(b)
-}
-
-func csrfCookie() *http.Cookie {
-	return &http.Cookie{
-		Name:     "mailflow_csrf",
-		Value:    csrfToken(),
-		Path:     "/",
-		SameSite: http.SameSiteStrictMode,
-		HttpOnly: false,
+	if _, err := rand.Read(b); err != nil {
+		return "", err
 	}
+	return hex.EncodeToString(b), nil
 }
 
 func csrfCookieWithToken(token string) *http.Cookie {

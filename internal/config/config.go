@@ -17,7 +17,6 @@ type Config struct {
 	SourceFolder  string `json:"source_folder"`
 	PollInterval  int    `json:"poll_interval"`
 	EncryptionKey string `json:"encryption_key"`
-	AdminPass     string `json:"-"`
 	DataDir       string `json:"-"`
 	ListenAddr    string `json:"-"`
 }
@@ -40,11 +39,15 @@ func Load(dataDir string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			cfg.EncryptionKey = generateKey()
-			if err := cfg.Save(); err != nil {
-				return nil, err
-			}
-			return cfg, nil
+		key, err := generateKey()
+		if err != nil {
+			return nil, err
+		}
+		cfg.EncryptionKey = key
+		if err := cfg.Save(); err != nil {
+			return nil, err
+		}
+		return cfg, nil
 		}
 		return nil, err
 	}
@@ -52,8 +55,14 @@ func Load(dataDir string) (*Config, error) {
 		return nil, err
 	}
 	if cfg.EncryptionKey == "" {
-		cfg.EncryptionKey = generateKey()
-		cfg.Save()
+		key, err := generateKey()
+		if err != nil {
+			return nil, err
+		}
+		cfg.EncryptionKey = key
+		if err := cfg.Save(); err != nil {
+			return nil, err
+		}
 	}
 	if err := cfg.Validate(); err != nil {
 		return nil, err
@@ -61,10 +70,12 @@ func Load(dataDir string) (*Config, error) {
 	return cfg, nil
 }
 
-func generateKey() string {
+func generateKey() (string, error) {
 	b := make([]byte, 32)
-	rand.Read(b)
-	return hex.EncodeToString(b)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
 }
 
 func (c *Config) Validate() error {

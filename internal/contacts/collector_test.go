@@ -40,16 +40,7 @@ func (m *mockClient) ListFolders() ([]imap.Folder, error)       { return nil, ni
 
 func openContactsTestDB(t *testing.T) *db.ContactsRepo {
 	t.Helper()
-	database, err := db.Open(":memory:")
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
-	if err := db.Migrate(database); err != nil {
-		database.Close()
-		t.Fatalf("Migrate: %v", err)
-	}
-	t.Cleanup(func() { database.Close() })
-	return db.NewContactsRepo(database)
+	return db.NewContactsRepo(db.NewTestDB(t))
 }
 
 func TestCollectFromMessage(t *testing.T) {

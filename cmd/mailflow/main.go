@@ -25,12 +25,11 @@ import (
 var version = "0.4.2"
 
 type App struct {
-	Config     *config.Config
-	DB         *sql.DB
-	ImapConn   *imap.IMAPClient
-	ImapClient imap.Client
-	Poller     *poller.Poller
-	Router     http.Handler
+	Config   *config.Config
+	DB       *sql.DB
+	ImapConn *imap.IMAPClient
+	Poller   *poller.Poller
+	Router   http.Handler
 }
 
 func (a *App) Close() {
@@ -132,8 +131,7 @@ func initialize(dataDir string) (*App, error) {
 	return &App{
 		Config:     cfg,
 		DB:         database,
-		ImapConn:   imapConn,
-		ImapClient: imapClient,
+		ImapConn: imapConn,
 		Poller:     p,
 		Router:     router,
 	}, nil

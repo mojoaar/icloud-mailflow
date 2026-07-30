@@ -40,7 +40,11 @@ func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.Ha
 			renderPage(w, r, "Login", "login", map[string]string{"Error": "Invalid password"})
 			return
 		}
-		token, _ := generateToken()
+		token, err := generateToken()
+		if err != nil {
+			renderPage(w, r, "Login", "login", map[string]string{"Error": "Internal error. Try again."})
+			return
+		}
 		sessRepo.Create(token, sessionTTL)
 		http.SetCookie(w, &http.Cookie{
 			Name:     sessionCookie,

@@ -41,7 +41,11 @@ func init() {
 }
 
 func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName string, data any) {
-	token := csrfToken()
+	token, err := csrfToken()
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	http.SetCookie(w, csrfCookieWithToken(token))
 	if m, ok := data.(map[string]any); ok {
 		m["CSRFToken"] = token

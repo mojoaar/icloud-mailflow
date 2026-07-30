@@ -12,21 +12,21 @@
 {{range .Rules}}
 <div style="margin-bottom:8px">
     <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:4px">
-        <span>{{.Name}}</span><span style="color:var(--muted)">{{.Count}}</span>
+        <span>{{.Name}}</span><span class="muted">{{.Count}}</span>
     </div>
     <div style="background:var(--bg);border-radius:3px;height:6px;overflow:hidden">
         <div style="background:var(--accent);height:100%;width:{{if $.MaxRuleHit}}{{percent .Count $.MaxRuleHit}}{{else}}0{{end}}%"></div>
     </div>
 </div>
-{{else}}<p style="color:var(--muted)">No data yet</p>{{end}}
+{{else}}<p class="muted">No data yet</p>{{end}}
 </div>
 
 <div class="card" style="flex:1;min-width:300px">
 <h2>Top Senders</h2>
 <table>
 {{range .Senders}}
-<tr><td>{{.Email}}</td><td style="color:var(--muted)">{{.Count}}</td></tr>
-{{else}}<tr><td colspan="2" style="color:var(--muted)">No data yet</td></tr>
+<tr><td>{{.Email}}</td><td class="muted">{{.Count}}</td></tr>
+{{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
 {{end}}
 </table>
 </div>
@@ -37,17 +37,17 @@
 <h2>Actions</h2>
 {{range .Actions}}
 <div style="display:flex;justify-content:space-between;font-size:0.85rem;padding:4px 0;border-bottom:1px solid var(--border)">
-    <span>{{.Type}}</span><span style="color:var(--muted)">{{.Count}}</span>
+    <span>{{.Type}}</span><span class="muted">{{.Count}}</span>
 </div>
-{{else}}<p style="color:var(--muted)">No data yet</p>{{end}}
+{{else}}<p class="muted">No data yet</p>{{end}}
 </div>
 
 <div class="card" style="flex:1;min-width:300px">
 <h2>Daily Volume</h2>
 <table>
 {{range .Daily}}
-<tr><td>{{.Date}}</td><td style="color:var(--muted)">{{.Count}}</td></tr>
-{{else}}<tr><td colspan="2" style="color:var(--muted)">No data yet</td></tr>
+<tr><td>{{.Date}}</td><td class="muted">{{.Count}}</td></tr>
+{{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
 {{end}}
 </table>
 </div>

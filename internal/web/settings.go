@@ -105,6 +105,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"ListenAddr":   r.Host,
 			"Version":      version,
 			"Timezone":     timezone,
+			"Timezones":    []string{"UTC", "Europe/Copenhagen", "Europe/London", "Europe/Berlin", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "Asia/Tokyo", "Australia/Sydney"},
 			"PollingActive": pollingEnabled != "false",
 			"Contacts":     contactsCount,
 			"MonoFont":     monoFont != "false",

@@ -2,7 +2,7 @@
 <h1>Documentation</h1>
 
 <div class="card" style="margin-bottom:24px">
-<p style="color:var(--muted)">Quick navigation:</p>
+<p class="muted">Quick navigation:
 <a href="#introduction" style="margin-right:16px;color:var(--accent)">Introduction</a>
 <a href="#getting-started" style="margin-right:16px;color:var(--accent)">Getting Started</a>
 <a href="#how-it-works" style="margin-right:16px;color:var(--accent)">How It Works</a>
@@ -26,7 +26,7 @@
 <h2>Getting Started</h2>
 
 <h3>1. iCloud Mail Rule</h3>
-<p style="color:var(--muted)">Create a rule on iCloud to route all incoming mail to the Processing folder:</p>
+<p class="muted">Create a rule on iCloud to route all incoming mail to the Processing folder:</p>
 <ol style="margin-left:2em">
 <li>Go to <a href="https://www.icloud.com/mail" target="_blank">icloud.com/mail</a></li>
 <li>Settings gear ⚙ → <strong>Rules</strong> → <strong>Add a Rule</strong></li>
@@ -36,7 +36,7 @@
 </ol>
 
 <h3>2. App-Specific Password</h3>
-<p style="color:var(--muted)">Generate at <a href="https://appleid.apple.com" target="_blank">appleid.apple.com</a> → Sign-In &amp; Security → App-Specific Passwords.</p>
+<p class="muted">Generate at <a href="https://appleid.apple.com" target="_blank">appleid.apple.com</a> → Sign-In &amp; Security → App-Specific Passwords.</p>
 
 <h3>3. Start the App</h3>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">go run ./cmd/mailflow/ -data=./data</code></pre></div>
@@ -61,7 +61,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
 
 <div class="card" id="rules">
 <h2>Rules &amp; Conditions</h2>
-<p style="color:var(--muted)">Rules are checked in priority order — lowest number runs first. Reorder via drag &amp; drop.</p>
+<p class="muted">Rules are checked in priority order — lowest number runs first. Reorder via drag &amp; drop.</p>
 
 <h3>Condition Fields</h3>
 <table>
@@ -97,7 +97,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
 
 <div class="card" id="contacts">
 <h2>Contacts</h2>
-<p style="color:var(--muted)">Collected automatically from processed messages. Seed from all folders via Dashboard.</p>
+<p class="muted">Collected automatically from processed messages. Seed from all folders via Dashboard.</p>
 <ul style="margin-left:1.5em">
 <li><strong>Seed Contacts</strong> — Bulk import across all IMAP folders (newest 200 each)</li>
 <li><strong>iCloud Contacts</strong> — Import address book via CardDAV (Settings)</li>
@@ -108,7 +108,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
 
 <div class="card" id="activity">
 <h2>Activity Log</h2>
-<p style="color:var(--muted)">Every rule match and action execution is logged. View at <code>/activity</code>.</p>
+<p class="muted">Every rule match and action execution is logged. View at <code>/activity</code>.</p>
 <ul style="margin-left:1.5em">
 <li>Shows timestamp, subject, sender, rule, action, and status</li>
 <li>Timezone-adjustable in Settings → Regional</li>
@@ -119,7 +119,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
 
 <div class="card" id="stats">
 <h2>Stats Dashboard</h2>
-<p style="color:var(--muted)">Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, and daily volume charts. All data is aggregated from the activity log.</p>
+<p class="muted">Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, and daily volume charts. All data is aggregated from the activity log.</p>
 <ul style="margin-left:1.5em">
 <li><strong>Rule Hits</strong> — How many times each rule matched (bar chart)</li>
 <li><strong>Top Senders</strong> — Most frequent email addresses</li>
@@ -145,110 +145,110 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
 </div>
 
 <h2 id="api" style="margin-top:32px">API Reference</h2>
-<p style="color:var(--muted)">Base URL: <code>http://{{.Host}}</code>. All endpoints require session cookie from <code>POST /login</code>.</p>
+<p class="muted">Base URL: <code>http://{{.Host}}</code>. All endpoints require session cookie from <code>POST /login</code>.</p>
 
 <h3 style="margin-top:24px;color:var(--muted)">Authentication</h3>
 
 <div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /login</h3>
-<p style="color:var(--muted)">Authenticate. Returns <code>mailflow_session</code> cookie. Rate limited: 5/min/IP.</p>
+<p class="muted">Authenticate. Returns <code>mailflow_session</code> cookie. Rate limited: 5/min/IP.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/login -d "password=YOUR_PASSWORD" -c cookies.txt</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-get">GET</span> GET /logout</h3>
-<p style="color:var(--muted)">Clear session cookie and redirect to login.</p>
+<p class="muted">Clear session cookie and redirect to login.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl http://{{.Host}}/logout -b cookies.txt</code></pre></div></div>
 
 <h3 style="margin-top:24px;color:var(--muted)">Polling</h3>
 
 <div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /poller/tick</h3>
-<p style="color:var(--muted)">Trigger a manual poll cycle immediately.</p>
+<p class="muted">Trigger a manual poll cycle immediately.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/poller/tick -b cookies.txt</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/poll/toggle</h3>
-<p style="color:var(--muted)">Enable or disable automatic polling.</p>
+<p class="muted">Enable or disable automatic polling.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/poll/toggle -b cookies.txt</code></pre></div></div>
 
 <h3 style="margin-top:24px;color:var(--muted)">Rules</h3>
 
 <div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /rules</h3>
-<p style="color:var(--muted)">Create a new rule. Conditions and actions parsed from form data.</p>
+<p class="muted">Create a new rule. Conditions and actions parsed from form data.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/rules -b cookies.txt \
   -d "name=My+Rule&enabled=on&cond_field=from&cond_op=contains&cond_value=@work.com&cond_operator=OR&action_type=move_to_folder&action_value=Work"</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-put">PUT</span> PUT /rules/{id}</h3>
-<p style="color:var(--muted)">Update an existing rule. Use <code>_method=PUT</code> in form data.</p>
+<p class="muted">Update an existing rule. Use <code>_method=PUT</code> in form data.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/1 -b cookies.txt \
   -d "_method=PUT&name=Updated+Rule&enabled=on"</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-delete">DEL</span> DELETE /rules/{id}</h3>
-<p style="color:var(--muted)">Delete a rule by ID. Use <code>_method=DELETE</code> in form data.</p>
+<p class="muted">Delete a rule by ID. Use <code>_method=DELETE</code> in form data.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/1 -b cookies.txt -d "_method=DELETE"</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-post">POST</span> POST /rules/reorder</h3>
-<p style="color:var(--muted)">Reorder rules by priority. Submit <code>rule_ids</code> in the desired order.</p>
+<p class="muted">Reorder rules by priority. Submit <code>rule_ids</code> in the desired order.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/reorder -b cookies.txt \
   -d "rule_ids=3&rule_ids=1&rule_ids=2"</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-get">GET</span> GET /settings/rules/export</h3>
-<p style="color:var(--muted)">Download all rules as JSON (excludes catch-all).</p>
+<p class="muted">Download all rules as JSON (excludes catch-all).</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl http://{{.Host}}/settings/rules/export -b cookies.txt -o rules.json</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/rules/import</h3>
-<p style="color:var(--muted)">Import rules from a JSON file.</p>
+<p class="muted">Import rules from a JSON file.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/rules/import -b cookies.txt \
   -F "rules_file=@rules.json"</code></pre></div></div>
 
 <h3 style="margin-top:24px;color:var(--muted)">Settings</h3>
 
 <div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /settings/imap</h3>
-<p style="color:var(--muted)">Save IMAP connection settings.</p>
+<p class="muted">Save IMAP connection settings.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/imap -b cookies.txt \
   -d "imap_email=user@icloud.com&imap_password=app-password"</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/imap/test</h3>
-<p style="color:var(--muted)">Test IMAP credentials without saving. Falls back to stored credentials if fields are empty.</p>
+<p class="muted">Test IMAP credentials without saving. Falls back to stored credentials if fields are empty.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/imap/test -b cookies.txt</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/password</h3>
-<p style="color:var(--muted)">Change admin password. Leave blank to keep current.</p>
+<p class="muted">Change admin password. Leave blank to keep current.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/password -b cookies.txt \
   -d "password=new-password"</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/poll</h3>
-<p style="color:var(--muted)">Save polling settings (source folder, interval, batch size, log retention).</p>
+<p class="muted">Save polling settings (source folder, interval, batch size, log retention).</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/poll -b cookies.txt \
   -d "source_folder=Processing&poll_interval=300&poll_batch=50&log_keep=1000"</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/timezone</h3>
-<p style="color:var(--muted)">Set display timezone.</p>
+<p class="muted">Set display timezone.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/timezone -b cookies.txt \
   -d "timezone=Europe/Copenhagen"</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/font</h3>
-<p style="color:var(--muted)">Set UI font (default or mono).</p>
+<p class="muted">Set UI font (default or mono).</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/font -b cookies.txt -d "font=mono"</code></pre></div></div>
 
 <h3 style="margin-top:24px;color:var(--muted)">Contacts &amp; Folders</h3>
 
 <div class="card" style="margin-top:12px"><h3><span class="method-badge method-get">GET</span> GET /api/contacts?q=&lt;query&gt;</h3>
-<p style="color:var(--muted)">Search contacts by email or name.</p>
+<p class="muted">Search contacts by email or name.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl 'http://{{.Host}}/api/contacts?q=alice' -b cookies.txt</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-get">GET</span> GET /api/folders</h3>
-<p style="color:var(--muted)">Sync folders from IMAP and return the list.</p>
+<p class="muted">Sync folders from IMAP and return the list.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl http://{{.Host}}/api/folders -b cookies.txt</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-post">POST</span> POST /contacts/seed</h3>
-<p style="color:var(--muted)">Seed contacts from all synced IMAP folders.</p>
+<p class="muted">Seed contacts from all synced IMAP folders.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/contacts/seed -b cookies.txt</code></pre></div></div>
 
 <div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/carddav-import</h3>
-<p style="color:var(--muted)">Import contacts from iCloud address book (CardDAV).</p>
+<p class="muted">Import contacts from iCloud address book (CardDAV).</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/carddav-import -b cookies.txt</code></pre></div></div>
 
 <h3 style="margin-top:24px;color:var(--muted)">Activity</h3>
 
 <div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /activity/delete</h3>
-<p style="color:var(--muted)">Clear all activity logs.</p>
+<p class="muted">Clear all activity logs.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/activity/delete -b cookies.txt</code></pre></div></div>
 
 {{end}}

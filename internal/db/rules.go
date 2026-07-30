@@ -156,7 +156,9 @@ func (r *RulesRepo) Reorder(ids []int64) error {
 			return err
 		}
 	}
-	tx.Exec(`UPDATE rules SET priority = 999 WHERE name = ?`, "_catch_all")
+	if _, err := tx.Exec(`UPDATE rules SET priority = 999 WHERE name = ?`, "_catch_all"); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
@@ -280,14 +282,24 @@ func (r *RulesRepo) EnsureCatchAll() error {
 		return err
 	}
 	if count > 0 {
-		r.DB.Exec(`DELETE FROM conditions WHERE group_id IN (SELECT id FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?))`, "_catch_all")
-		r.DB.Exec(`DELETE FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all")
-		r.DB.Exec(`DELETE FROM actions WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all")
-		r.DB.Exec(`INSERT INTO actions (rule_id, type, value) VALUES ((SELECT id FROM rules WHERE name = ?), 'move_to_folder', 'INBOX')`, "_catch_all")
+		if _, err := r.DB.Exec(`DELETE FROM conditions WHERE group_id IN (SELECT id FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?))`, "_catch_all"); err != nil {
+			return err
+		}
+		if _, err := r.DB.Exec(`DELETE FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all"); err != nil {
+			return err
+		}
+		if _, err := r.DB.Exec(`DELETE FROM actions WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all"); err != nil {
+			return err
+		}
+		if _, err := r.DB.Exec(`INSERT INTO actions (rule_id, type, value) VALUES ((SELECT id FROM rules WHERE name = ?), 'move_to_folder', 'INBOX')`, "_catch_all"); err != nil {
+			return err
+		}
 		return nil
 	}
 	var maxPri sql.NullInt64
-	r.DB.QueryRow(`SELECT MAX(priority) FROM rules`).Scan(&maxPri)
+	if err := r.DB.QueryRow(`SELECT MAX(priority) FROM rules`).Scan(&maxPri); err != nil {
+		return err
+	}
 	pri := 999
 	if maxPri.Valid {
 		pri = int(maxPri.Int64) + 1
@@ -297,7 +309,12 @@ func (r *RulesRepo) EnsureCatchAll() error {
 	if err != nil {
 		return err
 	}
-	ruleID, _ := res.LastInsertId()
-	r.DB.Exec(`INSERT INTO actions (rule_id, type, value) VALUES (?, 'move_to_folder', 'INBOX')`, ruleID)
+	ruleID, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+	if _, err := r.DB.Exec(`INSERT INTO actions (rule_id, type, value) VALUES (?, 'move_to_folder', 'INBOX')`, ruleID); err != nil {
+		return err
+	}
 	return nil
 }

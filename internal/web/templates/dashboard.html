@@ -4,7 +4,7 @@
 {{if not .Configured}}
 <div class="card" style="border-color:var(--accent)">
     <h2>Setup Required</h2>
-    <p style="color:var(--muted)">Configure your IMAP connection and admin password to start processing mail.</p>
+    <p class="muted">Configure your IMAP connection and admin password to start processing mail.</p>
     <a href="/settings" class="btn btn-primary">Go to Settings</a>
 </div>
 {{end}}
@@ -12,7 +12,7 @@
 {{if and (not .PollingActive) .Configured}}
 <div class="card" style="border-color:var(--red)">
     <h2>Polling Disabled</h2>
-    <p style="color:var(--muted)">Mail processing is paused. Rules are not running until polling is re-enabled in <a href="/settings" style="color:var(--accent)">Settings</a>.</p>
+    <p class="muted">Mail processing is paused. Rules are not running until polling is re-enabled in <a href="/settings" style="color:var(--accent)">Settings</a>.</p>
 </div>
 {{end}}
 

@@ -149,7 +149,4 @@ func TestLoadPreservesRuntimeFields(t *testing.T) {
 	if cfg.ListenAddr != "0.0.0.0:8080" {
 		t.Errorf("ListenAddr = %q, want 0.0.0.0:8080", cfg.ListenAddr)
 	}
-	if cfg.AdminPass != "" {
-		t.Error("AdminPass should be empty after Load")
-	}
 }

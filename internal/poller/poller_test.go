@@ -86,15 +86,7 @@ func (m *trackedMock) ListFolders() ([]imap.Folder, error) { return nil, nil }
 
 func openPollerTestDB(t *testing.T) (*db.RulesRepo, *db.ContactsRepo) {
 	t.Helper()
-	database, err := db.Open(":memory:")
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
-	if err := db.Migrate(database); err != nil {
-		database.Close()
-		t.Fatalf("Migrate: %v", err)
-	}
-	t.Cleanup(func() { database.Close() })
+	database := db.NewTestDB(t)
 	return db.NewRulesRepo(database), db.NewContactsRepo(database)
 }
 
