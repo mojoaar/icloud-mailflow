@@ -1,6 +1,7 @@
 package poller
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -8,36 +9,43 @@ import (
 	"time"
 
 	"github.com/mojoaar/icloud-mailflow/internal/contacts"
+	"github.com/mojoaar/icloud-mailflow/internal/config"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
 	"github.com/mojoaar/icloud-mailflow/internal/rules"
+	"github.com/mojoaar/icloud-mailflow/internal/smtp"
 )
 
 type Poller struct {
-	imapClient imap.Client
-	rulesRepo  *db.RulesRepo
-	collector  *contacts.Collector
-	logRepo    *db.LogRepo
-	interval   time.Duration
-	lastTick   atomic.Int64
-	batchSize  int
-	source     string
-	stopCh     chan struct{}
-	wg         sync.WaitGroup
-	running    bool
-	processing atomic.Bool
+	imapClient   imap.Client
+	rulesRepo    *db.RulesRepo
+	collector    *contacts.Collector
+	logRepo      *db.LogRepo
+	settingsRepo *db.SettingsRepo
+	cfg          *config.Config
+	imapEmail    string
+	interval     time.Duration
+	lastTick     atomic.Int64
+	batchSize    int
+	source       string
+	stopCh       chan struct{}
+	wg           sync.WaitGroup
+	running      bool
+	processing   atomic.Bool
 }
 
-func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, batchSize int, intervalSec int, source string) *Poller {
+func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, settingsRepo *db.SettingsRepo, cfg *config.Config, batchSize int, intervalSec int, source string) *Poller {
 	return &Poller{
-		imapClient: imapClient,
-		rulesRepo:  rulesRepo,
-		collector:  collector,
-		logRepo:    logRepo,
-		batchSize:  batchSize,
-		interval:   time.Duration(intervalSec) * time.Second,
-		source:     source,
-		stopCh:     make(chan struct{}),
+		imapClient:   imapClient,
+		rulesRepo:    rulesRepo,
+		collector:    collector,
+		logRepo:      logRepo,
+		settingsRepo: settingsRepo,
+		cfg:          cfg,
+		batchSize:    batchSize,
+		interval:     time.Duration(intervalSec) * time.Second,
+		source:       source,
+		stopCh:       make(chan struct{}),
 	}
 }
 
@@ -86,6 +94,7 @@ func (p *Poller) loop() {
 			if err := p.process(); err != nil {
 				slog.Error("poller tick failed", "error", err)
 			}
+			p.checkBackup()
 		case <-p.stopCh:
 			return
 		}
@@ -225,5 +234,127 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 		default:
 			slog.Warn("unknown action type", "type", action.Type)
 		}
+	}
+}
+
+func (p *Poller) getIMAPEmail() string {
+	if p.imapEmail != "" {
+		return p.imapEmail
+	}
+	return p.cfg.IMAPEmail
+}
+
+func (p *Poller) BackupNow() error {
+	if p.settingsRepo == nil || p.cfg == nil {
+		return fmt.Errorf("backup: settings not configured")
+	}
+	rules, err := p.rulesRepo.List()
+	if err != nil {
+		return fmt.Errorf("backup: list rules: %w", err)
+	}
+
+	type backupRule struct {
+		Name        string `json:"name"`
+		Description string `json:"description,omitempty"`
+		Operator    string `json:"operator,omitempty"`
+		Conditions  []struct {
+			Field    string `json:"field"`
+			Operator string `json:"operator"`
+			Value    string `json:"value"`
+		} `json:"conditions,omitempty"`
+		Actions []struct {
+			Type  string `json:"type"`
+			Value string `json:"value"`
+		} `json:"actions,omitempty"`
+	}
+
+	var export []backupRule
+	for _, rule := range rules {
+		if rule.Name == "_catch_all" {
+			continue
+		}
+		br := backupRule{Name: rule.Name, Description: rule.Description}
+		for _, g := range rule.Groups {
+			br.Operator = g.Operator
+			for _, c := range g.Conditions {
+				br.Conditions = append(br.Conditions, struct {
+					Field    string `json:"field"`
+					Operator string `json:"operator"`
+					Value    string `json:"value"`
+				}{c.Field, c.Operator, c.Value})
+			}
+		}
+		for _, a := range rule.Actions {
+			br.Actions = append(br.Actions, struct {
+				Type  string `json:"type"`
+				Value string `json:"value"`
+			}{a.Type, a.Value})
+		}
+		export = append(export, br)
+	}
+
+	jsonData, err := json.MarshalIndent(export, "", "  ")
+	if err != nil {
+		return fmt.Errorf("backup: marshal rules: %w", err)
+	}
+
+	from := p.getIMAPEmail()
+	recipient, _ := p.settingsRepo.Get("backup_recipient")
+	if recipient == "" {
+		recipient = from
+	}
+	password := p.cfg.IMAPPassword
+
+	ts := time.Now().Format("2006-01-02 15:04")
+	subject := fmt.Sprintf("[Mailflow Backup] Rules - %s", ts)
+	filename := fmt.Sprintf("icloud-mailflow-rules-%s.json", time.Now().Format("2006-01-02"))
+	body := fmt.Sprintf("Mailflow rules backup from %s.\n\n%d rules exported.\n\nTo restore, download the JSON attachment and import it in Settings > Rules > Import.", ts, len(export))
+
+	if err := smtp.Send(recipient, from, password, subject, body, smtp.Attachment{
+		Name: filename, Data: jsonData,
+	}); err != nil {
+		return fmt.Errorf("backup: send email: %w", err)
+	}
+
+	p.settingsRepo.Set("last_backup", time.Now().Format(time.RFC3339))
+	slog.Info("backup sent", "recipient", recipient, "rules", len(export))
+	return nil
+}
+
+func (p *Poller) checkBackup() {
+	if p.settingsRepo == nil {
+		return
+	}
+	enabled, _ := p.settingsRepo.Get("backup_enabled")
+	if enabled != "true" {
+		return
+	}
+
+	lastStr, _ := p.settingsRepo.Get("last_backup")
+	var lastBackup time.Time
+	if lastStr != "" {
+		lastBackup, _ = time.Parse(time.RFC3339, lastStr)
+	}
+
+	freq, _ := p.settingsRepo.Get("backup_frequency")
+	if freq == "" {
+		freq = "weekly"
+	}
+	var threshold time.Duration
+	switch freq {
+	case "daily":
+		threshold = 24 * time.Hour
+	case "monthly":
+		threshold = 720 * time.Hour
+	default:
+		threshold = 168 * time.Hour
+	}
+
+	if time.Since(lastBackup) < threshold {
+		return
+	}
+
+	if err := p.BackupNow(); err != nil {
+		slog.Error("backup failed", "error", err)
 	}
 }

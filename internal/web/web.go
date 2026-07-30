@@ -96,6 +96,8 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/settings/rules/import", rulesImportHandler(rulesRepo))
 	r.Post("/settings/timezone", settingsSaveTimezone(settingsRepo))
 	r.Post("/settings/font", settingsSaveFont(settingsRepo))
+	r.Post("/settings/backup/save", settingsSaveBackup(settingsRepo))
+	r.Post("/settings/backup/now", settingsBackupNow(p))
 
 	r.Get("/api/contacts", contactsSearchHandler(db.NewContactsRepo(d)))
 	r.Get("/api/folders", foldersListHandler(imapClient, foldersRepo))

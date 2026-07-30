@@ -20,7 +20,12 @@ func activityHandler(repo *db.LogRepo, settingsRepo *db.SettingsRepo) http.Handl
 				}
 			}
 		}
-		renderPage(w, r, "Activity", "activity", map[string]any{"Entries": entries})
+		data := map[string]any{"Entries": entries}
+		if r.Header.Get("HX-Request") == "true" {
+			renderPartial(w, "activity_content", data)
+			return
+		}
+		renderPage(w, r, "Activity", "activity", data)
 	}
 }
 

@@ -16,6 +16,7 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/crypto"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
+	"github.com/mojoaar/icloud-mailflow/internal/poller"
 )
 
 func setupPage(settingsRepo *db.SettingsRepo, d *sql.DB, cfg *config.Config) http.HandlerFunc {
@@ -96,6 +97,15 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		timezone, _ := settingsRepo.Get("timezone")
 		pollingEnabled, _ := settingsRepo.Get("polling_enabled")
 		monoFont, _ := settingsRepo.Get("font_mono")
+		backupEnabled, _ := settingsRepo.Get("backup_enabled")
+		backupFrequency, _ := settingsRepo.Get("backup_frequency")
+		backupRecipient, _ := settingsRepo.Get("backup_recipient")
+		lastBackup, _ := settingsRepo.Get("last_backup")
+		if lastBackup != "" {
+			if t, err := time.Parse(time.RFC3339, lastBackup); err == nil {
+				lastBackup = t.Format("2006-01-02 15:04:05")
+			}
+		}
 		data := map[string]any{
 			"Folders":      folders,
 			"IMAPEmail":    imapEmail,
@@ -112,7 +122,11 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"LogKeep":      logKeep,
 			"ServerTime":   time.Now().Format("2006-01-02 15:04:05 MST"),
 			"Uptime":       time.Since(startTime).Truncate(time.Second).String(),
-			"Memory":       getMemoryMB(),
+			"Memory":         getMemoryMB(),
+			"BackupEnabled":  backupEnabled == "true",
+			"BackupFrequency": backupFrequency,
+			"BackupRecipient": backupRecipient,
+			"LastBackup":     lastBackup,
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}
@@ -424,4 +438,26 @@ func getMemoryMB() string {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	return fmt.Sprintf("%d MB", m.Alloc/1024/1024)
+}
+
+func settingsBackupNow(p *poller.Poller) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := p.BackupNow(); err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+			return
+		}
+		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Backup sent"})
+	}
+}
+
+func settingsSaveBackup(settingsRepo *db.SettingsRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		settingsRepo.Set("backup_enabled", r.FormValue("backup_enabled"))
+		if freq := r.FormValue("backup_frequency"); freq != "" {
+			settingsRepo.Set("backup_frequency", freq)
+		}
+		settingsRepo.Set("backup_recipient", r.FormValue("backup_recipient"))
+		http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	}
 }

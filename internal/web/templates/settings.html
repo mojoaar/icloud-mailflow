@@ -102,6 +102,39 @@
 </div>
 
 <div class="card">
+    <h2>Backup</h2>
+    <p style="color:var(--muted);margin-bottom:12px">Periodically email your rules as a JSON attachment. Create a rule to file backup emails into a folder.</p>
+    <form method="POST" action="/settings/backup/save"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="backup_enabled" value="true" {{if .BackupEnabled}}checked{{end}} onchange="this.form.submit()">
+                Enable scheduled backup
+            </label>
+        </div>
+        <div class="form-group">
+            <label>Frequency</label>
+            <select name="backup_frequency" style="width:100%" onchange="this.form.submit()">
+                <option value="weekly" {{if eq .BackupFrequency "weekly"}}selected{{end}}>Weekly</option>
+                <option value="daily" {{if eq .BackupFrequency "daily"}}selected{{end}}>Daily</option>
+                <option value="monthly" {{if eq .BackupFrequency "monthly"}}selected{{end}}>Monthly</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Recipient (defaults to your iCloud email)</label>
+            <input type="email" name="backup_recipient" value="{{.BackupRecipient}}" placeholder="{{.IMAPEmail}}" style="width:100%" onchange="this.form.submit()">
+        </div>
+    </form>
+    <div class="flex-row">
+        <button class="btn btn-primary" hx-post="/settings/backup/now"
+            hx-target="#backup-toast" hx-swap="innerHTML">
+            <i data-lucide="send" data-size="14"></i> Backup Now
+        </button>
+        {{if .LastBackup}}<span class="muted">Last backup: {{.LastBackup}}</span>{{end}}
+    </div>
+    <div id="backup-toast" class="mt-1"></div>
+</div>
+
+<div class="card">
     <h2>Regional</h2>
     <form method="POST" action="/settings/timezone"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">

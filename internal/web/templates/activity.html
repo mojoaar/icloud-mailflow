@@ -1,6 +1,10 @@
-{{define "activity"}}
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    {{define "activity"}}
+<div class="flex-between" style="margin-bottom:16px">
 <h1 style="margin:0">Activity Log</h1>
+<div class="flex-row">
+<button class="btn" hx-get="/activity" hx-target="#activity-content" hx-swap="outerHTML">
+    <i data-lucide="refresh-cw" data-size="14"></i> Refresh
+</button>
 {{if .Entries}}
 <button class="btn btn-danger" hx-post="/activity/delete" hx-target="body" hx-swap="none"
     hx-confirm="Clear all activity logs? This will also reset your stats. Are you sure?">
@@ -8,7 +12,13 @@
 </button>
 {{end}}
 </div>
+</div>
 
+{{template "activity_content" .}}
+{{end}}
+
+{{define "activity_content"}}
+<div id="activity-content">
 {{if not .Entries}}
 <div class="card">
     <p class="muted">No activity yet. Messages will appear here when rules process mail.</p>
@@ -49,4 +59,5 @@
     </table>
 </div>
 {{end}}
+</div>
 {{end}}

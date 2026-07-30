@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.1] — Rules Backup & Activity Refresh
+
+### Added
+- **Activity page refresh button** — reloads activity content via HTMX without a full page reload
+- **Scheduled rules backup via email** — exports rules as JSON attachment and emails to a configurable recipient (defaults to self) via iCloud SMTP
+- Backup settings card with enabled toggle, frequency select (daily/weekly/monthly, default weekly), recipient input
+- "Backup Now" button for manual backups outside the schedule
+- `internal/smtp/` package — MIME multipart email sender using `net/smtp.SendMail`
+
+### Changed
+- Backup schedule checked after each poll tick — persists `last_backup` timestamp to DB across restarts
+
 ## [0.5.0] — Skip-list + DEBUG Logging
 
 ### Fixed

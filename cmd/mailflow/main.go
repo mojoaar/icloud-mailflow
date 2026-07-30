@@ -22,7 +22,7 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/web"
 )
 
-var version = "0.5.0"
+var version = "0.5.1"
 
 type App struct {
 	Config   *config.Config
@@ -120,7 +120,7 @@ func initialize(dataDir string) (*App, error) {
 				batchSize = n
 			}
 		}
-		p = poller.NewPoller(imapClient, rulesRepo, contactsCollector, logRepo, batchSize, cfg.PollInterval, cfg.SourceFolder)
+		p = poller.NewPoller(imapClient, rulesRepo, contactsCollector, logRepo, settingsRepo, cfg, batchSize, cfg.PollInterval, cfg.SourceFolder)
 		if v, _ := settingsRepo.Get("polling_enabled"); v != "false" {
 			p.Start()
 		}

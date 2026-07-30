@@ -126,7 +126,7 @@ func TestProcessNoMessages(t *testing.T) {
 	rulesRepo, contactsRepo := openPollerTestDB(t)
 	mock := &trackedMock{searchUIDs: []goimap.UID{}}
 	collector := contacts.NewCollector(contactsRepo, mock)
-	p := NewPoller(mock, rulesRepo, collector, nil, 50, 60, "INBOX")
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 60, "INBOX")
 
 	if err := p.process(); err != nil {
 		t.Fatalf("process: %v", err)
@@ -150,7 +150,7 @@ func TestProcessMessageMatchesRule(t *testing.T) {
 		},
 	}
 	collector := contacts.NewCollector(contactsRepo, mock)
-	p := NewPoller(mock, rulesRepo, collector, nil, 50, 60, "INBOX")
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 60, "INBOX")
 
 	if err := p.process(); err != nil {
 		t.Fatalf("process: %v", err)
@@ -177,7 +177,7 @@ func TestProcessDisabledRuleSkipped(t *testing.T) {
 		},
 	}
 	collector := contacts.NewCollector(contactsRepo, mock)
-	p := NewPoller(mock, rulesRepo, collector, nil, 50, 60, "INBOX")
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 60, "INBOX")
 
 	if err := p.process(); err != nil {
 		t.Fatalf("process: %v", err)
@@ -194,7 +194,7 @@ func TestProcessSearchError(t *testing.T) {
 	rulesRepo, contactsRepo := openPollerTestDB(t)
 	mock := &trackedMock{searchErr: errors.New("connection refused")}
 	collector := contacts.NewCollector(contactsRepo, mock)
-	p := NewPoller(mock, rulesRepo, collector, nil, 50, 60, "INBOX")
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 60, "INBOX")
 
 	err := p.process()
 	if err == nil {
@@ -211,7 +211,7 @@ func TestProcessFetchErrorContinues(t *testing.T) {
 		fetchErr:   errors.New("fetch failed"),
 	}
 	collector := contacts.NewCollector(contactsRepo, mock)
-	p := NewPoller(mock, rulesRepo, collector, nil, 50, 60, "INBOX")
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 60, "INBOX")
 
 	if err := p.process(); err != nil {
 		t.Fatalf("process should not return error on fetch failure: %v", err)
@@ -234,7 +234,7 @@ func TestProcessNilCollector(t *testing.T) {
 			1: {UID: 1, Subject: "test"},
 		},
 	}
-	p := NewPoller(mock, rulesRepo, nil, nil, 50, 60, "INBOX")
+	p := NewPoller(mock, rulesRepo, nil, nil, nil, nil, 50, 60, "INBOX")
 
 	if err := p.process(); err != nil {
 		t.Fatalf("process with nil collector: %v", err)
@@ -245,7 +245,7 @@ func TestProcessSearchesSourceFolder(t *testing.T) {
 	rulesRepo, contactsRepo := openPollerTestDB(t)
 	mock := &trackedMock{searchUIDs: []goimap.UID{}}
 	collector := contacts.NewCollector(contactsRepo, mock)
-	p := NewPoller(mock, rulesRepo, collector, nil, 50, 60, "Archive")
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 60, "Archive")
 
 	p.process()
 
@@ -298,7 +298,7 @@ func TestStartStop(t *testing.T) {
 	rulesRepo, contactsRepo := openPollerTestDB(t)
 	mock := &trackedMock{searchUIDs: []goimap.UID{}}
 	collector := contacts.NewCollector(contactsRepo, mock)
-	p := NewPoller(mock, rulesRepo, collector, nil, 50, 1, "INBOX")
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 1, "INBOX")
 
 	p.Start()
 	time.Sleep(50 * time.Millisecond)
@@ -309,7 +309,7 @@ func TestDoubleStart(t *testing.T) {
 	rulesRepo, contactsRepo := openPollerTestDB(t)
 	mock := &trackedMock{searchUIDs: []goimap.UID{}}
 	collector := contacts.NewCollector(contactsRepo, mock)
-	p := NewPoller(mock, rulesRepo, collector, nil, 50, 1, "INBOX")
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 1, "INBOX")
 
 	p.Start()
 	p.Start()
@@ -320,7 +320,7 @@ func TestDoubleStop(t *testing.T) {
 	rulesRepo, contactsRepo := openPollerTestDB(t)
 	mock := &trackedMock{searchUIDs: []goimap.UID{}}
 	collector := contacts.NewCollector(contactsRepo, mock)
-	p := NewPoller(mock, rulesRepo, collector, nil, 50, 1, "INBOX")
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 1, "INBOX")
 
 	p.Start()
 	time.Sleep(30 * time.Millisecond)
@@ -459,7 +459,7 @@ func TestProcessMessageMatchesCondition(t *testing.T) {
 		},
 	}
 	collector := contacts.NewCollector(contactsRepo, mock)
-	p := NewPoller(mock, rulesRepo, collector, nil, 50, 60, "INBOX")
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 60, "INBOX")
 
 	if err := p.process(); err != nil {
 		t.Fatalf("process: %v", err)
@@ -495,7 +495,7 @@ func TestProcessMessageDoesNotMatchCondition(t *testing.T) {
 		},
 	}
 	collector := contacts.NewCollector(contactsRepo, mock)
-	p := NewPoller(mock, rulesRepo, collector, nil, 50, 60, "INBOX")
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 60, "INBOX")
 
 	if err := p.process(); err != nil {
 		t.Fatalf("process: %v", err)
@@ -539,7 +539,7 @@ func TestProcessLogsActions(t *testing.T) {
 			1: {UID: 1, Subject: "Test Subject", From: []imap.Address{{Email: "sender@test.com"}}},
 		},
 	}
-	p := NewPoller(mock, rulesRepo, nil, logRepo, 50, 60, "INBOX")
+	p := NewPoller(mock, rulesRepo, nil, logRepo, nil, nil, 50, 60, "INBOX")
 
 	if err := p.process(); err != nil {
 		t.Fatalf("process: %v", err)
@@ -611,4 +611,36 @@ func TestExecuteActionsFlagAfterMoveOnDestUID(t *testing.T) {
 		t.Fatalf("expected SetFlags on dest uid 110 (after move), got %v", mock.setFlagsCalls)
 	}
 	mock.mu.Unlock()
+}
+
+func TestCheckBackupDisabled(t *testing.T) {
+	p := &Poller{}
+	p.checkBackup()
+}
+
+func TestCheckBackupNilSettings(t *testing.T) {
+	p := &Poller{settingsRepo: nil}
+	p.checkBackup()
+}
+
+func TestCheckBackupRecentlyRun(t *testing.T) {
+	database := db.NewTestDB(t)
+	settingsRepo := db.NewSettingsRepo(database)
+	settingsRepo.Set("backup_enabled", "true")
+	settingsRepo.Set("backup_frequency", "daily")
+	settingsRepo.Set("last_backup", time.Now().Format(time.RFC3339))
+
+	p := &Poller{settingsRepo: settingsRepo}
+	p.checkBackup()
+}
+
+func TestCheckBackupNotEnabled(t *testing.T) {
+	database := db.NewTestDB(t)
+	settingsRepo := db.NewSettingsRepo(database)
+	settingsRepo.Set("backup_enabled", "false")
+	settingsRepo.Set("backup_frequency", "daily")
+	settingsRepo.Set("last_backup", time.Now().Add(-48*time.Hour).Format(time.RFC3339))
+
+	p := &Poller{settingsRepo: settingsRepo}
+	p.checkBackup()
 }
