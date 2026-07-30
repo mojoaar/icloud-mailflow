@@ -101,7 +101,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"Timezone":     timezone,
 			"PollingActive": pollingEnabled != "false",
 			"Contacts":     contactsCount,
-			"MonoFont":     monoFont == "true",
+			"MonoFont":     monoFont != "false",
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}
@@ -399,7 +399,7 @@ func settingsSaveFont(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 			settingsRepo.Set("font_mono", "true")
 			useMonoFont = true
 		} else {
-			settingsRepo.Set("font_mono", "")
+			settingsRepo.Set("font_mono", "false")
 			useMonoFont = false
 		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)

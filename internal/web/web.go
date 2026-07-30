@@ -30,7 +30,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Use(middleware.Timeout(30 * time.Second))
 
 	settingsRepo := db.NewSettingsRepo(d)
-	if v, _ := settingsRepo.Get("font_mono"); v == "true" {
+	if v, _ := settingsRepo.Get("font_mono"); v != "false" {
 		useMonoFont = true
 	}
 	sessRepo := db.NewSessionsRepo(d)
