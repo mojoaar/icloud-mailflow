@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.4.3] — Performance & Reliability
+
+### Performance
+- Foreign keys enabled on SQLite — `ON DELETE CASCADE` now works, fixing silent orphaned rows
+- 3 database indexes added (`condition_groups.rule_id`, `conditions.group_id`, `actions.rule_id`)
+- N+1 query pattern eliminated in `RulesRepo.List()` — 3N+1 queries reduced to 4 total
+- Poller mutex replaced with atomic counter — `LastTick()` no longer blocks on IMAP round-trips
+- Regex compiled once on load instead of per-evaluation in `matches_regex` conditions
+- IMAP messages fetched in a single batch instead of one at a time
+
+### Fixed
+- iCloud `UID SEARCH` replaced with `UID FETCH 1:*` — fixes 1-email-per-poll-tick bug caused by iCloud search result capping
+- Confirm dialog now warns about stats reset when clearing activity logs
+- `rand.Read()` errors checked in config and web packages
+- `cfg.Save()` error handled on encryption key generation
+- `EnsureCatchAll()` wrapped in a transaction — no more partial cleanup on interruption
+- `Delete()` now relies on foreign key cascade (simplified from manual child-row deletion)
+
+### Added
+- Client-side search filter for rules list (name + description, instant)
+- Demo database now works correctly (fixed bcrypt hash, RFC 3339 timestamps, correct cookie instructions)
+
+### Changed
+- ~50 inline styles consolidated into 5 CSS utility classes (`.muted`, `.flex-between`, `.flex-row`, `.mt-*`)
+- Timezone list moved from hardcoded HTML to Go data-driven range loop
+- Dead code removed: `csrfCookie()`, `App.ImapClient`, `AdminPass`, unused `.docs-layout` CSS
+- Shared test helper `db.NewTestDB(t)` replaces 3 duplicate implementations
+- 25 new tests added — coverage `db` 60%→73%, `web` 27%→45%
+- HTMX 1.9.10→2.0.10, highlight.js 11.9.0→11.11.2
+
 ## [0.4.2] — Light Theme & Demo
 
 ### Added
