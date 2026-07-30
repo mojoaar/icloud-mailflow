@@ -1,6 +1,8 @@
 # iCloud Mailflow
 
-Automated iCloud mail sorting using IMAP rules.
+Apple's iCloud Mail rules are basically useless — a single condition, a single action, and no way to chain anything. Combined with a web client they haven't meaningfully updated in years, managing iCloud mail beyond the basics is a dead end.
+
+Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail through a real rules engine (AND/OR logic, 10 condition operators, multiple actions), and handles it all automatically. Everything Apple should have built, running on your own machine.
 
 ## Features
 
