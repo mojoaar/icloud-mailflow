@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.4] — iCloud MOVE Fix
+
+### Fixed
+- Replaced broken iCloud `UID MOVE` with `COPY + STORE \Deleted + UIDExpunge` — messages now actually move out of the Processing folder instead of silently staying
+
 ## [0.4.3] — Performance & Reliability
 
 ### Performance
