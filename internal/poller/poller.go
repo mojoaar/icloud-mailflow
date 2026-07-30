@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/mojoaar/icloud-mailflow/internal/contacts"
@@ -13,18 +14,18 @@ import (
 )
 
 type Poller struct {
-	mu         sync.Mutex
 	imapClient imap.Client
 	rulesRepo  *db.RulesRepo
 	collector  *contacts.Collector
 	logRepo    *db.LogRepo
 	interval   time.Duration
-	lastTick   time.Time
+	lastTick   atomic.Int64
 	batchSize  int
 	source     string
 	stopCh     chan struct{}
 	wg         sync.WaitGroup
 	running    bool
+	processing atomic.Bool
 }
 
 func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, batchSize int, intervalSec int, source string) *Poller {
@@ -65,9 +66,11 @@ func (p *Poller) Tick() error {
 }
 
 func (p *Poller) LastTick() time.Time {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return p.lastTick
+	ns := p.lastTick.Load()
+	if ns == 0 {
+		return time.Time{}
+	}
+	return time.Unix(0, ns)
 }
 
 func (p *Poller) loop() {
@@ -90,9 +93,11 @@ func (p *Poller) loop() {
 }
 
 func (p *Poller) process() error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.lastTick = time.Now()
+	if !p.processing.CompareAndSwap(false, true) {
+		return nil
+	}
+	defer p.processing.Store(false)
+	p.lastTick.Store(time.Now().UnixNano())
 	uids, err := p.imapClient.SearchMessages(p.source, p.batchSize)
 	if err != nil {
 		return fmt.Errorf("search: %w", err)
@@ -105,23 +110,22 @@ func (p *Poller) process() error {
 	if err != nil {
 		return fmt.Errorf("list rules: %w", err)
 	}
-	for _, uid := range uids {
-		msg, err := p.imapClient.FetchMessage(uint32(uid))
-		if err != nil {
-			slog.Warn("poller failed to fetch message", "uid", uid, "error", err)
-			continue
-		}
+	msgs, err := p.imapClient.FetchMessages(uids)
+	if err != nil {
+		return fmt.Errorf("fetch messages: %w", err)
+	}
+	for _, msg := range msgs {
 		if p.collector != nil {
 			p.collector.CollectFromMessage(msg)
 		}
 		matched, err := rules.Match(ruleList, msg)
 		if err != nil {
-			slog.Error("rule matching error", "uid", uid, "error", err)
+			slog.Error("rule matching error", "uid", msg.UID, "error", err)
 			continue
 		}
 		if matched != nil {
-			slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
-			p.executeActions(matched, uint32(uid), msg)
+			slog.Debug("rule matched", "uid", msg.UID, "rule", matched.Name)
+			p.executeActions(matched, msg.UID, msg)
 		}
 	}
 	return nil

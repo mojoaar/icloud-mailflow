@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"regexp"
 )
 
 type Rule struct {
@@ -26,11 +27,12 @@ type ConditionGroup struct {
 }
 
 type Condition struct {
-	ID       int64  `json:"id"`
-	GroupID  int64  `json:"group_id"`
-	Field    string `json:"field"`
-	Operator string `json:"operator"`
-	Value    string `json:"value"`
+	ID            int64           `json:"id"`
+	GroupID       int64           `json:"group_id"`
+	Field         string          `json:"field"`
+	Operator      string          `json:"operator"`
+	Value         string          `json:"value"`
+	CompiledRegex *regexp.Regexp  `json:"-"`
 }
 
 type Action struct {
@@ -61,15 +63,122 @@ func (r *RulesRepo) List() ([]Rule, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	for i := range out {
-		if err := r.loadConditions(&out[i]); err != nil {
-			return nil, err
-		}
-		if err := r.loadActions(&out[i]); err != nil {
-			return nil, err
-		}
+	if len(out) == 0 {
+		return out, nil
 	}
+
+	ruleIdx := map[int64]int{}
+	for i, rule := range out {
+		ruleIdx[rule.ID] = i
+	}
+
+	allGroups, err := r.loadAllConditionGroups()
+	if err != nil {
+		return nil, err
+	}
+	allConds, err := r.loadAllConditions()
+	if err != nil {
+		return nil, err
+	}
+	allActions, err := r.loadAllActions()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, g := range allGroups {
+		idx, ok := ruleIdx[g.RuleID]
+		if !ok {
+			continue
+		}
+		out[idx].Groups = append(out[idx].Groups, g)
+	}
+	condByGroup := map[int64][]Condition{}
+	for _, c := range allConds {
+		condByGroup[c.GroupID] = append(condByGroup[c.GroupID], c)
+	}
+	for _, a := range allActions {
+		idx, ok := ruleIdx[a.RuleID]
+		if !ok {
+			continue
+		}
+		out[idx].Actions = append(out[idx].Actions, a)
+	}
+
+	for i := range out {
+		if len(out[i].Groups) > 0 {
+			out[i].Groups = buildGroupTree(out[i].Groups, nil)
+		}
+		assignConditionsToGroups(out[i].Groups, condByGroup)
+	}
+
 	return out, nil
+}
+
+func (r *RulesRepo) loadAllConditionGroups() ([]ConditionGroup, error) {
+	rows, err := r.DB.Query(`SELECT id, rule_id, parent_id, logic_operator FROM condition_groups ORDER BY id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var groups []ConditionGroup
+	for rows.Next() {
+		var g ConditionGroup
+		var parentID sql.NullInt64
+		if err := rows.Scan(&g.ID, &g.RuleID, &parentID, &g.Operator); err != nil {
+			return nil, err
+		}
+		if parentID.Valid {
+			g.ParentID = &parentID.Int64
+		}
+		groups = append(groups, g)
+	}
+	return groups, rows.Err()
+}
+
+func (r *RulesRepo) loadAllConditions() ([]Condition, error) {
+	rows, err := r.DB.Query(`SELECT id, group_id, field, operator, value FROM conditions`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var conds []Condition
+	for rows.Next() {
+		var c Condition
+		if err := rows.Scan(&c.ID, &c.GroupID, &c.Field, &c.Operator, &c.Value); err != nil {
+			return nil, err
+		}
+		if c.Operator == "matches_regex" {
+			c.CompiledRegex, _ = regexp.Compile(c.Value)
+		}
+		conds = append(conds, c)
+	}
+	return conds, rows.Err()
+}
+
+func (r *RulesRepo) loadAllActions() ([]Action, error) {
+	rows, err := r.DB.Query(`SELECT id, rule_id, type, value FROM actions`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var actions []Action
+	for rows.Next() {
+		var a Action
+		if err := rows.Scan(&a.ID, &a.RuleID, &a.Type, &a.Value); err != nil {
+			return nil, err
+		}
+		actions = append(actions, a)
+	}
+	return actions, rows.Err()
+}
+
+func assignConditionsToGroups(groups []ConditionGroup, condByGroup map[int64][]Condition) {
+	for i := range groups {
+		if conds, ok := condByGroup[groups[i].ID]; ok {
+			groups[i].Conditions = conds
+		}
+		assignConditionsToGroups(groups[i].Groups, condByGroup)
+	}
 }
 
 func (r *RulesRepo) Get(id int64) (*Rule, error) {
@@ -120,9 +229,6 @@ func (r *RulesRepo) Update(rule *Rule) error {
 	_, err = tx.Exec(`UPDATE rules SET name=?, description=?, priority=?, enabled=?, updated_at=datetime('now') WHERE id=?`,
 		rule.Name, rule.Description, rule.Priority, rule.Enabled, rule.ID)
 	if err != nil {
-		return err
-	}
-	if _, err := tx.Exec(`DELETE FROM conditions WHERE group_id IN (SELECT id FROM condition_groups WHERE rule_id=?)`, rule.ID); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM condition_groups WHERE rule_id=?`, rule.ID); err != nil {
@@ -194,6 +300,9 @@ func (r *RulesRepo) loadConditions(rule *Rule) error {
 		var c Condition
 		if err := condRows.Scan(&c.ID, &c.GroupID, &c.Field, &c.Operator, &c.Value); err != nil {
 			return err
+		}
+		if c.Operator == "matches_regex" {
+			c.CompiledRegex, _ = regexp.Compile(c.Value)
 		}
 		condMap[c.GroupID] = append(condMap[c.GroupID], c)
 	}
@@ -277,34 +386,37 @@ func (r *RulesRepo) saveActions(tx *sql.Tx, rule *Rule) error {
 }
 
 func (r *RulesRepo) EnsureCatchAll() error {
+	tx, err := r.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
 	var count int
-	if err := r.DB.QueryRow(`SELECT COUNT(*) FROM rules WHERE name = ?`, "_catch_all").Scan(&count); err != nil {
+	if err := tx.QueryRow(`SELECT COUNT(*) FROM rules WHERE name = ?`, "_catch_all").Scan(&count); err != nil {
 		return err
 	}
 	if count > 0 {
-		if _, err := r.DB.Exec(`DELETE FROM conditions WHERE group_id IN (SELECT id FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?))`, "_catch_all"); err != nil {
+		if _, err := tx.Exec(`DELETE FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all"); err != nil {
 			return err
 		}
-		if _, err := r.DB.Exec(`DELETE FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all"); err != nil {
+		if _, err := tx.Exec(`DELETE FROM actions WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all"); err != nil {
 			return err
 		}
-		if _, err := r.DB.Exec(`DELETE FROM actions WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all"); err != nil {
+		if _, err := tx.Exec(`INSERT INTO actions (rule_id, type, value) VALUES ((SELECT id FROM rules WHERE name = ?), 'move_to_folder', 'INBOX')`, "_catch_all"); err != nil {
 			return err
 		}
-		if _, err := r.DB.Exec(`INSERT INTO actions (rule_id, type, value) VALUES ((SELECT id FROM rules WHERE name = ?), 'move_to_folder', 'INBOX')`, "_catch_all"); err != nil {
-			return err
-		}
-		return nil
+		return tx.Commit()
 	}
 	var maxPri sql.NullInt64
-	if err := r.DB.QueryRow(`SELECT MAX(priority) FROM rules`).Scan(&maxPri); err != nil {
+	if err := tx.QueryRow(`SELECT MAX(priority) FROM rules`).Scan(&maxPri); err != nil {
 		return err
 	}
 	pri := 999
 	if maxPri.Valid {
 		pri = int(maxPri.Int64) + 1
 	}
-	res, err := r.DB.Exec(`INSERT INTO rules (name, description, priority, enabled) VALUES (?, ?, ?, 1)`,
+	res, err := tx.Exec(`INSERT INTO rules (name, description, priority, enabled) VALUES (?, ?, ?, 1)`,
 		"_catch_all", "Built-in catch-all — moves unmatched mail to Inbox", pri)
 	if err != nil {
 		return err
@@ -313,8 +425,8 @@ func (r *RulesRepo) EnsureCatchAll() error {
 	if err != nil {
 		return err
 	}
-	if _, err := r.DB.Exec(`INSERT INTO actions (rule_id, type, value) VALUES (?, 'move_to_folder', 'INBOX')`, ruleID); err != nil {
+	if _, err := tx.Exec(`INSERT INTO actions (rule_id, type, value) VALUES (?, 'move_to_folder', 'INBOX')`, ruleID); err != nil {
 		return err
 	}
-	return nil
+	return tx.Commit()
 }

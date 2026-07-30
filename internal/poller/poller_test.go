@@ -57,6 +57,21 @@ func (m *trackedMock) FetchMessage(uid uint32) (*imap.Message, error) {
 	return &imap.Message{UID: uid}, nil
 }
 
+func (m *trackedMock) FetchMessages(uids []goimap.UID) ([]*imap.Message, error) {
+	if m.fetchErr != nil {
+		return nil, m.fetchErr
+	}
+	msgs := make([]*imap.Message, len(uids))
+	for i, uid := range uids {
+		if msg, ok := m.messages[uint32(uid)]; ok {
+			msgs[i] = msg
+		} else {
+			msgs[i] = &imap.Message{UID: uint32(uid)}
+		}
+	}
+	return msgs, nil
+}
+
 func (m *trackedMock) MoveMessage(uid uint32, dest string) (uint32, error) {
 	m.mu.Lock()
 	m.moveCalls = append(m.moveCalls, moveCall{UID: uid, Dest: dest})
@@ -182,7 +197,7 @@ func TestProcessSearchError(t *testing.T) {
 	}
 }
 
-func TestProcessFetchErrorContinues(t *testing.T) {
+func TestProcessFetchErrorReturnsError(t *testing.T) {
 	rulesRepo, contactsRepo := openPollerTestDB(t)
 	testRule(t, rulesRepo, "move-to-trash", true, "Trash")
 
@@ -193,8 +208,8 @@ func TestProcessFetchErrorContinues(t *testing.T) {
 	collector := contacts.NewCollector(contactsRepo, mock)
 	p := NewPoller(mock, rulesRepo, collector, nil, 50, 60, "INBOX")
 
-	if err := p.process(); err != nil {
-		t.Fatalf("process should not return error on fetch failure: %v", err)
+	if err := p.process(); err == nil {
+		t.Fatal("process should return error on batch fetch failure")
 	}
 
 	mock.mu.Lock()

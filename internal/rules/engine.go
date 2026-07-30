@@ -3,7 +3,6 @@ package rules
 import (
 	"fmt"
 	"mime"
-	"regexp"
 	"strings"
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
@@ -103,11 +102,10 @@ func evalCondition(c db.Condition, msg *imap.Message) (bool, error) {
 	case "ends_with":
 		return strings.HasSuffix(strings.ToLower(val), strings.ToLower(c.Value)), nil
 	case "matches_regex":
-		re, err := regexp.Compile(c.Value)
-		if err != nil {
-			return false, fmt.Errorf("invalid regex %q: %w", c.Value, err)
+		if c.CompiledRegex == nil {
+			return false, nil
 		}
-		return re.MatchString(val), nil
+		return c.CompiledRegex.MatchString(val), nil
 	default:
 		return false, nil
 	}

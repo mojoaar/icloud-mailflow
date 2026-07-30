@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
@@ -43,7 +44,11 @@ func makeGroup(op string, conditions []db.Condition) db.ConditionGroup {
 }
 
 func makeCond(field, operator, value string) db.Condition {
-	return db.Condition{Field: field, Operator: operator, Value: value}
+	c := db.Condition{Field: field, Operator: operator, Value: value}
+	if operator == "matches_regex" {
+		c.CompiledRegex = regexp.MustCompile(value)
+	}
+	return c
 }
 
 func TestMatchFirstMatchingRule(t *testing.T) {
@@ -293,11 +298,11 @@ func TestEvaluateConditionMatchesRegex(t *testing.T) {
 
 func TestEvaluateConditionInvalidRegex(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
-		makeGroup("AND", []db.Condition{makeCond("subject", "matches_regex", `[invalid`)}),
+		makeGroup("AND", []db.Condition{{Field: "subject", Operator: "matches_regex", Value: "[invalid"}}),
 	})
 	_, err := Evaluate(&rule, makeMsg("test", "a@b.com"))
-	if err == nil {
-		t.Error("invalid regex should return error")
+	if err != nil {
+		t.Fatalf("nil CompiledRegex should not error: %v", err)
 	}
 }
 

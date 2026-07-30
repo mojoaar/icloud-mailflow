@@ -219,3 +219,40 @@ func TestRulesGetNotFound(t *testing.T) {
 		t.Error("Get should return error for missing rule")
 	}
 }
+
+func TestRulesDeleteCascade(t *testing.T) {
+	db := openTestDB(t)
+	repo := NewRulesRepo(db)
+
+	r := &Rule{
+		Name: "test cascade",
+		Groups: []ConditionGroup{{Operator: "AND", Conditions: []Condition{{Field: "subject", Operator: "contains", Value: "hello"}}}},
+		Actions: []Action{{Type: "move_to_folder", Value: "Test"}},
+	}
+	if err := repo.Create(r); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := repo.Delete(r.ID); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	var orphaned int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM condition_groups WHERE rule_id = ?`, r.ID).Scan(&orphaned); err != nil {
+		t.Fatalf("count groups: %v", err)
+	}
+	if orphaned != 0 {
+		t.Errorf("orphaned condition_groups = %d, want 0", orphaned)
+	}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM conditions WHERE group_id NOT IN (SELECT id FROM condition_groups)`).Scan(&orphaned); err != nil {
+		t.Fatalf("count conditions: %v", err)
+	}
+	if orphaned != 0 {
+		t.Errorf("orphaned conditions = %d, want 0", orphaned)
+	}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM actions WHERE rule_id = ?`, r.ID).Scan(&orphaned); err != nil {
+		t.Fatalf("count actions: %v", err)
+	}
+	if orphaned != 0 {
+		t.Errorf("orphaned actions = %d, want 0", orphaned)
+	}
+}

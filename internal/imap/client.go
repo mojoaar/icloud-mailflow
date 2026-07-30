@@ -36,6 +36,7 @@ type Message struct {
 type Client interface {
 	SearchMessages(folder string, limit int) ([]goimap.UID, error)
 	FetchMessage(uid uint32) (*Message, error)
+	FetchMessages(uids []goimap.UID) ([]*Message, error)
 	MoveMessage(uid uint32, dest string) (uint32, error)
 	SelectMailbox(name string) error
 	SetFlags(uid uint32, flags []string) error
@@ -120,20 +121,35 @@ func (c *IMAPClient) SearchMessages(folder string, limit int) ([]goimap.UID, err
 }
 
 func (c *IMAPClient) FetchMessage(uid uint32) (*Message, error) {
-	seqSet := goimap.UIDSetNum(goimap.UID(uid))
+	msgs, err := c.FetchMessages([]goimap.UID{goimap.UID(uid)})
+	if err != nil {
+		return nil, err
+	}
+	if len(msgs) == 0 {
+		return nil, fmt.Errorf("message uid %d not found", uid)
+	}
+	return msgs[0], nil
+}
+
+func (c *IMAPClient) FetchMessages(uids []goimap.UID) ([]*Message, error) {
+	if len(uids) == 0 {
+		return nil, nil
+	}
+	seqSet := goimap.UIDSetNum(uids...)
 	opts := &goimap.FetchOptions{
 		Envelope:      true,
 		Flags:         true,
 		BodyStructure: &goimap.FetchItemBodyStructure{},
 	}
-	msgs, err := c.client.Fetch(seqSet, opts).Collect()
+	raw, err := c.client.Fetch(seqSet, opts).Collect()
 	if err != nil {
-		return nil, fmt.Errorf("fetch uid %d: %w", uid, err)
+		return nil, fmt.Errorf("fetch uids: %w", err)
 	}
-	if len(msgs) == 0 {
-		return nil, fmt.Errorf("message uid %d not found", uid)
+	msgs := make([]*Message, len(raw))
+	for i, m := range raw {
+		msgs[i] = convertMessage(m)
 	}
-	return convertMessage(msgs[0]), nil
+	return msgs, nil
 }
 
 func (c *IMAPClient) MoveMessage(uid uint32, dest string) (uint32, error) {

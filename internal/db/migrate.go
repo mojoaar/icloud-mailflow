@@ -65,6 +65,9 @@ var migrations = []string{
 		action_value TEXT NOT NULL DEFAULT '',
 		status TEXT NOT NULL DEFAULT 'success'
 	)`,
+	`CREATE INDEX IF NOT EXISTS idx_condition_groups_rule_id ON condition_groups(rule_id)`,
+	`CREATE INDEX IF NOT EXISTS idx_conditions_group_id ON conditions(group_id)`,
+	`CREATE INDEX IF NOT EXISTS idx_actions_rule_id ON actions(rule_id)`,
 }
 
 func Migrate(d *sql.DB) error {

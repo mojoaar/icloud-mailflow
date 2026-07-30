@@ -31,6 +31,21 @@ func (m *mockClient) FetchMessage(uid uint32) (*imap.Message, error) {
 	return &imap.Message{UID: uid}, nil
 }
 
+func (m *mockClient) FetchMessages(uids []goimap.UID) ([]*imap.Message, error) {
+	if m.fetchErr != nil {
+		return nil, m.fetchErr
+	}
+	msgs := make([]*imap.Message, len(uids))
+	for i, uid := range uids {
+		if msg, ok := m.messages[uint32(uid)]; ok {
+			msgs[i] = msg
+		} else {
+			msgs[i] = &imap.Message{UID: uint32(uid)}
+		}
+	}
+	return msgs, nil
+}
+
 func (m *mockClient) MoveMessage(uid uint32, dest string) (uint32, error) { return uid, nil }
 func (m *mockClient) SelectMailbox(name string) error        { return nil }
 func (m *mockClient) SetFlags(uid uint32, flags []string) error  { return nil }
