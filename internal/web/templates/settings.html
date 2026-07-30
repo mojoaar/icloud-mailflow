@@ -80,7 +80,7 @@
         <a href="/settings/rules/export" class="btn" download><i data-lucide="upload" data-size="14"></i> Export</a>
         <form hx-encoding="multipart/form-data" hx-post="/settings/rules/import"
             hx-target="#rules-import-toast" hx-swap="innerHTML" style="display:flex;gap:8px;align-items:center;margin:8px 0 0 0">
-            <input type="file" name="rules_file" accept=".json" style="font-size:0.85rem">
+            <input type="file" name="rules_file" accept=".json">
             <button type="submit" class="btn"><i data-lucide="download" data-size="14"></i> Import</button>
         </form>
     </div>

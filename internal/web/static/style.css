@@ -119,6 +119,10 @@ input:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--accent);
 }
+input[type="file"] {
+    padding: 5px 8px;
+    font-size: 0.85rem;
+}
 
 .form-group { margin-bottom: 12px; }
 .form-group label {
