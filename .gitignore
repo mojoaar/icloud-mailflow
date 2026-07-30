@@ -11,3 +11,5 @@
 .idea/
 .vscode/
 *.swp
+/demo/mailflow.db-shm
+/demo/mailflow.db-wal
