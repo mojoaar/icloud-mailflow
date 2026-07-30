@@ -8,7 +8,7 @@ go build ./cmd/mailflow/
 ```
 
 ## Stack
-- Go 1.22+, chi v5, modernc.org/sqlite (no CGO), html/template
+- Go 1.25+, chi v5, modernc.org/sqlite (no CGO), html/template
 - HTMX frontend, no JavaScript framework
 - IMAP via github.com/emersion/go-imap/v2 (not v1 - deprecated)
 
@@ -39,6 +39,7 @@ docker compose up -d
 - `internal/imap/` - IMAP client (go-imap v2), Message types
 - `internal/rules/` - rule evaluation engine
 - `internal/contacts/` - email contact collector
+- `internal/carddav/` - iCloud CardDAV contacts importer
 - `internal/poller/` - periodic email polling
 - `internal/crypto/` - AES encrypt/decrypt + bcrypt hashing
 - `internal/web/` - chi router, auth, handlers, embedded templates
