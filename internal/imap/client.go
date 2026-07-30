@@ -47,8 +47,9 @@ type Client interface {
 }
 
 type IMAPClient struct {
-	cfg    *config.Config
-	client *imapclient.Client
+	cfg            *config.Config
+	client         *imapclient.Client
+	selectedFolder string
 }
 
 func New(cfg *config.Config) *IMAPClient {
@@ -102,6 +103,7 @@ func (c *IMAPClient) ListFolders() ([]Folder, error) {
 }
 
 func (c *IMAPClient) SelectFolder(name string) (*goimap.SelectData, error) {
+	c.selectedFolder = name
 	return c.client.Select(name, nil).Wait()
 }
 
@@ -164,6 +166,11 @@ func (c *IMAPClient) FetchMessages(uids []goimap.UID) ([]*Message, error) {
 }
 
 func (c *IMAPClient) MoveMessage(uid uint32, dest string) (uint32, error) {
+	if c.selectedFolder != "" {
+		if _, err := c.SelectFolder(c.selectedFolder); err != nil {
+			return uid, fmt.Errorf("reselect before move: %w", err)
+		}
+	}
 	seqSet := goimap.UIDSetNum(goimap.UID(uid))
 	data, err := c.client.Copy(seqSet, dest).Wait()
 	if err != nil {
