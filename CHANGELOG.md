@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Activity From column shows full sender address on hover (title attribute)
+
+### Fixed
+- Docs sidebar active nav — removed broken `.docs-sidebar nav a.active` CSS rule and IntersectionObserver JS
+
 ### Removed
 - Unmatched messages counter from stats page — was a lifetime counter, misleading since unmatched messages eventually get handled
 
