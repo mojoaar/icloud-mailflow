@@ -7,11 +7,7 @@
     {{if or .Unmatched .Errors}}
     <div style="margin-top:8px;font-size:0.85rem;color:var(--muted)">
         {{if .Unmatched}}Unmatched: {{.Unmatched}}{{end}}
-        {{if .Errors}}
-            {{range .Errors}}
-                · {{.Status}}: {{.Count}}
-            {{end}}
-        {{end}}
+        {{range .Errors}}{{if ne .Status "success"}}{{if $.Unmatched}} ·{{end}} {{.Status}}: {{.Count}}{{end}}{{end}}
     </div>
     {{end}}
 </div>
