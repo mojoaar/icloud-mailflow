@@ -84,7 +84,8 @@ iCloud's IMAP implementation has non-standard behavior that must be accounted fo
 1. Determine bump level (MAJOR/MINOR/PATCH) from changelog entries
 2. Bump version in `cmd/mailflow/main.go` and `VERSION` (keep in sync)
 3. Move `[Unreleased]` entries to new version section with date in `CHANGELOG.md`
-4. Commit: `git add -A && git commit -m "chore: release vX.Y.Z"`
-5. Tag: `git tag vX.Y.Z`
-6. Push: `git push origin main && git push --tags`
-7. Create GitHub release: `gh release create vX.Y.Z --title "vX.Y.Z — <brief description>" --notes-file <(extract_changelog_section) --latest`
+4. Add comparison link to bottom of `CHANGELOG.md`: `[X.Y.Z]: https://github.com/mojoaar/icloud-mailflow/compare/vPREVIOUS...vX.Y.Z`
+5. Commit: `git add -A && git commit -m "chore: release vX.Y.Z"`
+6. Tag: `git tag vX.Y.Z`
+7. Push: `git push origin main && git push --tags`
+8. Create GitHub release: `gh release create vX.Y.Z --title "vX.Y.Z — <brief description>" --notes-file <(extract_changelog_section) --latest`
