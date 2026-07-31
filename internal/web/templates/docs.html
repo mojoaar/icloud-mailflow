@@ -485,14 +485,20 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 <script>
 hljs.highlightAll();
 (function(){
-    var o=new IntersectionObserver((entries)=>{
-        entries.forEach(e=>{if(e.isIntersecting){
-            document.querySelectorAll('.docs-sidebar nav a').forEach(a=>a.classList.remove('active'));
-            var l=document.querySelector('.docs-sidebar nav a[href="#'+e.target.id+'"]');
-            if(l)l.classList.add('active');
-        }})
-    },{rootMargin:'-20% 0px -70% 0px'});
-    document.querySelectorAll('h2[id], h3[id]').forEach(h=>o.observe(h));
+    var observer = new IntersectionObserver(function(entries) {
+        var best = null;
+        entries.forEach(function(e) {
+            if (e.isIntersecting && (!best || e.target.offsetTop < best.target.offsetTop)) {
+                best = e;
+            }
+        });
+        if (best) {
+            document.querySelectorAll('.docs-sidebar nav a').forEach(function(a) { a.classList.remove('active'); });
+            var link = document.querySelector('.docs-sidebar nav a[href="#' + best.target.id + '"]');
+            if (link) link.classList.add('active');
+        }
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    document.querySelectorAll('h2[id], h3[id]').forEach(function(h) { observer.observe(h); });
 })();
 </script>
 <footer style="text-align:center;padding:24px 0;font-size:0.8rem;color:var(--muted);margin-top:48px;border-top:1px solid var(--border)">
