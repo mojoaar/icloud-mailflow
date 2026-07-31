@@ -125,6 +125,7 @@ func (c *IMAPClient) SearchMessages(folder string, limit int, minUID uint32) ([]
 	if limit > 0 && len(uids) > limit {
 		uids = uids[:limit]
 	}
+	slog.Debug("imap search", "folder", folder, "minUID", minUID, "found", len(uids))
 	return uids, nil
 }
 
@@ -157,6 +158,7 @@ func (c *IMAPClient) FetchMessages(uids []goimap.UID) ([]*Message, error) {
 	for i, m := range raw {
 		msgs[i] = convertMessage(m)
 	}
+	slog.Debug("imap fetch", "count", len(msgs))
 	return msgs, nil
 }
 
@@ -167,8 +169,11 @@ func (c *IMAPClient) MoveMessage(uid uint32, dest string) (uint32, error) {
 		return uid, fmt.Errorf("move uid %d to %s: %w", uid, dest, err)
 	}
 	if uidSet, ok := data.DestUIDs.(goimap.UIDSet); ok && len(uidSet) > 0 {
-		return uint32(uidSet[0].Start), nil
+		newUID := uint32(uidSet[0].Start)
+		slog.Debug("imap move", "srcUID", uid, "dest", dest, "newUID", newUID)
+		return newUID, nil
 	}
+	slog.Debug("imap move", "srcUID", uid, "dest", dest)
 	return uid, nil
 }
 
@@ -191,7 +196,11 @@ func (c *IMAPClient) SetFlags(uid uint32, flags []string) error {
 		Op:    goimap.StoreFlagsAdd,
 		Flags: imapFlags,
 	}
-	return c.client.Store(seqSet, store, nil).Close()
+	if err := c.client.Store(seqSet, store, nil).Close(); err != nil {
+		return err
+	}
+	slog.Debug("imap set flags", "uid", uid, "flags", flags)
+	return nil
 }
 
 func (c *IMAPClient) RemoveFlags(uid uint32, flags []string) error {
@@ -204,7 +213,11 @@ func (c *IMAPClient) RemoveFlags(uid uint32, flags []string) error {
 		Op:    goimap.StoreFlagsDel,
 		Flags: imapFlags,
 	}
-	return c.client.Store(seqSet, store, nil).Close()
+	if err := c.client.Store(seqSet, store, nil).Close(); err != nil {
+		return err
+	}
+	slog.Debug("imap remove flags", "uid", uid, "flags", flags)
+	return nil
 }
 
 func convertMessage(buf *imapclient.FetchMessageBuffer) *Message {

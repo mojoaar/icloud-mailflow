@@ -3,6 +3,7 @@ package smtp
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"mime"
 	"mime/multipart"
 	"net/smtp"
@@ -49,12 +50,20 @@ func Send(to, from, password, subject, body string, attachments ...Attachment) e
 	host := "smtp.mail.me.com:587"
 	server, _, _ := strings.Cut(host, ":")
 	auth := smtp.PlainAuth("", from, password, server)
-	return smtp.SendMail(host, auth, from, []string{to}, buf.Bytes())
+	if err := smtp.SendMail(host, auth, from, []string{to}, buf.Bytes()); err != nil {
+		return err
+	}
+	slog.Debug("smtp send", "to", to, "subject", subject)
+	return nil
 }
 
 func SendRaw(to, from, password string, raw []byte) error {
 	host := "smtp.mail.me.com:587"
 	server, _, _ := strings.Cut(host, ":")
 	auth := smtp.PlainAuth("", from, password, server)
-	return smtp.SendMail(host, auth, from, []string{to}, raw)
+	if err := smtp.SendMail(host, auth, from, []string{to}, raw); err != nil {
+		return err
+	}
+	slog.Debug("smtp send raw", "to", to)
+	return nil
 }

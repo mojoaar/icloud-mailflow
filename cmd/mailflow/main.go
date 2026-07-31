@@ -60,6 +60,7 @@ func initialize(dataDir string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	slog.Debug("database opened", "path", dbPath)
 
 	if err := db.Migrate(database); err != nil {
 		database.Close()
@@ -105,6 +106,7 @@ func initialize(dataDir string) (*App, error) {
 		if imapConn != nil {
 			imapClient = imapConn
 			imapClient.CreateFolder(cfg.SourceFolder)
+			slog.Debug("imap connected and ready")
 		}
 	}
 

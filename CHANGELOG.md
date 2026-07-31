@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Debug logging across SMTP, IMAP client, DB migrations, and startup — comprehensive visibility when LOG_LEVEL=debug
+
 ### Changed
 - Top senders increased from 10 to 15 on stats page and MCP `get_stats`
 

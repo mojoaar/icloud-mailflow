@@ -1,6 +1,9 @@
 package db
 
-import "database/sql"
+import (
+	"database/sql"
+	"log/slog"
+)
 
 var migrations = []string{
 	`CREATE TABLE IF NOT EXISTS settings (
@@ -82,6 +85,7 @@ func Migrate(d *sql.DB) error {
 			return err
 		}
 	}
+	slog.Debug("migrations complete")
 	return backfillStats(d)
 }
 
