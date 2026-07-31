@@ -29,15 +29,19 @@ var appVersion string
 var useMonoFont bool
 var startTime time.Time
 
+var templateFuncs = template.FuncMap{
+	"percent": func(val, max int) int {
+		if max == 0 {
+			return 0
+		}
+		return val * 100 / max
+	},
+	"subtract": func(a, b int) int { return a - b },
+	"add":      func(a, b int) int { return a + b },
+}
+
 func init() {
-	tmpl = template.Must(template.New("").Funcs(template.FuncMap{
-		"percent": func(val, max int) int {
-			if max == 0 {
-				return 0
-			}
-			return val * 100 / max
-		},
-	}).ParseFS(templatesFS, "templates/*.html"))
+	tmpl = template.Must(template.New("").Funcs(templateFuncs).ParseFS(templatesFS, "templates/*.html"))
 }
 
 func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName string, data any) {

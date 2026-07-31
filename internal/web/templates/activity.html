@@ -19,6 +19,32 @@
 
 {{define "activity_content"}}
 <div id="activity-content">
+<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <input type="search" name="q" value="{{.Search}}" placeholder="Search..."
+        hx-get="/activity" hx-trigger="keyup changed delay:300ms"
+        hx-target="#activity-content" hx-swap="outerHTML"
+        hx-include="[name='rule'],[name='status'],[name='per_page']" style="max-width:220px">
+    <select name="rule" hx-get="/activity" hx-trigger="change"
+        hx-target="#activity-content" hx-swap="outerHTML"
+        hx-include="[name='q'],[name='status'],[name='per_page']">
+        <option value="">All Rules</option>
+        {{range .RuleNames}}<option value="{{.}}" {{if eq . $.Rule}}selected{{end}}>{{.}}</option>{{end}}
+    </select>
+    <select name="status" hx-get="/activity" hx-trigger="change"
+        hx-target="#activity-content" hx-swap="outerHTML"
+        hx-include="[name='q'],[name='rule'],[name='per_page']">
+        <option value="">All Status</option>
+        <option value="success" {{if eq .Status "success"}}selected{{end}}>Success</option>
+        <option value="error" {{if eq .Status "error"}}selected{{end}}>Error</option>
+    </select>
+    <select name="per_page" hx-get="/activity" hx-trigger="change"
+        hx-target="#activity-content" hx-swap="outerHTML"
+        hx-include="[name='q'],[name='rule'],[name='status']">
+        <option value="25" {{if or (eq .PerPage "25") (eq .PerPage "")}}selected{{end}}>25</option>
+        <option value="50" {{if eq .PerPage "50"}}selected{{end}}>50</option>
+        <option value="100" {{if eq .PerPage "100"}}selected{{end}}>100</option>
+    </select>
+</div>
 {{if not .Entries}}
 <div class="card">
     <p class="muted">No activity yet. Messages will appear here when rules process mail.</p>
@@ -57,6 +83,19 @@
         {{end}}
         </tbody>
     </table>
+    {{if gt .TotalPages 1}}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+        <span class="muted">Page {{.Page}} of {{.TotalPages}} ({{.TotalEntries}} entries)</span>
+        <div style="display:flex;gap:4px">
+            {{if gt .Page 1}}
+            <button class="btn" hx-get="/activity?page={{subtract .Page 1}}&per_page={{.PerPage}}&q={{.Search}}&rule={{.Rule}}&status={{.Status}}" hx-target="#activity-content" hx-swap="outerHTML">Prev</button>
+            {{end}}
+            {{if lt .Page .TotalPages}}
+            <button class="btn" hx-get="/activity?page={{add .Page 1}}&per_page={{.PerPage}}&q={{.Search}}&rule={{.Rule}}&status={{.Status}}" hx-target="#activity-content" hx-swap="outerHTML">Next</button>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
 </div>
 {{end}}
 </div>

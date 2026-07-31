@@ -17,10 +17,11 @@ func TestActivityHandler(t *testing.T) {
 
 	settingsRepo := db.NewSettingsRepo(database)
 	settingsRepo.Set("timezone", "UTC")
+	rulesRepo := db.NewRulesRepo(database)
 
 	req := httptest.NewRequest("GET", "/activity", nil)
 	rec := httptest.NewRecorder()
-	activityHandler(logRepo, settingsRepo).ServeHTTP(rec, req)
+	activityHandler(logRepo, rulesRepo, settingsRepo).ServeHTTP(rec, req)
 
 	if rec.Code != 200 {
 		t.Fatalf("status = %d, want 200", rec.Code)
@@ -38,10 +39,11 @@ func TestActivityHandlerEmpty(t *testing.T) {
 	database := openWebTestDB(t)
 	logRepo := db.NewLogRepo(database)
 	settingsRepo := db.NewSettingsRepo(database)
+	rulesRepo := db.NewRulesRepo(database)
 
 	req := httptest.NewRequest("GET", "/activity", nil)
 	rec := httptest.NewRecorder()
-	activityHandler(logRepo, settingsRepo).ServeHTTP(rec, req)
+	activityHandler(logRepo, rulesRepo, settingsRepo).ServeHTTP(rec, req)
 
 	if rec.Code != 200 {
 		t.Fatalf("status = %d, want 200", rec.Code)

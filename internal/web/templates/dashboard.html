@@ -16,34 +16,9 @@
 </div>
 {{end}}
 
-<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h2 style="margin:0">Status</h2>
-        <div style="display:flex;gap:8px">
-            <button class="btn" hx-post="/contacts/seed"
-                hx-target="#seed-toast" hx-swap="innerHTML"
-                onclick="document.getElementById('seed-toast').innerHTML='Scanning folders for contacts...'">
-                Seed Contacts
-            </button>
-            <button class="btn btn-primary" hx-post="/poller/tick"
-                hx-target="#poll-toast" hx-swap="innerHTML">
-                Run Poll Now
-            </button>
-        </div>
-    </div>
-    <table>
-        <tr><td>IMAP Server</td><td>{{.IMAPEmail}} @ imap.mail.me.com</td></tr>
-        <tr><td>Source Folder</td><td>{{.SourceFolder}}</td></tr>
-        <tr><td>Poll Interval</td><td>{{.PollInterval}}s</td></tr>
-        <tr><td>Processed</td><td>{{.Processed}} messages</td></tr>
-        <tr><td>Rules</td><td>{{len .Rules}}</td></tr>
-        <tr><td>Contacts</td><td>{{.Contacts}}</td></tr>
-        <tr><td>Folders</td><td>{{len .Folders}}</td></tr>
-        <tr><td>Polling</td><td>{{if .PollingActive}}Active{{else}}Disabled{{end}}</td></tr>
-        {{if .PollingActive}}<tr><td>Next Poll</td><td>{{if .NextPoll}}{{.NextPoll}}{{else}}Soon{{end}}</td></tr>{{end}}
-    </table>
+<div hx-get="/dashboard/status" hx-trigger="every 30s" hx-swap="innerHTML">
+    {{template "dashboard_status" .}}
 </div>
-
 <div id="seed-toast"></div>
 <div id="poll-toast"></div>
 
@@ -65,4 +40,46 @@
     </table>
 </div>
 {{end}}
+{{end}}
+
+{{define "dashboard_status"}}
+<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 style="margin:0">Status</h2>
+        <div style="display:flex;gap:8px">
+            <button class="btn" hx-post="/contacts/seed"
+                hx-target="#seed-toast" hx-swap="innerHTML"
+                onclick="document.getElementById('seed-toast').innerHTML='Scanning folders...'">
+                <span class="htmx-indicator spinner"></span> Seed Contacts
+            </button>
+            <button class="btn btn-primary" hx-post="/poller/tick"
+                hx-target="#poll-toast" hx-swap="innerHTML">
+                <span class="htmx-indicator spinner"></span> Run Poll Now
+            </button>
+        </div>
+    </div>
+    {{if not .PollingHealthy}}
+    <div class="card" style="border-color:var(--red);margin-bottom:12px">
+        {{if .LastError}}<p>Error: {{.LastError}}</p>{{end}}
+        <p class="muted">IMAP disconnected. Reconnecting...</p>
+    </div>
+    {{end}}
+    <table>
+        <tr><td>IMAP Server</td><td>{{.IMAPEmail}} @ imap.mail.me.com</td></tr>
+        <tr><td>Source Folder</td><td>{{.SourceFolder}}</td></tr>
+        <tr><td>Poll Interval</td><td>{{.PollInterval}}s</td></tr>
+        <tr><td>Processed</td><td>{{.Processed}} messages</td></tr>
+        <tr><td>Rules</td><td>{{len .Rules}}</td></tr>
+        <tr><td>Contacts</td><td>{{.Contacts}}</td></tr>
+        <tr><td>Folders</td><td>{{len .Folders}}</td></tr>
+        <tr><td>Polling</td><td>{{if .PollingActive}}Active{{else}}Disabled{{end}}</td></tr>
+        {{if .PollingActive}}<tr><td>Next Poll</td><td>{{if .NextPoll}}{{.NextPoll}}{{else}}Soon{{end}}</td></tr>{{end}}
+        {{if .LastTick}}
+        <tr><td>Last Poll</td><td>{{.LastTick}}{{if .LastError}} -- Error{{else}} -- OK{{end}}{{if .LastDuration}} ({{.LastDuration}}){{end}}</td></tr>
+        {{end}}
+    </table>
+    {{if .Processing}}
+    <div style="margin-top:8px;color:var(--muted)"><span class="spinner"></span> Polling...</div>
+    {{end}}
+</div>
 {{end}}

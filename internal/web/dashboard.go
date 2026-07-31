@@ -73,6 +73,50 @@ func dashboardHandler(imapClient imap.Client, p *poller.Poller, rulesRepo *db.Ru
 	}
 }
 
+func dashboardStatusHandler(p *poller.Poller, settingsRepo *db.SettingsRepo, imapClient imap.Client, rulesRepo *db.RulesRepo, foldersRepo *db.FoldersRepo, contactsRepo *db.ContactsRepo, cfg *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data := map[string]any{}
+		imapEmail, _ := settingsRepo.Get("imap_email")
+		source, _ := settingsRepo.Get("source_folder")
+		interval, _ := settingsRepo.Get("poll_interval")
+		enabled, _ := settingsRepo.Get("polling_enabled")
+
+		data["IMAPEmail"] = imapEmail
+		data["SourceFolder"] = source
+		data["PollInterval"] = interval
+		data["PollingActive"] = enabled != "false"
+		data["PollingHealthy"] = true
+
+		if p != nil {
+			s := p.Status()
+			data["PollingHealthy"] = s.Healthy
+			data["LastError"] = s.LastError
+			data["Processing"] = s.ProcessingMessages
+			if !s.LastTick.IsZero() {
+				data["LastTick"] = s.LastTick.Format("15:04:05")
+				data["LastDuration"] = s.LastDuration.Truncate(time.Millisecond).String()
+			}
+			if data["PollingActive"].(bool) && s.LastTick.Unix() > 0 {
+				intSec, _ := strconv.Atoi(interval)
+				if intSec > 0 {
+					data["NextPoll"] = time.Unix(0, s.LastTick.UnixNano()).Add(time.Duration(intSec) * time.Second).Format("15:04:05")
+				}
+			}
+		}
+
+		totalProcessed, _ := db.NewStatsRepo(rulesRepo.DB).TotalProcessed()
+		data["Processed"] = totalProcessed
+		rules, _ := rulesRepo.List()
+		data["Rules"] = rules
+		folders, _ := foldersRepo.List()
+		data["Folders"] = folders
+		count, _ := contactsRepo.Count()
+		data["Contacts"] = count
+
+		renderPartial(w, "dashboard_status", data)
+	}
+}
+
 func pollerTickHandler(p *poller.Poller) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := p.Tick(); err != nil {

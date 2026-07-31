@@ -75,9 +75,10 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/setup", setupPage(settingsRepo, d, cfg))
 
 	r.Get("/dashboard", dashboardHandler(imapClient, p, rulesRepo, foldersRepo, settingsRepo, contactsRepo, cfg))
+	r.Get("/dashboard/status", dashboardStatusHandler(p, settingsRepo, imapClient, rulesRepo, foldersRepo, contactsRepo, cfg))
 	r.Post("/poller/tick", pollerTickHandler(p))
 
-	r.Get("/activity", activityHandler(logRepo, settingsRepo))
+	r.Get("/activity", activityHandler(logRepo, rulesRepo, settingsRepo))
 	r.Post("/activity/delete", activityDeleteHandler(logRepo))
 	r.Get("/docs", docsStandaloneHandler(settingsRepo))
 	r.Get("/stats", statsHandler(statsRepo))
