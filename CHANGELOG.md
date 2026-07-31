@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - AGENTS.md now has mandatory Documentation Updates section; doc-update convention made more prominent
+- README: added shields.io badges (Go, Release, License, Docker), fixed operator count (10→13), actions list, and MCP tool count (12→19)
+- docs.html: MCP tool count corrected (18→19), added missing health tool, action types, condition fields, date operators, and API endpoints (mcp/toggle, mcp/regenerate, setup, dashboard/status)
 
 ### Fixed
 - Docs MCP tool count updated from 12 to 18; missing 7 tools added to reference table

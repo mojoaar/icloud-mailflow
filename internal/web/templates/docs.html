@@ -165,7 +165,7 @@ pre {
 
 <h2 id="introduction">Introduction</h2>
 <p>Apple's iCloud Mail rules are basically useless — a single condition, a single action, and no way to chain anything. Combined with a web client they haven't meaningfully updated in years, managing iCloud mail beyond the basics is a dead end.</p>
-<p>Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail through a real rules engine (AND/OR logic, 10 condition operators, multiple actions), and handles it all automatically.</p>
+<p>Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail through a real rules engine (AND/OR logic, 13 condition operators, multiple actions), and handles it all automatically.</p>
 
 <h2 id="getting-started">Getting Started</h2>
 <h3>1. iCloud Mail Rule</h3>
@@ -210,10 +210,14 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>cc</code></td><td>CC email</td><td><code>contains @team.com</code></td></tr>
     <tr><td><code>subject</code></td><td>Message subject</td><td><code>starts_with Re:</code></td></tr>
     <tr><td><code>has_attachment</code></td><td>Has attachment</td><td><code>exists</code> / <code>not_exists</code></td></tr>
+    <tr><td><code>body</code></td><td>Message body text</td><td><code>contains invoice</code></td></tr>
+    <tr><td><code>header:Name</code></td><td>Arbitrary header field</td><td><code>header:X-Spam-Flag equals YES</code></td></tr>
 </table>
 
 <h3>Operators</h3>
-<p><code>equals</code> · <code>not_equals</code> · <code>contains</code> · <code>not_contains</code> · <code>starts_with</code> · <code>ends_with</code> · <code>matches_regex</code> · <code>exists</code> · <code>not_exists</code></p>
+<p><strong>Text:</strong> <code>equals</code> · <code>not_equals</code> · <code>contains</code> · <code>not_contains</code> · <code>starts_with</code> · <code>ends_with</code> · <code>matches_regex</code></p>
+<p><strong>Boolean:</strong> <code>exists</code> · <code>not_exists</code></p>
+<p><strong>Date:</strong> <code>older_than</code> ("7 days") · <code>newer_than</code> ("30 days") · <code>before</code> (ISO date) · <code>after</code> (ISO date)</p>
 
 <h3>Match Logic</h3>
 <ul>
@@ -228,8 +232,11 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>mark_as_read</code></td><td>Set \Seen on message</td><td>None</td></tr>
     <tr><td><code>mark_as_unread</code></td><td>Remove \Seen</td><td>None</td></tr>
     <tr><td><code>set_flag</code></td><td>Set IMAP flag</td><td>e.g. <code>\Flagged</code>, <code>$Junk</code></td></tr>
+    <tr><td><code>remove_flag</code></td><td>Remove IMAP flag</td><td>e.g. <code>\Flagged</code></td></tr>
+    <tr><td><code>forward</code></td><td>Forward message via SMTP</td><td>Recipient email</td></tr>
+    <tr><td><code>delete</code></td><td>Move to Trash folder</td><td>None</td></tr>
 </table>
-<p>Multiple actions execute in declaration order. Moves run first so flags apply in the destination folder.</p>
+<p>Actions execute strictly in declared order. For iCloud, place <code>mark_as_read</code> before <code>move_to_folder</code> — iCloud requires \Seen before allowing MOVE.</p>
 
 <h2 id="contacts">Contacts</h2>
 <p>Collected automatically from processed messages. Seed from all folders via Dashboard.</p>
@@ -254,7 +261,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <h2 id="mcp">MCP Server</h2>
 <p>Mailflow exposes a Model Context Protocol (MCP) server so AI agents (Claude Code, OpenCode, Codex) can manage rules, check stats, and trigger polls remotely. Enable it in Settings → MCP Access — you get an API key and ready-to-use config snippets for all platforms.</p>
-<p>The server runs over HTTPS on <code>/mcp</code>. All 18 tools require a Bearer token in the Authorization header.</p>
+<p>The server runs over HTTPS on <code>/mcp</code>. All 19 tools require a Bearer token in the Authorization header.</p>
 <table>
     <tr><th>Tool</th><th>Description</th></tr>
     <tr><td><code>list_rules</code></td><td>List all filtering rules with conditions and actions</td></tr>
@@ -276,6 +283,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>import_rules</code></td><td>Import rules from JSON array</td></tr>
     <tr><td><code>clear_activity</code></td><td>Clear all activity logs</td></tr>
     <tr><td><code>get_poller_status</code></td><td>Get poller running state, last tick, errors, health</td></tr>
+    <tr><td><code>health</code></td><td>Get system health, uptime, DB/IMAP/poller state, and stats</td></tr>
 </table>
 
 <h2 id="settings">Settings Reference</h2>
@@ -310,6 +318,19 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <pre><code class="language-bash">curl http://{{.Host}}/logout -b cookies.txt</code></pre>
 </div>
 
+<div class="endpoint">
+    <h4><span class="method-badge method-get">GET</span> GET /setup</h4>
+    <p class="desc">First-run setup page. Configure admin password and iCloud IMAP credentials.</p>
+    <pre><code class="language-bash">curl http://{{.Host}}/setup</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /setup</h4>
+    <p class="desc">Submit initial setup form (password, IMAP email, app-specific password).</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/setup \
+  -d "password=admin123&imap_email=user@icloud.com&imap_password=app-password"</code></pre>
+</div>
+
 <h3 class="api-group" id="api-polling">Polling</h3>
 
 <div class="endpoint">
@@ -322,6 +343,12 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <h4><span class="method-badge method-post">POST</span> POST /settings/poll/toggle</h4>
     <p class="desc">Enable or disable automatic polling.</p>
     <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/poll/toggle -b cookies.txt</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-get">GET</span> GET /dashboard/status</h4>
+    <p class="desc">Live poller status JSON (auto-refreshed by dashboard every 30s). Returns running state, health, last tick, last duration, and consecutive failures.</p>
+    <pre><code class="language-bash">curl http://{{.Host}}/dashboard/status -b cookies.txt</code></pre>
 </div>
 
 <h3 class="api-group" id="api-rules">Rules</h3>
@@ -481,6 +508,18 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     }
   }
 }</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/mcp/toggle</h4>
+    <p class="desc">Enable or disable the MCP server.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/mcp/toggle -b cookies.txt</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/mcp/regenerate</h4>
+    <p class="desc">Generate a new MCP API key. Invalidates the previous key immediately.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/mcp/regenerate -b cookies.txt</code></pre>
 </div>
 
 <h3 class="api-group" id="api-health">Health</h3>
