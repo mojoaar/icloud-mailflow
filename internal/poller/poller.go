@@ -37,9 +37,15 @@ type Poller struct {
 	running      bool
 	processing   atomic.Bool
 	trashFolder  string
+	mu                  sync.Mutex
+	lastError           atomic.Value
+	consecutiveFailures int
+	backoff             time.Duration
+	imapConnect         func() (imap.Client, error)
+	lastTickDuration    time.Duration
 }
 
-func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, settingsRepo *db.SettingsRepo, statsRepo *db.StatsRepo, cfg *config.Config, batchSize int, intervalSec int, source string) *Poller {
+func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, settingsRepo *db.SettingsRepo, statsRepo *db.StatsRepo, cfg *config.Config, batchSize int, intervalSec int, source, imapEmail string, connectFn func() (imap.Client, error)) *Poller {
 	return &Poller{
 		imapClient:   imapClient,
 		rulesRepo:    rulesRepo,
@@ -51,6 +57,8 @@ func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *conta
 		batchSize:    batchSize,
 		interval:     time.Duration(intervalSec) * time.Second,
 		source:       source,
+		imapEmail:    imapEmail,
+		imapConnect:  connectFn,
 		stopCh:       make(chan struct{}),
 	}
 }
@@ -112,6 +120,10 @@ func (p *Poller) process() error {
 		return nil
 	}
 	defer p.processing.Store(false)
+
+	start := time.Now()
+	defer func() { p.lastTickDuration = time.Since(start) }()
+
 	p.lastTick.Store(time.Now().UnixNano())
 	slog.Debug("poller tick start", "source", p.source)
 	ruleList, err := p.rulesRepo.List()
@@ -171,6 +183,7 @@ func (p *Poller) process() error {
 			}
 		}
 	}
+	p.clearLastError()
 	return nil
 }
 
@@ -482,6 +495,84 @@ func buildForwardMIME(original, subject, from string) []byte {
 	return buf.Bytes()
 }
 
+type PollerStatus struct {
+	Active              bool          `json:"active"`
+	Healthy             bool          `json:"healthy"`
+	LastTick            time.Time     `json:"last_tick"`
+	LastError           string        `json:"last_error"`
+	LastDuration        time.Duration `json:"last_duration"`
+	ProcessingMessages  bool          `json:"processing_messages"`
+	ConsecutiveFailures int           `json:"consecutive_failures"`
+}
+
+func (p *Poller) Status() PollerStatus {
+	lastErr := ""
+	if v := p.lastError.Load(); v != nil {
+		lastErr = v.(string)
+	}
+	p.mu.Lock()
+	cf := p.consecutiveFailures
+	p.mu.Unlock()
+	return PollerStatus{
+		Active:              p.running,
+		Healthy:             cf == 0,
+		LastTick:            time.Unix(0, p.lastTick.Load()),
+		LastError:           lastErr,
+		LastDuration:        p.lastTickDuration,
+		ProcessingMessages:  p.processing.Load(),
+		ConsecutiveFailures: cf,
+	}
+}
+
+func (p *Poller) PollingHealthy() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.consecutiveFailures == 0
+}
+
 func (p *Poller) setLastError(err error) {
 	slog.Error("action error", "error", err)
+	p.lastError.Store(err.Error())
+	p.mu.Lock()
+	p.consecutiveFailures++
+	cf := p.consecutiveFailures
+	p.mu.Unlock()
+	if cf > 2 && p.running && p.imapConnect != nil {
+		go p.reconnect()
+	}
+}
+
+func (p *Poller) clearLastError() {
+	p.lastError.Store(nil)
+	p.mu.Lock()
+	p.consecutiveFailures = 0
+	p.backoff = 0
+	p.mu.Unlock()
+}
+
+func (p *Poller) reconnect() {
+	p.mu.Lock()
+	if p.backoff == 0 {
+		p.backoff = 5 * time.Second
+	}
+	delay := p.backoff
+	p.mu.Unlock()
+
+	time.Sleep(delay)
+
+	client, err := p.imapConnect()
+	if err != nil {
+		p.lastError.Store(err.Error())
+		p.mu.Lock()
+		p.consecutiveFailures++
+		p.backoff *= 2
+		if p.backoff > 60*time.Second {
+			p.backoff = 60 * time.Second
+		}
+		p.mu.Unlock()
+		return
+	}
+	p.imapClient = client
+	p.clearLastError()
+	slog.Info("IMAP reconnected")
 }

@@ -121,7 +121,17 @@ func initialize(dataDir string) (*App, error) {
 				batchSize = n
 			}
 		}
-		p = poller.NewPoller(imapClient, rulesRepo, contactsCollector, logRepo, settingsRepo, statsRepo, cfg, batchSize, cfg.PollInterval, cfg.SourceFolder)
+		p = poller.NewPoller(imapClient, rulesRepo, contactsCollector,
+			logRepo, settingsRepo, statsRepo, cfg, batchSize, cfg.PollInterval, cfg.SourceFolder,
+			imapEmail,
+			func() (imap.Client, error) {
+				conn := imap.New(cfg)
+				if err := conn.Connect(); err != nil {
+					return nil, err
+				}
+				return conn, nil
+			},
+		)
 		if v, _ := settingsRepo.Get("polling_enabled"); v != "false" {
 			p.Start()
 		}
