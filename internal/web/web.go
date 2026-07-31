@@ -55,7 +55,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 		})
 	})
 
-	mcpServer := mcp.New(d, imapClient, p, version)
+	mcpServer := mcp.New(d, imapClient, p, version, collector, settingsRepo)
 	mcpHandler := mcp.NewAuthMiddleware(mcpServer, settingsRepo)
 	r.Handle("/mcp", mcpHandler)
 	r.Handle("/mcp/*", mcpHandler)

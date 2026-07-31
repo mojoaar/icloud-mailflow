@@ -7,12 +7,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 
+	"github.com/mojoaar/icloud-mailflow/internal/contacts"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
 	"github.com/mojoaar/icloud-mailflow/internal/poller"
@@ -23,7 +25,7 @@ func resultJSON(v any) (*mcp.CallToolResult, error) {
 	return mcp.NewToolResultJSON(v)
 }
 
-func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string) *server.StreamableHTTPServer {
+func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, collector *contacts.Collector, settingsRepo *db.SettingsRepo) *server.StreamableHTTPServer {
 	rulesRepo := db.NewRulesRepo(d)
 	logRepo := db.NewLogRepo(d)
 	statsRepo := db.NewStatsRepo(d)
@@ -305,6 +307,136 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string) *s
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 		return resultJSON(contacts)
+	})
+
+	s.AddTool(mcp.NewTool("list_contacts",
+		mcp.WithDescription("List all collected email contacts"),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		contacts, err := contactsRepo.ListAll()
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		return resultJSON(contacts)
+	})
+
+	s.AddTool(mcp.NewTool("enable_rule",
+		mcp.WithDescription("Enable a rule by ID"),
+		mcp.WithNumber("rule_id", mcp.Required(), mcp.Description("Rule ID")),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id := int64(req.GetArguments()["rule_id"].(float64))
+		rule, err := rulesRepo.Get(id)
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		rule.Enabled = true
+		if err := rulesRepo.Update(rule); err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		return mcp.NewToolResultText("rule enabled"), nil
+	})
+
+	s.AddTool(mcp.NewTool("disable_rule",
+		mcp.WithDescription("Disable a rule by ID"),
+		mcp.WithNumber("rule_id", mcp.Required(), mcp.Description("Rule ID")),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id := int64(req.GetArguments()["rule_id"].(float64))
+		rule, err := rulesRepo.Get(id)
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		rule.Enabled = false
+		if err := rulesRepo.Update(rule); err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		return mcp.NewToolResultText("rule disabled"), nil
+	})
+
+	s.AddTool(mcp.NewTool("get_poller_status",
+		mcp.WithDescription("Get poller status: running state, last tick, errors, health"),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if p == nil {
+			return mcp.NewToolResultError("poller not running"), nil
+		}
+		return resultJSON(p.Status())
+	})
+
+	s.AddTool(mcp.NewTool("import_rules",
+		mcp.WithDescription("Import rules from JSON array"),
+		mcp.WithString("rules", mcp.Required(), mcp.Description("JSON array of rule objects in the same format as backup_rules output")),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		rulesJSON := req.GetArguments()["rules"].(string)
+		var input []struct {
+			Name        string `json:"name"`
+			Description string `json:"description,omitempty"`
+			Priority    int    `json:"priority"`
+			Enabled     bool   `json:"enabled"`
+			Operator    string `json:"operator,omitempty"`
+			Conditions  []struct {
+				Field    string `json:"field"`
+				Operator string `json:"operator"`
+				Value    string `json:"value"`
+			} `json:"conditions,omitempty"`
+			Actions []struct {
+				Type  string `json:"type"`
+				Value string `json:"value"`
+			} `json:"actions,omitempty"`
+		}
+		if err := json.Unmarshal([]byte(rulesJSON), &input); err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		imported := 0
+		for _, r := range input {
+			op := r.Operator
+			if op == "" {
+				op = "OR"
+			}
+			if op != "AND" && op != "OR" {
+				op = "OR"
+			}
+			rule := &db.Rule{Name: r.Name, Description: r.Description, Priority: r.Priority, Enabled: r.Enabled}
+			if len(r.Conditions) > 0 {
+				g := db.ConditionGroup{Operator: op}
+				for _, c := range r.Conditions {
+					g.Conditions = append(g.Conditions, db.Condition{Field: c.Field, Operator: c.Operator, Value: c.Value})
+				}
+				rule.Groups = []db.ConditionGroup{g}
+			}
+			for _, a := range r.Actions {
+				rule.Actions = append(rule.Actions, db.Action{Type: a.Type, Value: a.Value})
+			}
+			if err := rulesRepo.Create(rule); err != nil {
+				return mcp.NewToolResultError("import failed: " + err.Error()), nil
+			}
+			imported++
+		}
+		return resultJSON(map[string]int{"imported": imported})
+	})
+
+	s.AddTool(mcp.NewTool("clear_activity",
+		mcp.WithDescription("Clear all activity logs (stats unaffected)"),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if err := logRepo.DeleteAll(); err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		return mcp.NewToolResultText("activity log cleared"), nil
+	})
+
+	s.AddTool(mcp.NewTool("seed_contacts",
+		mcp.WithDescription("Scan IMAP folders for contacts"),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if collector == nil {
+			return mcp.NewToolResultError("contacts collector not configured"), nil
+		}
+		folders, err := db.NewFoldersRepo(d).List()
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		for _, f := range folders {
+			if err := collector.SeedFromFolder(f.Name); err != nil {
+				slog.Warn("seed contacts failed for folder", "folder", f.Name, "error", err)
+			}
+		}
+		return resultJSON(map[string]int{"folders_scanned": len(folders)})
 	})
 
 	return server.NewStreamableHTTPServer(s)

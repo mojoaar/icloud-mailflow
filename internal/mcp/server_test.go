@@ -11,7 +11,7 @@ import (
 
 func TestNew(t *testing.T) {
 	d := db.NewTestDB(t)
-	srvr := New(d, nil, nil, "0.6.0")
+	srvr := New(d, nil, nil, "0.6.0", nil, nil)
 	if srvr == nil {
 		t.Fatal("New returned nil")
 	}
@@ -150,7 +150,7 @@ func TestParseRuleInputNoConditions(t *testing.T) {
 
 func TestNewAllowsNilDeps(t *testing.T) {
 	var d *sql.DB
-	srvr := New(d, nil, nil, "1.0")
+	srvr := New(d, nil, nil, "1.0", nil, nil)
 	if srvr == nil {
 		t.Fatal("New should not panic with nil deps")
 	}
