@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-07-31
+
 ### Added
 - `GET /health` endpoint — public JSON health check with status, uptime, DB/IMAP/poller state, and stats
 - MCP `health` tool — same health data available via MCP for agent consumption
@@ -342,7 +344,8 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
-[Unreleased]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.4...HEAD
+[0.7.4]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.0...v0.7.1
