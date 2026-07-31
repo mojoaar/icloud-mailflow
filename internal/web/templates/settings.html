@@ -173,7 +173,9 @@
             <pre style="margin:0;font-size:0.8rem"><code>{
   "mcpServers": {
     "mailflow": {
+      "type": "remote",
       "url": "{{.MCPURL}}",
+      "enabled": true,
       "headers": {
         "Authorization": "Bearer {{.MCPAPIKey}}"
       }
@@ -185,11 +187,10 @@
             <pre style="margin:0;font-size:0.8rem"><code>{
   "mcpServers": {
     "mailflow": {
-      "command": "npx",
-      "args": ["-y", "@anthropic-ai/mcp-server-remote"],
-      "env": {
-        "MCP_URL": "{{.MCPURL}}",
-        "MCP_AUTH_HEADER": "Bearer {{.MCPAPIKey}}"
+      "type": "url",
+      "url": "{{.MCPURL}}",
+      "headers": {
+        "Authorization": "Bearer {{.MCPAPIKey}}"
       }
     }
   }
@@ -199,6 +200,7 @@
             <pre style="margin:0;font-size:0.8rem"><code>{
   "mcpServers": {
     "mailflow": {
+      "type": "remote",
       "url": "{{.MCPURL}}",
       "headers": {
         "Authorization": "Bearer {{.MCPAPIKey}}"

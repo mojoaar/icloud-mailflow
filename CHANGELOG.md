@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Activity page dropdowns right-aligned, search input expanded to fill space
 - Rules dropdown sorted alphabetically (case-insensitive)
 - Per_page options increased: 100/250/500/1000
+- MCP requests blocked by CSRF middleware — `/mcp` path now bypasses CSRF
+- MCP config snippets in Settings updated with correct `type` fields (OpenCode, Claude Code, Codex)
+- Dashboard rules Edit button right-aligned
 
 ## [0.7.1] - 2026-07-31
 
