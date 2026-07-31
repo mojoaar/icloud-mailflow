@@ -71,3 +71,4 @@ iCloud's IMAP implementation has non-standard behavior that must be accounted fo
 3. Commit: `git add -A && git commit -m "chore: release vX.Y.Z"`
 4. Tag: `git tag vX.Y.Z`
 5. Push: `git push origin main && git push --tags`
+6. Create GitHub release with changelog: `gh release create vX.Y.Z --title "vX.Y.Z — <section title>" --notes "<changelog section body>"`
