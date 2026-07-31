@@ -1,298 +1,344 @@
 {{define "docs"}}
+
+<div class="docs-wrap">
+<aside class="docs-sidebar">
+    <h3>Getting Started</h3>
+    <nav>
+        <a href="#introduction">Introduction</a>
+        <a href="#getting-started">Getting Started</a>
+        <a href="#how-it-works">How It Works</a>
+    </nav>
+    <hr>
+    <h3>Reference</h3>
+    <nav>
+        <a href="#rules">Rules &amp; Conditions</a>
+        <a href="#actions">Actions</a>
+        <a href="#contacts">Contacts</a>
+        <a href="#activity">Activity Log</a>
+        <a href="#stats">Stats Dashboard</a>
+        <a href="#mcp">MCP Server</a>
+        <a href="#settings">Settings Reference</a>
+    </nav>
+    <hr>
+    <h3>API</h3>
+    <nav>
+        <a href="#api-auth">Authentication</a>
+        <a href="#api-polling">Polling</a>
+        <a href="#api-rules">Rules</a>
+        <a href="#api-settings">Settings</a>
+        <a href="#api-backup">Backup</a>
+        <a href="#api-contacts">Contacts &amp; Folders</a>
+        <a href="#api-activity">Activity</a>
+        <a href="#api-mcp">MCP Server</a>
+    </nav>
+</aside>
+
+<main class="docs-content">
+
 <h1>Documentation</h1>
 
-<div class="card" style="margin-bottom:24px">
-<p class="muted">Quick navigation:
-<a href="#introduction" style="margin-right:16px;color:var(--accent)">Introduction</a>
-<a href="#getting-started" style="margin-right:16px;color:var(--accent)">Getting Started</a>
-<a href="#how-it-works" style="margin-right:16px;color:var(--accent)">How It Works</a>
-<a href="#rules" style="margin-right:16px;color:var(--accent)">Rules</a>
-<a href="#actions" style="margin-right:16px;color:var(--accent)">Actions</a>
-<a href="#contacts" style="margin-right:16px;color:var(--accent)">Contacts</a>
-<a href="#activity" style="margin-right:16px;color:var(--accent)">Activity</a>
-<a href="#stats" style="margin-right:16px;color:var(--accent)">Stats</a>
-<a href="#settings" style="margin-right:16px;color:var(--accent)">Settings</a>
-<a href="#api" style="color:var(--accent)">API</a>
-</p>
-</div>
-
-<div class="card" id="introduction">
-<h2>Introduction</h2>
+<h2 id="introduction">Introduction</h2>
 <p>Apple's iCloud Mail rules are basically useless — a single condition, a single action, and no way to chain anything. Combined with a web client they haven't meaningfully updated in years, managing iCloud mail beyond the basics is a dead end.</p>
-<p>Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail through a real rules engine (AND/OR logic, 10 condition operators, multiple actions), and handles it all automatically. Everything Apple should have built, running on your own machine.</p>
-</div>
+<p>Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail through a real rules engine (AND/OR logic, 10 condition operators, multiple actions), and handles it all automatically.</p>
 
-<div class="card" id="getting-started">
-<h2>Getting Started</h2>
-
+<h2 id="getting-started">Getting Started</h2>
 <h3>1. iCloud Mail Rule</h3>
-<p class="muted">Create a rule on iCloud to route all incoming mail to the Processing folder:</p>
-<ol style="margin-left:2em">
-<li>Go to <a href="https://www.icloud.com/mail" target="_blank">icloud.com/mail</a></li>
-<li>Settings gear ⚙ → <strong>Rules</strong> → <strong>Add a Rule</strong></li>
-<li>If a message → <strong>is addressed to</strong> → leave address empty</li>
-<li>Then → <strong>Move to Folder</strong> → <strong>New Folder…</strong> → enter <strong>Processing</strong></li>
-<li>Click <strong>Done</strong> twice</li>
+<p>Create a rule on iCloud to route all incoming mail to the Processing folder:</p>
+<ol>
+    <li>Go to <a href="https://www.icloud.com/mail" target="_blank">icloud.com/mail</a></li>
+    <li>Settings gear → <strong>Rules</strong> → <strong>Add a Rule</strong></li>
+    <li>If a message → <strong>is addressed to</strong> → leave address empty</li>
+    <li>Then → <strong>Move to Folder</strong> → <strong>New Folder…</strong> → enter <strong>Processing</strong></li>
+    <li>Click <strong>Done</strong> twice</li>
 </ol>
 
 <h3>2. App-Specific Password</h3>
-<p class="muted">Generate at <a href="https://appleid.apple.com" target="_blank">appleid.apple.com</a> → Sign-In &amp; Security → App-Specific Passwords.</p>
+<p>Generate at <a href="https://appleid.apple.com" target="_blank">appleid.apple.com</a> → Sign-In &amp; Security → App-Specific Passwords.</p>
 
 <h3>3. Start the App</h3>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">go run ./cmd/mailflow/ -data=./data</code></pre></div>
+<pre><code class="language-bash">go run ./cmd/mailflow/ -data=./data</code></pre>
 <p>Open <code>http://{{.Host}}/setup</code> → configure admin password + iCloud email + app password.</p>
 
 <h3>4. Docker</h3>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">docker compose up -d
-docker compose restart  # after setup → IMAP reconnects</code></pre></div>
-</div>
+<pre><code class="language-bash">docker compose up -d
+docker compose restart  # after setup → IMAP reconnects</code></pre>
 
-<div class="card" id="how-it-works">
-<h2>How It Works</h2>
-    <pre><code>Incoming mail → iCloud Rule → "Processing" folder → Mailflow poller → Match rules → Execute actions</code></pre>
-<ol style="margin-left:2em">
-<li>iCloud rule moves all incoming mail to the Processing folder</li>
-<li>Mailflow polls Processing every 300s (configurable, default 50 messages/poll)</li>
-<li>Each message is checked against your rules in priority order (lowest first)</li>
-<li>First matching rule's actions execute — if none match, the catch-all handles it</li>
-<li>Contacts are auto-collected from message headers (From, To, Cc)</li>
+<h2 id="how-it-works">How It Works</h2>
+<pre><code>Incoming mail → iCloud Rule → "Processing" folder → Mailflow poller → Match rules → Execute actions</code></pre>
+<ol>
+    <li>iCloud rule moves all incoming mail to the Processing folder</li>
+    <li>Mailflow polls Processing every 300s (configurable, default 50 messages/poll)</li>
+    <li>Each message is checked against your rules in priority order (lowest first)</li>
+    <li>First matching rule's actions execute — if none match, the catch-all handles it</li>
+    <li>Contacts are auto-collected from message headers (From, To, Cc)</li>
 </ol>
-</div>
 
-<div class="card" id="rules">
-<h2>Rules &amp; Conditions</h2>
-<p class="muted">Rules are checked in priority order — lowest number runs first. Reorder via drag &amp; drop.</p>
+<h2 id="rules">Rules &amp; Conditions</h2>
+<p>Rules are checked in priority order — lowest number runs first. Reorder via drag &amp; drop.</p>
 
 <h3>Condition Fields</h3>
 <table>
-<tr><th>Field</th><th>Matches</th><th>Example</th></tr>
-<tr><td><code>from</code></td><td>Sender email</td><td><code>equals alice@example.com</code></td></tr>
-<tr><td><code>to</code></td><td>Recipient email</td><td><code>contains @work.com</code></td></tr>
-<tr><td><code>cc</code></td><td>CC email</td><td><code>contains @team.com</code></td></tr>
-<tr><td><code>subject</code></td><td>Message subject</td><td><code>starts_with Re:</code></td></tr>
-<tr><td><code>has_attachment</code></td><td>Has attachment</td><td><code>exists</code> / <code>not_exists</code></td></tr>
+    <tr><th>Field</th><th>Matches</th><th>Example</th></tr>
+    <tr><td><code>from</code></td><td>Sender email</td><td><code>equals alice@example.com</code></td></tr>
+    <tr><td><code>to</code></td><td>Recipient email</td><td><code>contains @work.com</code></td></tr>
+    <tr><td><code>cc</code></td><td>CC email</td><td><code>contains @team.com</code></td></tr>
+    <tr><td><code>subject</code></td><td>Message subject</td><td><code>starts_with Re:</code></td></tr>
+    <tr><td><code>has_attachment</code></td><td>Has attachment</td><td><code>exists</code> / <code>not_exists</code></td></tr>
 </table>
 
 <h3>Operators</h3>
 <p><code>equals</code> · <code>not_equals</code> · <code>contains</code> · <code>not_contains</code> · <code>starts_with</code> · <code>ends_with</code> · <code>matches_regex</code> · <code>exists</code> · <code>not_exists</code></p>
 
 <h3>Match Logic</h3>
-<ul style="margin-left:1.5em">
-<li><strong>ANY</strong> (OR): Rule fires if any ONE condition is true — <em>default for new rules</em></li>
-<li><strong>ALL</strong> (AND): Rule fires only if <em>every</em> condition matches</li>
+<ul>
+    <li><strong>ANY</strong> (OR): Rule fires if any ONE condition is true — <em>default for new rules</em></li>
+    <li><strong>ALL</strong> (AND): Rule fires only if <em>every</em> condition matches</li>
 </ul>
-</div>
 
-<div class="card" id="actions">
-<h2>Actions</h2>
+<h2 id="actions">Actions</h2>
 <table>
-<tr><th>Action</th><th>What it does</th><th>Value</th></tr>
-<tr><td><code>move_to_folder</code></td><td>Move message to folder</td><td>Folder name</td></tr>
-<tr><td><code>mark_as_read</code></td><td>Set \Seen on message</td><td>None</td></tr>
-<tr><td><code>mark_as_unread</code></td><td>Remove \Seen</td><td>None</td></tr>
-<tr><td><code>set_flag</code></td><td>Set IMAP flag</td><td>e.g. <code>\Flagged</code>, <code>$Junk</code></td></tr>
+    <tr><th>Action</th><th>What it does</th><th>Value</th></tr>
+    <tr><td><code>move_to_folder</code></td><td>Move message to folder</td><td>Folder name</td></tr>
+    <tr><td><code>mark_as_read</code></td><td>Set \Seen on message</td><td>None</td></tr>
+    <tr><td><code>mark_as_unread</code></td><td>Remove \Seen</td><td>None</td></tr>
+    <tr><td><code>set_flag</code></td><td>Set IMAP flag</td><td>e.g. <code>\Flagged</code>, <code>$Junk</code></td></tr>
 </table>
-<p style="color:var(--muted);font-size:0.85rem">Multiple actions execute in declaration order. Moves run first so flags apply in the destination folder.</p>
-</div>
+<p>Multiple actions execute in declaration order. Moves run first so flags apply in the destination folder.</p>
 
-<div class="card" id="contacts">
-<h2>Contacts</h2>
-<p class="muted">Collected automatically from processed messages. Seed from all folders via Dashboard.</p>
-<ul style="margin-left:1.5em">
-<li><strong>Seed Contacts</strong> — Bulk import across all IMAP folders (newest 200 each)</li>
-<li><strong>iCloud Contacts</strong> — Import address book via CardDAV (Settings)</li>
-<li><strong>Autocomplete</strong> — Contacts suggest in rule condition value inputs</li>
-<li><strong>Count</strong> — Shown on Dashboard and Settings → Server</li>
+<h2 id="contacts">Contacts</h2>
+<p>Collected automatically from processed messages. Seed from all folders via Dashboard.</p>
+<ul>
+    <li><strong>Seed Contacts</strong> — Bulk import across all IMAP folders (newest 200 each)</li>
+    <li><strong>iCloud Contacts</strong> — Import address book via CardDAV (Settings)</li>
+    <li><strong>Autocomplete</strong> — Contacts suggest in rule condition value inputs</li>
+    <li><strong>Count</strong> — Shown on Dashboard and Settings → Server</li>
 </ul>
-</div>
 
-<div class="card" id="activity">
-<h2>Activity Log</h2>
-<p class="muted">Every rule match and action execution is logged. View at <code>/activity</code>.</p>
-<ul style="margin-left:1.5em">
-<li>Shows timestamp, subject, sender, rule, action, and status</li>
-<li>Timezone-adjustable in Settings → Regional</li>
-<li>Clear logs with "Clear Logs" button</li>
-<li>Auto-cleaned on startup (default 1000 entries, configurable in Settings)</li>
+<h2 id="activity">Activity Log</h2>
+<p>Every rule match and action execution is logged. View at <code>/activity</code>.</p>
+<ul>
+    <li>Shows timestamp, subject, sender, rule, action, and status</li>
+    <li>Timezone-adjustable in Settings → Regional</li>
+    <li>Clear logs with "Clear Logs" button</li>
+    <li>Auto-cleaned on startup (default 1000 entries, configurable in Settings)</li>
 </ul>
-</div>
 
-<div class="card" id="stats">
-<h2>Stats Dashboard</h2>
-<p class="muted">Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, daily volume, weekly volume, messages by folder, and more. Stats are stored independently from the activity log — clearing logs preserves all statistics.</p>
-<ul style="margin-left:1.5em">
-<li><strong>Rule Hits</strong> — How many times each rule matched (bar chart)</li>
-<li><strong>Top Senders</strong> — Most frequent email addresses</li>
-<li><strong>Actions Breakdown</strong> — move_to_folder vs mark_as_read vs set_flag vs mark_as_unread</li>
-<li><strong>Daily Volume</strong> — Messages processed per day over the last 7 days</li>
-<li><strong>Total Processed</strong> — Lifetime count at the top</li>
-</ul>
-<p style="color:var(--muted);margin-top:8px">Also accessible from the footer link on every page.</p>
-</div>
+<h2 id="stats">Stats Dashboard</h2>
+<p>Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, daily/weekly volume, messages by folder, and more. Stats are stored independently from the activity log — clearing logs preserves all statistics.</p>
 
-<div class="card" id="settings">
-<h2>Settings Reference</h2>
+<h2 id="mcp">MCP Server</h2>
+<p>Mailflow exposes a Model Context Protocol (MCP) server so AI agents (Claude Code, OpenCode, Codex) can manage rules, check stats, and trigger polls remotely. Enable it in Settings → MCP Access — you get an API key and ready-to-use config snippets for all platforms.</p>
+<p>The server runs over HTTPS on <code>/mcp</code>. All 12 tools require a Bearer token in the Authorization header.</p>
 <table>
-<tr><th>Section</th><th>Options</th></tr>
-<tr><td>IMAP Connection</td><td>Email, app-specific password, test connection</td></tr>
-<tr><td>Admin Password</td><td>Change password (leave blank to keep current)</td></tr>
-<tr><td>Polling</td><td>Source folder, poll interval, messages per poll, log retention, enable/disable, refresh folders</td></tr>
-<tr><td>Rules</td><td>Export/import rules as JSON</td></tr>
-<tr><td>Backup</td><td>Scheduled rules backup via email — enabled toggle, frequency (daily/weekly/monthly), recipient, Backup Now button</td></tr>
-<tr><td>iCloud Contacts</td><td>Import from iCloud address book (CardDAV)</td></tr>
-<tr><td>MCP Access</td><td>Enable remote access for AI agents (Claude Code, OpenCode, Codex) with API key auth</td></tr>
-<tr><td>Regional</td><td>Timezone, font (System Default / JetBrains Mono)</td></tr>
-<tr><td>Server</td><td>Listen address, contacts, folders, time, uptime, memory, version</td></tr>
+    <tr><th>Tool</th><th>Description</th></tr>
+    <tr><td><code>list_rules</code></td><td>List all filtering rules with conditions and actions</td></tr>
+    <tr><td><code>get_rule</code></td><td>Get a single rule by ID</td></tr>
+    <tr><td><code>create_rule</code></td><td>Create a new filtering rule</td></tr>
+    <tr><td><code>update_rule</code></td><td>Update an existing rule</td></tr>
+    <tr><td><code>delete_rule</code></td><td>Delete a rule by ID</td></tr>
+    <tr><td><code>check_email</code></td><td>Simulate rule matching against an email</td></tr>
+    <tr><td><code>list_activity</code></td><td>List recent processing activity</td></tr>
+    <tr><td><code>get_stats</code></td><td>Get processing statistics</td></tr>
+    <tr><td><code>run_poll</code></td><td>Manually trigger a poll cycle</td></tr>
+    <tr><td><code>backup_rules</code></td><td>Export all rules as JSON</td></tr>
+    <tr><td><code>list_folders</code></td><td>List available IMAP folders</td></tr>
+    <tr><td><code>search_contacts</code></td><td>Search collected contacts</td></tr>
 </table>
+
+<h2 id="settings">Settings Reference</h2>
+<table>
+    <tr><th>Section</th><th>Options</th></tr>
+    <tr><td>IMAP Connection</td><td>Email, app-specific password, test connection</td></tr>
+    <tr><td>Admin Password</td><td>Change password (leave blank to keep current)</td></tr>
+    <tr><td>Polling</td><td>Source folder, poll interval, messages per poll, log retention, enable/disable, refresh folders</td></tr>
+    <tr><td>Rules</td><td>Export/import rules as JSON</td></tr>
+    <tr><td>Backup</td><td>Scheduled rules backup via email — enabled toggle, frequency, recipient, Backup Now button</td></tr>
+    <tr><td>iCloud Contacts</td><td>Import from iCloud address book (CardDAV)</td></tr>
+    <tr><td>MCP Access</td><td>Enable remote access for AI agents (Claude Code, OpenCode, Codex) with API key auth</td></tr>
+    <tr><td>Regional</td><td>Timezone, font (System Default / JetBrains Mono)</td></tr>
+    <tr><td>Server</td><td>Listen address, contacts, folders, time, uptime, memory, version</td></tr>
+</table>
+
+<div class="api-section">
+<h2 id="api">API Reference</h2>
+<p>Base URL: <code>http://{{.Host}}</code>. All endpoints require session cookie from <code>POST /login</code>.</p>
+
+<h3 class="api-group" id="api-auth">Authentication</h3>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /login</h4>
+    <p class="desc">Authenticate. Returns <code>mailflow_session</code> cookie. Rate limited: 5/min/IP.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/login -d "password=YOUR_PASSWORD" -c cookies.txt</code></pre>
 </div>
 
-<h2 id="api" style="margin-top:32px">API Reference</h2>
-<p class="muted">Base URL: <code>http://{{.Host}}</code>. All endpoints require session cookie from <code>POST /login</code>.</p>
+<div class="endpoint">
+    <h4><span class="method-badge method-get">GET</span> GET /logout</h4>
+    <p class="desc">Clear session cookie and redirect to login.</p>
+    <pre><code class="language-bash">curl http://{{.Host}}/logout -b cookies.txt</code></pre>
+</div>
 
-<h3 style="margin-top:24px;color:var(--muted)">Authentication</h3>
+<h3 class="api-group" id="api-polling">Polling</h3>
 
-<div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /login</h3>
-<p class="muted">Authenticate. Returns <code>mailflow_session</code> cookie. Rate limited: 5/min/IP.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/login -d "password=YOUR_PASSWORD" -c cookies.txt</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /poller/tick</h4>
+    <p class="desc">Trigger a manual poll cycle immediately.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/poller/tick -b cookies.txt</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-get">GET</span> GET /logout</h3>
-<p class="muted">Clear session cookie and redirect to login.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl http://{{.Host}}/logout -b cookies.txt</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/poll/toggle</h4>
+    <p class="desc">Enable or disable automatic polling.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/poll/toggle -b cookies.txt</code></pre>
+</div>
 
-<h3 style="margin-top:24px;color:var(--muted)">Polling</h3>
+<h3 class="api-group" id="api-rules">Rules</h3>
 
-<div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /poller/tick</h3>
-<p class="muted">Trigger a manual poll cycle immediately.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/poller/tick -b cookies.txt</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /rules</h4>
+    <p class="desc">Create a new rule. Conditions and actions parsed from form data.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/rules -b cookies.txt \
+  -d "name=My+Rule&enabled=on&cond_field=from&cond_op=contains&cond_value=@work.com&cond_operator=OR&action_type=move_to_folder&action_value=Work"</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/poll/toggle</h3>
-<p class="muted">Enable or disable automatic polling.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/poll/toggle -b cookies.txt</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-put">PUT</span> PUT /rules/{id}</h4>
+    <p class="desc">Update an existing rule. Use <code>_method=PUT</code> in form data.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/1 -b cookies.txt \
+  -d "_method=PUT&name=Updated+Rule&enabled=on"</code></pre>
+</div>
 
-<h3 style="margin-top:24px;color:var(--muted)">Rules</h3>
+<div class="endpoint">
+    <h4><span class="method-badge method-delete">DEL</span> DELETE /rules/{id}</h4>
+    <p class="desc">Delete a rule by ID. Use <code>_method=DELETE</code> in form data.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/1 -b cookies.txt -d "_method=DELETE"</code></pre>
+</div>
 
-<div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /rules</h3>
-<p class="muted">Create a new rule. Conditions and actions parsed from form data.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/rules -b cookies.txt \
-  -d "name=My+Rule&enabled=on&cond_field=from&cond_op=contains&cond_value=@work.com&cond_operator=OR&action_type=move_to_folder&action_value=Work"</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /rules/reorder</h4>
+    <p class="desc">Reorder rules by priority. Submit <code>rule_ids</code> in the desired order.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/reorder -b cookies.txt \
+  -d "rule_ids=3&rule_ids=1&rule_ids=2"</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-put">PUT</span> PUT /rules/{id}</h3>
-<p class="muted">Update an existing rule. Use <code>_method=PUT</code> in form data.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/1 -b cookies.txt \
-  -d "_method=PUT&name=Updated+Rule&enabled=on"</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-get">GET</span> GET /settings/rules/export</h4>
+    <p class="desc">Download all rules as JSON (excludes catch-all).</p>
+    <pre><code class="language-bash">curl http://{{.Host}}/settings/rules/export -b cookies.txt -o rules.json</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-delete">DEL</span> DELETE /rules/{id}</h3>
-<p class="muted">Delete a rule by ID. Use <code>_method=DELETE</code> in form data.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/1 -b cookies.txt -d "_method=DELETE"</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/rules/import</h4>
+    <p class="desc">Import rules from a JSON file.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/rules/import -b cookies.txt \
+  -F "rules_file=@rules.json"</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-post">POST</span> POST /rules/reorder</h3>
-<p class="muted">Reorder rules by priority. Submit <code>rule_ids</code> in the desired order.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/reorder -b cookies.txt \
-  -d "rule_ids=3&rule_ids=1&rule_ids=2"</code></pre></div></div>
+<h3 class="api-group" id="api-settings">Settings</h3>
 
-<div class="card"><h3><span class="method-badge method-get">GET</span> GET /settings/rules/export</h3>
-<p class="muted">Download all rules as JSON (excludes catch-all).</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl http://{{.Host}}/settings/rules/export -b cookies.txt -o rules.json</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/imap</h4>
+    <p class="desc">Save IMAP connection settings.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/imap -b cookies.txt \
+  -d "imap_email=user@icloud.com&imap_password=app-password"</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/rules/import</h3>
-<p class="muted">Import rules from a JSON file.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/rules/import -b cookies.txt \
-  -F "rules_file=@rules.json"</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/imap/test</h4>
+    <p class="desc">Test IMAP credentials without saving. Falls back to stored credentials if fields are empty.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/imap/test -b cookies.txt</code></pre>
+</div>
 
-<h3 style="margin-top:24px;color:var(--muted)">Settings</h3>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/password</h4>
+    <p class="desc">Change admin password. Leave blank to keep current.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/password -b cookies.txt \
+  -d "password=new-password"</code></pre>
+</div>
 
-<div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /settings/imap</h3>
-<p class="muted">Save IMAP connection settings.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/imap -b cookies.txt \
-  -d "imap_email=user@icloud.com&imap_password=app-password"</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/poll</h4>
+    <p class="desc">Save polling settings (source folder, interval, batch size, log retention).</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/poll -b cookies.txt \
+  -d "source_folder=Processing&poll_interval=300&poll_batch=50&log_keep=1000"</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/imap/test</h3>
-<p class="muted">Test IMAP credentials without saving. Falls back to stored credentials if fields are empty.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/imap/test -b cookies.txt</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/timezone</h4>
+    <p class="desc">Set display timezone.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/timezone -b cookies.txt \
+  -d "timezone=Europe/Copenhagen"</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/password</h3>
-<p class="muted">Change admin password. Leave blank to keep current.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/password -b cookies.txt \
-  -d "password=new-password"</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/font</h4>
+    <p class="desc">Set UI font (default or mono).</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/font -b cookies.txt -d "font=mono"</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/poll</h3>
-<p class="muted">Save polling settings (source folder, interval, batch size, log retention).</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/poll -b cookies.txt \
-  -d "source_folder=Processing&poll_interval=300&poll_batch=50&log_keep=1000"</code></pre></div></div>
+<h3 class="api-group" id="api-backup">Backup</h3>
 
-<div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/timezone</h3>
-<p class="muted">Set display timezone.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/timezone -b cookies.txt \
-  -d "timezone=Europe/Copenhagen"</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/backup/save</h4>
+    <p class="desc">Save backup settings (enabled, frequency, recipient).</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/backup/save -b cookies.txt \
+  -d "backup_enabled=true&backup_frequency=weekly&backup_recipient=user@icloud.com"</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/font</h3>
-<p class="muted">Set UI font (default or mono).</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/font -b cookies.txt -d "font=mono"</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/backup/now</h4>
+    <p class="desc">Trigger an immediate rules backup to the configured recipient.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/backup/now -b cookies.txt</code></pre>
+</div>
 
-<h3 style="margin-top:24px;color:var(--muted)">Backup</h3>
+<h3 class="api-group" id="api-contacts">Contacts &amp; Folders</h3>
 
-<div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /settings/backup/save</h3>
-<p class="muted">Save backup settings (enabled, frequency, recipient).</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/backup/save -b cookies.txt \
-  -d "backup_enabled=true&backup_frequency=weekly&backup_recipient=user@icloud.com"</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-get">GET</span> GET /api/contacts?q=&lt;query&gt;</h4>
+    <p class="desc">Search contacts by email or name.</p>
+    <pre><code class="language-bash">curl 'http://{{.Host}}/api/contacts?q=alice' -b cookies.txt</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/backup/now</h3>
-<p class="muted">Trigger an immediate rules backup to the configured recipient.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/backup/now -b cookies.txt</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-get">GET</span> GET /api/folders</h4>
+    <p class="desc">Sync folders from IMAP and return the list.</p>
+    <pre><code class="language-bash">curl http://{{.Host}}/api/folders -b cookies.txt</code></pre>
+</div>
 
-<h3 style="margin-top:24px;color:var(--muted)">Contacts &amp; Folders</h3>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /contacts/seed</h4>
+    <p class="desc">Seed contacts from all synced IMAP folders.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/contacts/seed -b cookies.txt</code></pre>
+</div>
 
-<div class="card" style="margin-top:12px"><h3><span class="method-badge method-get">GET</span> GET /api/contacts?q=&lt;query&gt;</h3>
-<p class="muted">Search contacts by email or name.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl 'http://{{.Host}}/api/contacts?q=alice' -b cookies.txt</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/carddav-import</h4>
+    <p class="desc">Import contacts from iCloud address book (CardDAV).</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/carddav-import -b cookies.txt</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-get">GET</span> GET /api/folders</h3>
-<p class="muted">Sync folders from IMAP and return the list.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl http://{{.Host}}/api/folders -b cookies.txt</code></pre></div></div>
+<h3 class="api-group" id="api-activity">Activity</h3>
 
-<div class="card"><h3><span class="method-badge method-post">POST</span> POST /contacts/seed</h3>
-<p class="muted">Seed contacts from all synced IMAP folders.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/contacts/seed -b cookies.txt</code></pre></div></div>
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /activity/delete</h4>
+    <p class="desc">Clear all activity logs.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/activity/delete -b cookies.txt</code></pre>
+</div>
 
-<div class="card"><h3><span class="method-badge method-post">POST</span> POST /settings/carddav-import</h3>
-<p class="muted">Import contacts from iCloud address book (CardDAV).</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/carddav-import -b cookies.txt</code></pre></div></div>
+<h3 class="api-group" id="api-mcp">MCP Server</h3>
 
-<h3 style="margin-top:24px;color:var(--muted)">Activity</h3>
-
-<div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /activity/delete</h3>
-<p class="muted">Clear all activity logs.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/activity/delete -b cookies.txt</code></pre></div></div>
-
-<h3 style="margin-top:24px;color:var(--muted)">MCP (Model Context Protocol)</h3>
-
-<div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /mcp</h3>
-<p class="muted">MCP JSON-RPC endpoint for AI agent access. All 12 tools documented below. Requires Bearer token authentication (enabled via Settings).</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/mcp \
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /mcp</h4>
+    <p class="desc">MCP JSON-RPC endpoint for AI agent access. Requires Bearer token authentication (enabled via Settings).</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/mcp \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</code></pre></div></div>
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</code></pre>
+</div>
 
-<div class="card"><h3 style="font-size:1rem;margin-bottom:4px">Tools Reference</h3>
-<table>
-<tr><th>Tool</th><th>Parameters</th><th>Description</th></tr>
-<tr><td><code>list_rules</code></td><td>none</td><td>List all filtering rules with conditions and actions</td></tr>
-<tr><td><code>get_rule</code></td><td><code>id</code> (int)</td><td>Get a single rule by ID</td></tr>
-<tr><td><code>create_rule</code></td><td><code>name</code>, <code>conditions_json</code>, <code>actions_json</code>, <code>priority</code></td><td>Create a new filtering rule</td></tr>
-<tr><td><code>update_rule</code></td><td><code>id</code>, <code>name</code>, <code>conditions_json</code>, <code>actions_json</code>, <code>priority</code></td><td>Update an existing rule</td></tr>
-<tr><td><code>delete_rule</code></td><td><code>id</code> (int)</td><td>Delete a rule by ID</td></tr>
-<tr><td><code>check_email</code></td><td><code>from</code>, <code>to</code>, <code>cc</code>, <code>subject</code></td><td>Simulate rule matching against an email</td></tr>
-<tr><td><code>list_activity</code></td><td><code>limit</code> (int, default 50)</td><td>List recent processing activity</td></tr>
-<tr><td><code>get_stats</code></td><td><code>days</code> (int, default 7)</td><td>Get processing statistics</td></tr>
-<tr><td><code>run_poll</code></td><td>none</td><td>Manually trigger a poll cycle</td></tr>
-<tr><td><code>backup_rules</code></td><td>none</td><td>Export all rules as JSON</td></tr>
-<tr><td><code>list_folders</code></td><td>none</td><td>List available IMAP folders</td></tr>
-<tr><td><code>search_contacts</code></td><td><code>q</code> (string)</td><td>Search collected contacts</td></tr>
-</table></div>
-
-<div class="card" style="margin-top:12px"><h3 style="font-size:1rem">Platform Configuration</h3>
-<p class="muted">Copy-paste ready configs. Replace <code>YOUR_API_KEY</code> with the key shown in Settings > MCP Access.</p>
-<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-json">{
+<div class="endpoint">
+    <h4>Platform Configuration</h4>
+    <p class="desc">Copy-paste ready config for OpenCode, Claude Code, or Codex. Replace the key with the one shown in Settings → MCP Access.</p>
+    <pre><code class="language-json">{
   "mcpServers": {
     "mailflow": {
       "url": "http://{{.Host}}/mcp",
@@ -302,6 +348,26 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
     }
   }
 }</code></pre>
-<p class="muted" style="margin-top:8px">Use this JSON in OpenCode, Claude Code, or Codex MCP client settings.</p></div></div>
+</div>
+
+</div>
+
+</main>
+</div>
+
+<script>
+(function() {
+    var observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                document.querySelectorAll('.docs-sidebar nav a').forEach(a => a.classList.remove('active'));
+                var link = document.querySelector('.docs-sidebar nav a[href="#' + e.target.id + '"]');
+                if (link) link.classList.add('active');
+            }
+        });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    document.querySelectorAll('h2[id]').forEach(h => observer.observe(h));
+})();
+</script>
 
 {{end}}
