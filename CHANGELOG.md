@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.1] — Persistent Stats & New Categories
+
+### Added
+- **Persistent stats** — stats now stored in a dedicated `stats` table, independent of the activity log. Clearing activity logs no longer resets statistics.
+- 4 new stat categories: **unmatched messages**, **error/success rates**, **messages by folder** (distribution), **weekly volume**
+- Stats backfill on migration — existing activity log data is populated into the new stats table on first run
+- `StatsRepo.IncrementStat()` for atomic upsert increments (no race conditions)
+
+### Changed
+- Stats page redesigned with 3 new cards: unmatched/error summary row, folder distribution bars, weekly volume table
+- Activity log confirm dialog updated — no longer warns about resetting stats
+- Docs updated with new stats categories and persistence explanation
+
 ## [0.6.0] — MCP Server
 
 ### Added

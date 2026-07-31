@@ -26,14 +26,30 @@ type DailyVolume struct {
 	Count int    `json:"count"`
 }
 
+type FolderCount struct {
+	Folder string `json:"folder"`
+	Count  int    `json:"count"`
+}
+
+type StatusBreakdown struct {
+	Status string `json:"status"`
+	Count  int    `json:"count"`
+}
+
+func (r *StatsRepo) IncrementStat(category, key string) error {
+	_, err := r.DB.Exec(`INSERT INTO stats (category, key, value) VALUES (?, ?, 1)
+		ON CONFLICT(category, key) DO UPDATE SET value = value + 1`, category, key)
+	return err
+}
+
 func (r *StatsRepo) TotalProcessed() (int, error) {
 	var n int
-	err := r.DB.QueryRow(`SELECT COUNT(*) FROM message_log`).Scan(&n)
+	err := r.DB.QueryRow(`SELECT COALESCE((SELECT value FROM stats WHERE category='total' AND key='processed'), 0)`).Scan(&n)
 	return n, err
 }
 
 func (r *StatsRepo) RuleHits() ([]RuleHit, error) {
-	rows, err := r.DB.Query(`SELECT rule_name, COUNT(*) as cnt FROM message_log WHERE rule_name != '' GROUP BY rule_name ORDER BY cnt DESC`)
+	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category='rule_hit' ORDER BY value DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +66,7 @@ func (r *StatsRepo) RuleHits() ([]RuleHit, error) {
 }
 
 func (r *StatsRepo) TopSenders(limit int) ([]TopSender, error) {
-	rows, err := r.DB.Query(`SELECT from_addr, COUNT(*) as cnt FROM message_log WHERE from_addr != '' GROUP BY from_addr ORDER BY cnt DESC LIMIT ?`, limit)
+	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category='sender' ORDER BY value DESC LIMIT ?`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +83,7 @@ func (r *StatsRepo) TopSenders(limit int) ([]TopSender, error) {
 }
 
 func (r *StatsRepo) ActionsBreakdown() ([]ActionBreakdown, error) {
-	rows, err := r.DB.Query(`SELECT action_type, COUNT(*) as cnt FROM message_log WHERE action_type != '' GROUP BY action_type ORDER BY cnt DESC`)
+	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category='action' ORDER BY value DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +100,64 @@ func (r *StatsRepo) ActionsBreakdown() ([]ActionBreakdown, error) {
 }
 
 func (r *StatsRepo) DailyVolume(days int) ([]DailyVolume, error) {
-	rows, err := r.DB.Query(`SELECT date(created_at) as dt, COUNT(*) as cnt FROM message_log WHERE dt != '' GROUP BY dt ORDER BY dt DESC LIMIT ?`, days)
+	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category='daily' ORDER BY key DESC LIMIT ?`, days)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []DailyVolume
+	for rows.Next() {
+		var d DailyVolume
+		if err := rows.Scan(&d.Date, &d.Count); err != nil {
+			return nil, err
+		}
+		out = append(out, d)
+	}
+	return out, rows.Err()
+}
+
+func (r *StatsRepo) UnmatchedCount() (int, error) {
+	var n int
+	err := r.DB.QueryRow(`SELECT COALESCE((SELECT value FROM stats WHERE category='unmatched' AND key='total'), 0)`).Scan(&n)
+	return n, err
+}
+
+func (r *StatsRepo) ErrorBreakdown() ([]StatusBreakdown, error) {
+	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category='status'`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []StatusBreakdown
+	for rows.Next() {
+		var s StatusBreakdown
+		if err := rows.Scan(&s.Status, &s.Count); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
+func (r *StatsRepo) FolderDistribution() ([]FolderCount, error) {
+	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category='folder' ORDER BY value DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []FolderCount
+	for rows.Next() {
+		var f FolderCount
+		if err := rows.Scan(&f.Folder, &f.Count); err != nil {
+			return nil, err
+		}
+		out = append(out, f)
+	}
+	return out, rows.Err()
+}
+
+func (r *StatsRepo) WeeklyVolume(weeks int) ([]DailyVolume, error) {
+	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category='weekly' ORDER BY key DESC LIMIT ?`, weeks)
 	if err != nil {
 		return nil, err
 	}

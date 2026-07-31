@@ -1,23 +1,37 @@
 package db
 
-import "testing"
+import (
+	"testing"
+)
 
-func insertLogEntry(t *testing.T, d *StatsRepo, uid int, fromAddr, ruleName, actionType string) {
+func insertLogEntry(t *testing.T, repo *StatsRepo, uid int, fromAddr, ruleName, actionType string) {
 	t.Helper()
-	_, err := d.DB.Exec(`INSERT INTO message_log (uid, subject, from_addr, rule_name, action_type) VALUES (?, 'test', ?, ?, ?)`,
+	_, err := repo.DB.Exec(`INSERT INTO message_log (uid, subject, from_addr, rule_name, action_type) VALUES (?, 'test', ?, ?, ?)`,
 		uid, fromAddr, ruleName, actionType)
 	if err != nil {
 		t.Fatalf("insert log entry: %v", err)
 	}
+	repo.IncrementStat("total", "processed")
+	if ruleName != "" {
+		repo.IncrementStat("rule_hit", ruleName)
+	}
+	if fromAddr != "" {
+		repo.IncrementStat("sender", fromAddr)
+	}
+	if actionType != "" {
+		repo.IncrementStat("action", actionType)
+	}
 }
 
-func insertLogEntryAt(t *testing.T, d *StatsRepo, uid int, fromAddr, ruleName, actionType, createdAt string) {
+func insertLogEntryAt(t *testing.T, repo *StatsRepo, createdAt string) {
 	t.Helper()
-	_, err := d.DB.Exec(`INSERT INTO message_log (uid, subject, from_addr, rule_name, action_type, created_at) VALUES (?, 'test', ?, ?, ?, ?)`,
-		uid, fromAddr, ruleName, actionType, createdAt)
+	_, err := repo.DB.Exec(`INSERT INTO message_log (uid, subject, created_at) VALUES (1, 'test', ?)`, createdAt)
 	if err != nil {
 		t.Fatalf("insert log entry: %v", err)
 	}
+	repo.IncrementStat("total", "processed")
+	repo.IncrementStat("daily", createdAt[:10])
+	repo.IncrementStat("weekly", "2026-W27")
 }
 
 func TestStatsTotalProcessed(t *testing.T) {
@@ -126,9 +140,9 @@ func TestStatsDailyVolume(t *testing.T) {
 	d := NewTestDB(t)
 	repo := NewStatsRepo(d)
 
-	insertLogEntryAt(t, repo, 1, "a@b.com", "rule1", "move", "2026-07-01 10:00:00")
-	insertLogEntryAt(t, repo, 2, "a@b.com", "rule1", "move", "2026-07-01 11:00:00")
-	insertLogEntryAt(t, repo, 3, "a@b.com", "rule1", "move", "2026-07-02 09:00:00")
+	insertLogEntryAt(t, repo, "2026-07-01 10:00:00")
+	insertLogEntryAt(t, repo, "2026-07-01 11:00:00")
+	insertLogEntryAt(t, repo, "2026-07-02 09:00:00")
 
 	vol, err := repo.DailyVolume(7)
 	if err != nil {

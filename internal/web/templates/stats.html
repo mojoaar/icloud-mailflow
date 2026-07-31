@@ -4,6 +4,16 @@
 <div class="card" style="text-align:center;padding:32px">
     <div style="font-size:2.5rem;font-weight:700;color:var(--accent)">{{.Total}}</div>
     <div style="color:var(--muted);font-size:0.9rem">messages processed</div>
+    {{if or .Unmatched .Errors}}
+    <div style="margin-top:8px;font-size:0.85rem;color:var(--muted)">
+        {{if .Unmatched}}Unmatched: {{.Unmatched}}{{end}}
+        {{if .Errors}}
+            {{range .Errors}}
+                · {{.Status}}: {{.Count}}
+            {{end}}
+        {{end}}
+    </div>
+    {{end}}
 </div>
 
 <div style="display:flex;gap:16px;flex-wrap:wrap">
@@ -46,6 +56,32 @@
 <h2>Daily Volume</h2>
 <table>
 {{range .Daily}}
+<tr><td>{{.Date}}</td><td class="muted">{{.Count}}</td></tr>
+{{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
+{{end}}
+</table>
+</div>
+</div>
+
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
+<div class="card" style="flex:1;min-width:300px">
+<h2>Messages by Folder</h2>
+{{range .Folders}}
+<div style="margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:4px">
+        <span>{{.Folder}}</span><span class="muted">{{.Count}}</span>
+    </div>
+    <div style="background:var(--bg);border-radius:3px;height:6px;overflow:hidden">
+        <div style="background:var(--accent);height:100%;width:{{if $.MaxFolderCount}}{{percent .Count $.MaxFolderCount}}{{else}}0{{end}}%"></div>
+    </div>
+</div>
+{{else}}<p class="muted">No data yet</p>{{end}}
+</div>
+
+<div class="card" style="flex:1;min-width:300px">
+<h2>Weekly Volume</h2>
+<table>
+{{range .Weekly}}
 <tr><td>{{.Date}}</td><td class="muted">{{.Count}}</td></tr>
 {{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
 {{end}}

@@ -7,7 +7,7 @@
 </button>
 {{if .Entries}}
 <button class="btn btn-danger" hx-post="/activity/delete" hx-target="body" hx-swap="none"
-    hx-confirm="Clear all activity logs? This will also reset your stats. Are you sure?">
+    hx-confirm="Clear all activity logs? Stats are stored separately and won't be affected.">
     <i data-lucide="trash-2" data-size="14"></i> Clear Logs
 </button>
 {{end}}

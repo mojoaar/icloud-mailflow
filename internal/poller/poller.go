@@ -22,6 +22,7 @@ type Poller struct {
 	collector    *contacts.Collector
 	logRepo      *db.LogRepo
 	settingsRepo *db.SettingsRepo
+	statsRepo    *db.StatsRepo
 	cfg          *config.Config
 	imapEmail    string
 	interval     time.Duration
@@ -34,13 +35,14 @@ type Poller struct {
 	processing   atomic.Bool
 }
 
-func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, settingsRepo *db.SettingsRepo, cfg *config.Config, batchSize int, intervalSec int, source string) *Poller {
+func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, settingsRepo *db.SettingsRepo, statsRepo *db.StatsRepo, cfg *config.Config, batchSize int, intervalSec int, source string) *Poller {
 	return &Poller{
 		imapClient:   imapClient,
 		rulesRepo:    rulesRepo,
 		collector:    collector,
 		logRepo:      logRepo,
 		settingsRepo: settingsRepo,
+		statsRepo:    statsRepo,
 		cfg:          cfg,
 		batchSize:    batchSize,
 		interval:     time.Duration(intervalSec) * time.Second,
@@ -162,6 +164,9 @@ func (p *Poller) process() error {
 					highestSkipped = u + 1
 				}
 				slog.Debug("no rule matched, skipping", "uid", uid)
+			if p.statsRepo != nil {
+				p.statsRepo.IncrementStat("unmatched", "total")
+			}
 			}
 		}
 	}
@@ -178,6 +183,8 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 		subject = msg.Subject
 	}
 
+	messageStatsDone := false
+
 	logAction := func(actionUID uint32, action db.Action, status string) {
 		if p.logRepo != nil {
 			p.logRepo.Insert(&db.LogEntry{
@@ -189,6 +196,25 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 				ActionValue: action.Value,
 				Status:      status,
 			})
+		}
+		if p.statsRepo != nil {
+			if !messageStatsDone {
+				p.statsRepo.IncrementStat("total", "processed")
+				p.statsRepo.IncrementStat("rule_hit", rule.Name)
+				if from != "" {
+					p.statsRepo.IncrementStat("sender", from)
+				}
+				now := time.Now()
+				p.statsRepo.IncrementStat("daily", now.Format("2006-01-02"))
+				year, week := now.ISOWeek()
+				p.statsRepo.IncrementStat("weekly", fmt.Sprintf("%d-W%02d", year, week))
+				messageStatsDone = true
+			}
+			p.statsRepo.IncrementStat("action", action.Type)
+			p.statsRepo.IncrementStat("status", status)
+			if action.Type == "move_to_folder" && action.Value != "" {
+				p.statsRepo.IncrementStat("folder", action.Value)
+			}
 		}
 	}
 

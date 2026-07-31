@@ -65,6 +65,12 @@ var migrations = []string{
 		action_value TEXT NOT NULL DEFAULT '',
 		status TEXT NOT NULL DEFAULT 'success'
 	)`,
+	`CREATE TABLE IF NOT EXISTS stats (
+		category TEXT NOT NULL,
+		key TEXT NOT NULL,
+		value INTEGER NOT NULL DEFAULT 0,
+		PRIMARY KEY (category, key)
+	)`,
 	`CREATE INDEX IF NOT EXISTS idx_condition_groups_rule_id ON condition_groups(rule_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_conditions_group_id ON conditions(group_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_actions_rule_id ON actions(rule_id)`,
@@ -74,6 +80,38 @@ func Migrate(d *sql.DB) error {
 	for _, m := range migrations {
 		if _, err := d.Exec(m); err != nil {
 			return err
+		}
+	}
+	return backfillStats(d)
+}
+
+func backfillStats(d *sql.DB) error {
+	var count int
+	if err := d.QueryRow("SELECT COUNT(*) FROM stats").Scan(&count); err != nil {
+		return nil
+	}
+	if count > 0 {
+		return nil
+	}
+
+	var logCount int
+	if err := d.QueryRow("SELECT COUNT(*) FROM message_log").Scan(&logCount); err != nil || logCount == 0 {
+		return nil
+	}
+
+	queries := []string{
+		`INSERT OR IGNORE INTO stats (category, key, value) SELECT 'total', 'processed', COUNT(*) FROM message_log`,
+		`INSERT OR IGNORE INTO stats (category, key, value) SELECT 'rule_hit', rule_name, COUNT(*) FROM message_log WHERE rule_name != '' GROUP BY rule_name`,
+		`INSERT OR IGNORE INTO stats (category, key, value) SELECT 'sender', from_addr, COUNT(*) FROM message_log WHERE from_addr != '' GROUP BY from_addr`,
+		`INSERT OR IGNORE INTO stats (category, key, value) SELECT 'action', action_type, COUNT(*) FROM message_log WHERE action_type != '' GROUP BY action_type`,
+		`INSERT OR IGNORE INTO stats (category, key, value) SELECT 'status', status, COUNT(*) FROM message_log GROUP BY status`,
+		`INSERT OR IGNORE INTO stats (category, key, value) SELECT 'folder', action_value, COUNT(*) FROM message_log WHERE action_type='move_to_folder' AND action_value!='' GROUP BY action_value`,
+		`INSERT OR IGNORE INTO stats (category, key, value) SELECT 'daily', date(created_at), COUNT(*) FROM message_log GROUP BY date(created_at)`,
+		`INSERT OR IGNORE INTO stats (category, key, value) SELECT 'weekly', strftime('%G-W%V', created_at), COUNT(*) FROM message_log WHERE created_at != '' GROUP BY strftime('%G-W%V', created_at)`,
+	}
+	for _, q := range queries {
+		if _, err := d.Exec(q); err != nil {
+			return nil
 		}
 	}
 	return nil
