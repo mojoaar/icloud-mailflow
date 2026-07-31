@@ -17,6 +17,7 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/contacts"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
+	"github.com/mojoaar/icloud-mailflow/internal/mcp"
 	"github.com/mojoaar/icloud-mailflow/internal/poller"
 )
 
@@ -53,6 +54,11 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 			next.ServeHTTP(w, r)
 		})
 	})
+
+	mcpServer := mcp.New(d, imapClient, p, version)
+	mcpHandler := mcp.NewAuthMiddleware(mcpServer, settingsRepo)
+	r.Handle("/mcp", mcpHandler)
+	r.Handle("/mcp/*", mcpHandler)
 
 	subFS, _ := fs.Sub(staticFS, "static")
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(subFS))))
@@ -98,6 +104,8 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/settings/font", settingsSaveFont(settingsRepo))
 	r.Post("/settings/backup/save", settingsSaveBackup(settingsRepo))
 	r.Post("/settings/backup/now", settingsBackupNow(p))
+	r.Post("/settings/mcp/toggle", settingsMcpToggle(settingsRepo))
+	r.Post("/settings/mcp/regenerate", settingsMcpRegenerate(settingsRepo))
 
 	r.Get("/api/contacts", contactsSearchHandler(db.NewContactsRepo(d)))
 	r.Get("/api/folders", foldersListHandler(imapClient, foldersRepo))

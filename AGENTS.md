@@ -37,6 +37,7 @@ docker compose up -d
 - `internal/config/` - JSON config file
 - `internal/db/` - SQLite + migrations + repos
 - `internal/imap/` - IMAP client (go-imap v2), Message types
+- `internal/mcp/` - MCP server (go-mcp) with 12 tools, API key auth middleware
 - `internal/rules/` - rule evaluation engine
 - `internal/contacts/` - email contact collector
 - `internal/carddav/` - iCloud CardDAV contacts importer

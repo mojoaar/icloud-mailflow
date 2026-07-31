@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.0] — MCP Server
+
+### Added
+- **MCP (Model Context Protocol) server** — remote access for AI agents (Claude Code, OpenCode, Codex) with 12 tools
+- `internal/mcp/` package — `New(*sql.DB, imap.Client, *poller.Poller) *StreamableHTTPServer` with Bearer token auth middleware
+- MCP Access settings card with enable/disable toggle, API key generation/regeneration, copy button, and platform config snippets
+- 12 MCP tools: `list_rules`, `get_rule`, `create_rule`, `update_rule`, `delete_rule`, `check_email`, `list_activity`, `get_stats`, `run_poll`, `backup_rules`, `list_folders`, `search_contacts`
+- MCP endpoint docs in the built-in documentation page (Settings Reference + API Reference + tools table + platform config)
+- Dependency: `github.com/mark3labs/mcp-go@v0.57.0`
+
 ## [0.5.1] — Rules Backup & Activity Refresh
 
 ### Added

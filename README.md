@@ -23,6 +23,7 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **Test Connection** — verify IMAP credentials before saving
 - **Configurable Polling** — adjustable batch size, interval, and on/off toggle
 - **Log Retention** — configure how many activity entries to keep
+- **MCP Server** — remote access for AI agents (Claude Code, OpenCode, Codex) with 12 tools and API key auth
 - **Server Metrics** — uptime, memory, and server time in Settings
 
 ### Security
@@ -165,6 +166,7 @@ internal/
   rules/          — rule evaluation engine
   contacts/       — contact collector from email headers
   carddav/        — iCloud CardDAV contacts importer
+  mcp/            — MCP server for AI agent access (12 tools)
   poller/         — periodic email polling
   smtp/           — SMTP MIME multipart email sender
   web/            — chi router, auth, handlers, templates
@@ -185,6 +187,7 @@ Using the iCloud web mail client (mail.icloud.com) while Mailflow is polling may
 | Library | Use | License |
 | ------- | --- | ------- |
 | [go-imap v2](https://github.com/emersion/go-imap) | IMAP client | MIT |
+| [mcp-go](https://github.com/mark3labs/mcp-go) | MCP server framework | MIT |
 | [go-webdav](https://github.com/emersion/go-webdav) | CardDAV client | MIT |
 | [go-vcard](https://github.com/emersion/go-vcard) | vCard parsing | MIT |
 | [chi v5](https://github.com/go-chi/chi) | HTTP router | MIT |

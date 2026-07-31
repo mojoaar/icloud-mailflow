@@ -135,6 +135,83 @@
 </div>
 
 <div class="card">
+    <h2>MCP Access</h2>
+    <p style="color:var(--muted);margin-bottom:12px">Enable Model Context Protocol access so AI agents (Claude Code, OpenCode, Codex) can manage your rules and check mailflow status.</p>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+        <form method="POST" action="/settings/mcp/toggle" style="margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <button type="submit" class="btn {{if .MCPEnabled}}btn-danger{{else}}btn-primary{{end}}">
+                {{if .MCPEnabled}}Disable MCP{{else}}Enable MCP{{end}}
+            </button>
+        </form>
+        <span style="color:var(--muted);font-size:0.85rem">
+            Status: {{if .MCPEnabled}}<span style="color:#22c55e">Enabled</span>{{else}}<span style="color:var(--muted)">Disabled</span>{{end}}
+        </span>
+    </div>
+    {{if .MCPEnabled}}
+    <div class="form-group">
+        <label>API Key</label>
+        <div style="display:flex;gap:8px;align-items:center">
+            <code style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-size:0.8rem;word-break:break-all;flex:1">{{.MCPAPIKey}}</code>
+            <button type="button" class="btn" onclick="navigator.clipboard.writeText('{{.MCPAPIKey}}')" style="white-space:nowrap">Copy</button>
+            <form method="POST" action="/settings/mcp/regenerate" style="margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <button type="submit" class="btn" style="white-space:nowrap">Regenerate</button>
+            </form>
+        </div>
+    </div>
+    <div class="form-group">
+        <label>Endpoint</label>
+        <code style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-size:0.8rem;display:block">{{.MCPURL}}</code>
+    </div>
+    <div class="form-group" style="margin-top:16px">
+        <label style="margin-bottom:8px">Platform Config</label>
+        <div style="display:flex;gap:4px;margin-bottom:8px">
+            <button type="button" class="btn" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-opencode').style.display='block'">OpenCode</button>
+            <button type="button" class="btn" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-claude').style.display='block'">Claude Code</button>
+            <button type="button" class="btn" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-codex').style.display='block'">Codex</button>
+        </div>
+        <div id="mcp-opencode" class="mcp-config-snippet" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
+            <pre style="margin:0;font-size:0.8rem"><code>{
+  "mcpServers": {
+    "mailflow": {
+      "url": "{{.MCPURL}}",
+      "headers": {
+        "Authorization": "Bearer {{.MCPAPIKey}}"
+      }
+    }
+  }
+}</code></pre>
+        </div>
+        <div id="mcp-claude" class="mcp-config-snippet" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
+            <pre style="margin:0;font-size:0.8rem"><code>{
+  "mcpServers": {
+    "mailflow": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-server-remote"],
+      "env": {
+        "MCP_URL": "{{.MCPURL}}",
+        "MCP_AUTH_HEADER": "Bearer {{.MCPAPIKey}}"
+      }
+    }
+  }
+}</code></pre>
+        </div>
+        <div id="mcp-codex" class="mcp-config-snippet" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
+            <pre style="margin:0;font-size:0.8rem"><code>{
+  "mcpServers": {
+    "mailflow": {
+      "url": "{{.MCPURL}}",
+      "headers": {
+        "Authorization": "Bearer {{.MCPAPIKey}}"
+      }
+    }
+  }
+}</code></pre>
+        </div>
+    </div>
+    {{end}}
+</div>
+
+<div class="card">
     <h2>Regional</h2>
     <form method="POST" action="/settings/timezone"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">

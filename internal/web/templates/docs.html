@@ -140,6 +140,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
 <tr><td>Rules</td><td>Export/import rules as JSON</td></tr>
 <tr><td>Backup</td><td>Scheduled rules backup via email — enabled toggle, frequency (daily/weekly/monthly), recipient, Backup Now button</td></tr>
 <tr><td>iCloud Contacts</td><td>Import from iCloud address book (CardDAV)</td></tr>
+<tr><td>MCP Access</td><td>Enable remote access for AI agents (Claude Code, OpenCode, Codex) with API key auth</td></tr>
 <tr><td>Regional</td><td>Timezone, font (System Default / JetBrains Mono)</td></tr>
 <tr><td>Server</td><td>Listen address, contacts, folders, time, uptime, memory, version</td></tr>
 </table>
@@ -262,5 +263,45 @@ docker compose restart  # after setup → IMAP reconnects</code></pre></div>
 <div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /activity/delete</h3>
 <p class="muted">Clear all activity logs.</p>
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/activity/delete -b cookies.txt</code></pre></div></div>
+
+<h3 style="margin-top:24px;color:var(--muted)">MCP (Model Context Protocol)</h3>
+
+<div class="card" style="margin-top:12px"><h3><span class="method-badge method-post">POST</span> POST /mcp</h3>
+<p class="muted">MCP JSON-RPC endpoint for AI agent access. All 12 tools documented below. Requires Bearer token authentication (enabled via Settings).</p>
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-bash">curl -X POST http://{{.Host}}/mcp \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</code></pre></div></div>
+
+<div class="card"><h3 style="font-size:1rem;margin-bottom:4px">Tools Reference</h3>
+<table>
+<tr><th>Tool</th><th>Parameters</th><th>Description</th></tr>
+<tr><td><code>list_rules</code></td><td>none</td><td>List all filtering rules with conditions and actions</td></tr>
+<tr><td><code>get_rule</code></td><td><code>id</code> (int)</td><td>Get a single rule by ID</td></tr>
+<tr><td><code>create_rule</code></td><td><code>name</code>, <code>conditions_json</code>, <code>actions_json</code>, <code>priority</code></td><td>Create a new filtering rule</td></tr>
+<tr><td><code>update_rule</code></td><td><code>id</code>, <code>name</code>, <code>conditions_json</code>, <code>actions_json</code>, <code>priority</code></td><td>Update an existing rule</td></tr>
+<tr><td><code>delete_rule</code></td><td><code>id</code> (int)</td><td>Delete a rule by ID</td></tr>
+<tr><td><code>check_email</code></td><td><code>from</code>, <code>to</code>, <code>cc</code>, <code>subject</code></td><td>Simulate rule matching against an email</td></tr>
+<tr><td><code>list_activity</code></td><td><code>limit</code> (int, default 50)</td><td>List recent processing activity</td></tr>
+<tr><td><code>get_stats</code></td><td><code>days</code> (int, default 7)</td><td>Get processing statistics</td></tr>
+<tr><td><code>run_poll</code></td><td>none</td><td>Manually trigger a poll cycle</td></tr>
+<tr><td><code>backup_rules</code></td><td>none</td><td>Export all rules as JSON</td></tr>
+<tr><td><code>list_folders</code></td><td>none</td><td>List available IMAP folders</td></tr>
+<tr><td><code>search_contacts</code></td><td><code>q</code> (string)</td><td>Search collected contacts</td></tr>
+</table></div>
+
+<div class="card" style="margin-top:12px"><h3 style="font-size:1rem">Platform Configuration</h3>
+<p class="muted">Copy-paste ready configs. Replace <code>YOUR_API_KEY</code> with the key shown in Settings > MCP Access.</p>
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px"><pre><code class="language-json">{
+  "mcpServers": {
+    "mailflow": {
+      "url": "http://{{.Host}}/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}</code></pre>
+<p class="muted" style="margin-top:8px">Use this JSON in OpenCode, Claude Code, or Codex MCP client settings.</p></div></div>
 
 {{end}}

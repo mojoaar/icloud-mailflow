@@ -1,6 +1,7 @@
 package web
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
@@ -106,6 +107,8 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 				lastBackup = t.Format("2006-01-02 15:04:05")
 			}
 		}
+		mcpEnabled, _ := settingsRepo.Get("mcp_enabled")
+		mcpAPIKey, _ := settingsRepo.Get("mcp_api_key")
 		data := map[string]any{
 			"Folders":      folders,
 			"IMAPEmail":    imapEmail,
@@ -127,6 +130,9 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"BackupFrequency": backupFrequency,
 			"BackupRecipient": backupRecipient,
 			"LastBackup":     lastBackup,
+			"MCPEnabled":     mcpEnabled == "true",
+			"MCPAPIKey":      mcpAPIKey,
+			"MCPURL":         "http://" + r.Host + "/mcp",
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}
@@ -458,6 +464,30 @@ func settingsSaveBackup(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 			settingsRepo.Set("backup_frequency", freq)
 		}
 		settingsRepo.Set("backup_recipient", r.FormValue("backup_recipient"))
+		http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	}
+}
+
+func settingsMcpToggle(settingsRepo *db.SettingsRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		enabled, _ := settingsRepo.Get("mcp_enabled")
+		if enabled != "true" {
+			key := make([]byte, 32)
+			rand.Read(key)
+			settingsRepo.Set("mcp_api_key", hex.EncodeToString(key))
+			settingsRepo.Set("mcp_enabled", "true")
+		} else {
+			settingsRepo.Set("mcp_enabled", "false")
+		}
+		http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	}
+}
+
+func settingsMcpRegenerate(settingsRepo *db.SettingsRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		key := make([]byte, 32)
+		rand.Read(key)
+		settingsRepo.Set("mcp_api_key", hex.EncodeToString(key))
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
 }
