@@ -49,7 +49,7 @@
         <tr>
             <td style="white-space:nowrap;font-size:0.8rem;color:var(--muted)">{{.CreatedAt}}</td>
             <td>{{.Subject}}</td>
-            <td>{{.FromAddr}}</td>
+            <td title="{{.FromAddr}}">{{.FromAddr}}</td>
             <td>{{.RuleName}}</td>
             <td>{{.ActionType}}{{if .ActionValue}} → {{.ActionValue}}{{end}}</td>
             <td>{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>

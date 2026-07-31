@@ -51,7 +51,6 @@ body {
     transition:background 0.15s,color 0.15s;
 }
 .docs-sidebar nav a:hover { background:var(--border); color:var(--text); }
-.docs-sidebar nav a.active { color:var(--accent); font-weight:600; }
 .docs-sidebar hr { border:none; border-top:1px solid var(--border); margin:12px 0; }
 
 .docs-content { flex:1; padding:32px 48px; max-width:900px; }
@@ -484,22 +483,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 <script src="/static/highlight.min.js"></script>
 <script>
 hljs.highlightAll();
-(function(){
-    var observer = new IntersectionObserver(function(entries) {
-        var best = null;
-        entries.forEach(function(e) {
-            if (e.isIntersecting && (!best || e.target.offsetTop < best.target.offsetTop)) {
-                best = e;
-            }
-        });
-        if (best) {
-            document.querySelectorAll('.docs-sidebar nav a').forEach(function(a) { a.classList.remove('active'); });
-            var link = document.querySelector('.docs-sidebar nav a[href="#' + best.target.id + '"]');
-            if (link) link.classList.add('active');
-        }
-    }, { rootMargin: '-20% 0px -70% 0px' });
-    document.querySelectorAll('h2[id], h3[id]').forEach(function(h) { observer.observe(h); });
-})();
+
 </script>
 <footer style="text-align:center;padding:24px 0;font-size:0.8rem;color:var(--muted);margin-top:48px;border-top:1px solid var(--border)">
     iCloud Mailflow · <a href="/" style="color:var(--accent)">Back to Dashboard</a> · v{{.Version}}
