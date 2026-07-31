@@ -10,7 +10,7 @@ func statsHandler(repo *db.StatsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		total, _ := repo.TotalProcessed()
 		rules, _ := repo.RuleHits()
-		senders, _ := repo.TopSenders(10)
+		senders, _ := repo.TopSenders(15)
 		actions, _ := repo.ActionsBreakdown()
 		daily, _ := repo.DailyVolume(7)
 		errors, _ := repo.ErrorBreakdown()

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Top senders increased from 10 to 15 on stats page and MCP `get_stats`
+
 ## [0.7.4] - 2026-07-31
 
 ### Added

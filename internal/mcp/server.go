@@ -201,7 +201,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		}
 		total, _ := statsRepo.TotalProcessed()
 		hits, _ := statsRepo.RuleHits()
-		senders, _ := statsRepo.TopSenders(10)
+		senders, _ := statsRepo.TopSenders(15)
 		breakdown, _ := statsRepo.ActionsBreakdown()
 		volume, _ := statsRepo.DailyVolume(days)
 		return resultJSON(map[string]any{
