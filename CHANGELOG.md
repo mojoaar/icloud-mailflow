@@ -1,6 +1,13 @@
 # Changelog
 
-## [0.6.1] — Persistent Stats & New Categories
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.6.1] - 2026-07-31
 
 ### Added
 - **Persistent stats** — stats now stored in a dedicated `stats` table, independent of the activity log. Clearing activity logs no longer resets statistics.
@@ -13,7 +20,7 @@
 - Activity log confirm dialog updated — no longer warns about resetting stats
 - Docs updated with new stats categories and persistence explanation
 
-## [0.6.0] — MCP Server
+## [0.6.0] - 2026-07-31
 
 ### Added
 - **MCP (Model Context Protocol) server** — remote access for AI agents (Claude Code, OpenCode, Codex) with 12 tools
@@ -23,7 +30,7 @@
 - MCP endpoint docs in the built-in documentation page (Settings Reference + API Reference + tools table + platform config)
 - Dependency: `github.com/mark3labs/mcp-go@v0.57.0`
 
-## [0.5.1] — Rules Backup & Activity Refresh
+## [0.5.1] - 2026-07-31
 
 ### Added
 - **Activity page refresh button** — reloads activity content via HTMX without a full page reload
@@ -40,24 +47,12 @@
 ### Fixed
 - **Unmatched message pipeline deadlock** — unmatched messages no longer block subsequent messages with matching rules. Poller now uses `UID >= N` search range to skip past already-seen unmatched messages instead of bailing early.
 
-## [0.5.0] — Skip-list + DEBUG Logging
-
-### Fixed
-- **Skip-list for unmatched messages** — when a message has no matching rule, it's added to a skip list and filtered from subsequent search results. Other messages in the folder continue processing instead of being blocked.
-- **Single-pass action execution** — `mark_as_read` now executes BEFORE `move_to_folder` in declared order. iCloud requires `\Seen` flag before allowing MOVE operations.
-- **Poll loop** — calls `SearchMessages(source, 1)` repeatedly until folder is empty or batch limit reached. iCloud caps all IMAP queries to ~1 result per call.
-- **iCloud IMAP constraints** documented in AGENTS.md — `\Seen` before MOVE, no `STORE \Deleted`, query result caps, UIDSearch seen/unseen behavior.
+## [0.5.0] - 2026-07-30
 
 ### Added
 - `LOG_LEVEL=debug` environment variable for verbose logging in Docker
 - `slog.Debug` traces for every condition evaluation, poller state, rule matching
 - Client-side search filter for rules list
-
-### Performance
-- Foreign keys enabled on SQLite — `ON DELETE CASCADE` now works
-- 3 database indexes added (`condition_groups.rule_id`, `conditions.group_id`, `actions.rule_id`)
-- Poller mutex replaced with atomic counter — `LastTick()` no longer blocks
-- Regex compiled once on load instead of per-evaluation
 
 ### Changed
 - ~50 inline styles consolidated into 5 CSS utility classes
@@ -65,18 +60,40 @@
 - Screenshots added to README
 - HTMX 1.9.10→2.0.10, highlight.js 11.9.0→11.11.2
 - 21 new tests — coverage `db` 60%→73%, `web` 27%→45%
+- Foreign keys enabled on SQLite — `ON DELETE CASCADE` now works
+- 3 database indexes added (`condition_groups.rule_id`, `conditions.group_id`, `actions.rule_id`)
+- Poller mutex replaced with atomic counter — `LastTick()` no longer blocks
+- Regex compiled once on load instead of per-evaluation
 
-## [0.4.4] — iCloud IMAP Fixes (superseded by 0.5.0)
+### Fixed
+- **Skip-list for unmatched messages** — when a message has no matching rule, it's added to a skip list and filtered from subsequent search results. Other messages in the folder continue processing instead of being blocked.
+- **Single-pass action execution** — `mark_as_read` now executes BEFORE `move_to_folder` in declared order. iCloud requires `\Seen` flag before allowing MOVE operations.
+- **Poll loop** — calls `SearchMessages(source, 1)` repeatedly until folder is empty or batch limit reached. iCloud caps all IMAP queries to ~1 result per call.
+- **iCloud IMAP constraints** documented in AGENTS.md — `\Seen` before MOVE, no `STORE \Deleted`, query result caps, UIDSearch seen/unseen behavior.
 
-## [0.4.3] — Performance & Reliability
+## [0.4.4] - 2026-07-30
 
-### Performance
+Superseded by 0.5.0.
+
+## [0.4.3] - 2026-07-30
+
+### Added
+- Client-side search filter for rules list (name + description, instant)
+- Demo database now works correctly (fixed bcrypt hash, RFC 3339 timestamps, correct cookie instructions)
+
+### Changed
 - Foreign keys enabled on SQLite — `ON DELETE CASCADE` now works, fixing silent orphaned rows
 - 3 database indexes added (`condition_groups.rule_id`, `conditions.group_id`, `actions.rule_id`)
 - N+1 query pattern eliminated in `RulesRepo.List()` — 3N+1 queries reduced to 4 total
 - Poller mutex replaced with atomic counter — `LastTick()` no longer blocks on IMAP round-trips
 - Regex compiled once on load instead of per-evaluation in `matches_regex` conditions
 - IMAP messages fetched in a single batch instead of one at a time
+- ~50 inline styles consolidated into 5 CSS utility classes (`.muted`, `.flex-between`, `.flex-row`, `.mt-*`)
+- Timezone list moved from hardcoded HTML to Go data-driven range loop
+- Dead code removed: `csrfCookie()`, `App.ImapClient`, `AdminPass`, unused `.docs-layout` CSS
+- Shared test helper `db.NewTestDB(t)` replaces 3 duplicate implementations
+- 25 new tests added — coverage `db` 60%→73%, `web` 27%→45%
+- HTMX 1.9.10→2.0.10, highlight.js 11.9.0→11.11.2
 
 ### Fixed
 - iCloud `UID SEARCH` replaced with `UID FETCH 1:*` — fixes 1-email-per-poll-tick bug caused by iCloud search result capping
@@ -86,19 +103,7 @@
 - `EnsureCatchAll()` wrapped in a transaction — no more partial cleanup on interruption
 - `Delete()` now relies on foreign key cascade (simplified from manual child-row deletion)
 
-### Added
-- Client-side search filter for rules list (name + description, instant)
-- Demo database now works correctly (fixed bcrypt hash, RFC 3339 timestamps, correct cookie instructions)
-
-### Changed
-- ~50 inline styles consolidated into 5 CSS utility classes (`.muted`, `.flex-between`, `.flex-row`, `.mt-*`)
-- Timezone list moved from hardcoded HTML to Go data-driven range loop
-- Dead code removed: `csrfCookie()`, `App.ImapClient`, `AdminPass`, unused `.docs-layout` CSS
-- Shared test helper `db.NewTestDB(t)` replaces 3 duplicate implementations
-- 25 new tests added — coverage `db` 60%→73%, `web` 27%→45%
-- HTMX 1.9.10→2.0.10, highlight.js 11.9.0→11.11.2
-
-## [0.4.2] — Light Theme & Demo
+## [0.4.2] - 2026-07-30
 
 ### Added
 - Light/dark theme toggle with OS preference detection (moon icon in nav)
@@ -111,7 +116,7 @@
 - Demo script: added table migrations and clearer login instructions
 - Ignored demo WAL files in git
 
-## [0.4.1] — Stats & Documentation
+## [0.4.1] - 2026-07-30
 
 ### Added
 - Stats dashboard (`/stats`) — rule hit counts (bar chart), top senders, actions breakdown, daily volume
@@ -132,12 +137,12 @@
 - Refresh button renamed to "Refresh folders"
 - Removed icons from cramped Edit/Del buttons
 
-## [0.4.0] — UI Polish & Features
+## [0.4.0] - 2026-07-30
 
 ### Added
 - Lucide icons throughout the UI (nav, buttons, drag handle)
 - JetBrains Mono font with toggle in Settings → Regional
-- Favicon (SVG + PNG + Apple touch icon)  
+- Favicon (SVG + PNG + Apple touch icon)
 - Footer with author, GitHub, MIT license, version, copyright
 - Brand gradient text header
 - Polling enable/disable toggle on Settings
@@ -162,7 +167,11 @@
 - Condition/action rows have remove (×) buttons
 - Docker build: `golang:alpine` + `GOTOOLCHAIN=auto`
 
-## [0.3.2] — Docker & Root Fix
+## [0.3.2] - 2026-07-30
+
+### Changed
+- CSRF disabled on login/setup pages (pre-auth, no session)
+- Login rate limiting removed CSRF dependency
 
 ### Fixed
 - Root path `/` redirects to `/dashboard` (was 404)
@@ -171,11 +180,7 @@
 - Docker build with `golang:alpine` + `GOTOOLCHAIN=auto` (no dependency downgrades)
 - Default listen address `0.0.0.0:8080` for Docker compatibility
 
-### Changed
-- CSRF disabled on login/setup pages (pre-auth, no session)
-- Login rate limiting removed CSRF dependency
-
-## [0.3.1] — UI & Docker
+## [0.3.1] - 2026-07-29
 
 ### Added
 - AND/OR condition toggle on rule forms (ALL vs ANY matching)
@@ -187,26 +192,38 @@
 - Navigation links hidden when logged out (only brand shows)
 - Dockerfile updated to Go 1.23
 
-## [0.3.0] — Security & Hardening
+## [0.3.0] - 2026-07-29
 
-### Security
-- IMAP password encrypted at rest with AES-256-GCM (random key stored in config.json)
+### Added
+- AES-256-GCM encrypted IMAP password storage (random key in config.json)
 - CSRF protection on all non-HTMX POST forms (login, setup, settings, rules)
-- Session cookie set to SameSite=Strict
 - Rate limiting on login (5 attempts/minute/IP)
 - Config validation on load (port, poll interval)
 
-### Fixed
-- Build-time version injection via ldflags (`-X main.version=...`)
-- Activity log auto-cleanup on startup (keeps last 1000 entries)
-
 ### Changed
+- Session cookie set to SameSite=Strict
 - `renderPage` now sets CSRF token cookie and embeds token in template data
 - All form templates include CSRF hidden field
 - `setupPage` accepts `*config.Config` for password encryption
 - `settingsSaveIMAP` encrypts password before storing
 
-## [0.2.0] — Bug Fixes & Polish
+### Fixed
+- Build-time version injection via ldflags (`-X main.version=...`)
+- Activity log auto-cleanup on startup (keeps last 1000 entries)
+
+## [0.2.0] - 2026-07-29
+
+### Added
+- `mark_as_unread` action (removes `\Seen` flag via IMAP `StoreFlagsDel`)
+- Rules export/import as JSON from Settings
+- Timezone setting with local time display in activity log
+- Contact autocomplete (datalist) on rule condition value inputs
+- Folder autocomplete (datalist) on rule action value inputs
+- Seed Contacts scans all synced folders, shows contact count
+- Remove button (×) on condition and action rows in rule editor
+- Refresh Folders button on settings polling section
+- Activity page in nav, version + repo link in settings footer
+- IMAP connection test button on settings
 
 ### Fixed
 - `mark_as_read` now correctly applies to destination folder after move (uses `SelectMailbox` repositioning)
@@ -221,33 +238,17 @@
 - Seed Contacts button shows immediate "Scanning..." feedback
 - Toast notifications fixed at bottom-right with auto-dismiss and click-to-dismiss
 
+## [0.1.0] - 2026-07-29
+
 ### Added
-- `mark_as_unread` action (removes `\Seen` flag via IMAP `StoreFlagsDel`)
-- Rules export/import as JSON from Settings
-- Timezone setting with local time display in activity log
-- Contact autocomplete (datalist) on rule condition value inputs
-- Folder autocomplete (datalist) on rule action value inputs
-- Seed Contacts scans all synced folders, shows contact count
-- Remove button (×) on condition and action rows in rule editor
-- Refresh Folders button on settings polling section
-- Activity page in nav, version + repo link in settings footer
-- IMAP connection test button on settings
-
-## [0.1.0] — Initial Release
-
-### Core
 - IMAP client via go-imap v2 (connect, search, fetch, move, set flags, create folder, list folders)
 - Periodic email polling from a configurable source folder
 - Rule engine with 10 condition operators (equals, contains, starts_with, ends_with, matches_regex, exists, etc.)
 - Rule actions: move to folder, mark as read, set flag
 - Catch-all fallback rule for unmatched messages
-
-### Contacts
 - Email contact collection from message headers (From/To/Cc)
 - Seed contacts from all synced IMAP folders (newest messages first)
 - iCloud CardDAV address book import (go-webdav/carddav)
-
-### Web UI
 - HTMX-powered single-page app with chi v5 router
 - Dashboard with status, contacts count, rules overview
 - Rules list with drag-and-drop reordering
@@ -255,10 +256,24 @@
 - Settings page with IMAP test connection, folder refresh, CardDAV import
 - Setup flow for first-time configuration
 - Session-based authentication with bcrypt password hashing
-
-### Infrastructure
 - SQLite database with 9 tables (modernc.org/sqlite, no CGO)
 - AES-256 encrypted credential storage
 - Docker Compose support
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
+
+[Unreleased]: https://github.com/mojoaar/icloud-mailflow/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/mojoaar/icloud-mailflow/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.5.1...v0.6.0
+[0.5.1]: https://github.com/mojoaar/icloud-mailflow/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.4.4...v0.5.0
+[0.4.4]: https://github.com/mojoaar/icloud-mailflow/compare/v0.4.3...v0.4.4
+[0.4.3]: https://github.com/mojoaar/icloud-mailflow/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/mojoaar/icloud-mailflow/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/mojoaar/icloud-mailflow/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.3.2...v0.4.0
+[0.3.2]: https://github.com/mojoaar/icloud-mailflow/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/mojoaar/icloud-mailflow/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/mojoaar/icloud-mailflow/releases/tag/v0.1.0

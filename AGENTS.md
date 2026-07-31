@@ -55,6 +55,21 @@ docker compose up -d
 - Action execution MUST preserve declared order — never reorder `mark_as_read` before `move_to_folder`. iCloud requires `\Seen` flag on a message before allowing MOVE/delete operations. Two-pass execution (moves first, flags second) breaks this. Always execute actions sequentially in declared order.
 - When adding a new feature or package, always update documentation: README.md features list + architecture tree, docs.html reference + API endpoints, and AGENTS.md architecture section.
 
+## Versioning
+- Semantic versioning per https://semver.org (MAJOR.MINOR.PATCH)
+- Version stored in `cmd/mailflow/main.go` (`const version`) and `VERSION` file — keep both in sync
+- MAJOR: breaking changes (API, removed features, DB schema breaks)
+- MINOR: new features (new package, new endpoint, new capability)
+- PATCH: bug fixes, performance, refactoring without behavior changes
+- Agent determines bump level from changelog entries
+
+## Changelog
+- Follows https://keepachangelog.com/en/1.0.0/ format
+- `[Unreleased]` section at top to accumulate changes before release
+- Version headers: `## [X.Y.Z] - YYYY-MM-DD`
+- Standard section types only: Added, Changed, Deprecated, Removed, Fixed, Security
+- Release dates in ISO 8601 format (`YYYY-MM-DD`)
+
 ## iCloud IMAP Constraints
 
 iCloud's IMAP implementation has non-standard behavior that must be accounted for:
@@ -66,9 +81,10 @@ iCloud's IMAP implementation has non-standard behavior that must be accounted fo
 - **Unmatched message deadlock**: Since `UIDSearch` with empty criteria returns only unseen messages, an unmatched unread message blocks the pipeline — it stays unseen and gets returned by every subsequent call. Use `UID >= N` range criteria (the `minUID` parameter on `SearchMessages`) to skip past already-examined UIDs. After each unmatched message, set `minUID = unmatchedUID + 1` so the next `UIDSearch` only returns messages beyond the blocker.
 
 ## Release
-1. Bump version in `cmd/mailflow/main.go` (`const version = "X.Y.Z"`)
-2. Update `CHANGELOG.md` with new version header and changes
-3. Commit: `git add -A && git commit -m "chore: release vX.Y.Z"`
-4. Tag: `git tag vX.Y.Z`
-5. Push: `git push origin main && git push --tags`
-6. Create GitHub release with changelog: `gh release create vX.Y.Z --title "vX.Y.Z — <section title>" --notes "<changelog section body>"`
+1. Determine bump level (MAJOR/MINOR/PATCH) from changelog entries
+2. Bump version in `cmd/mailflow/main.go` and `VERSION` (keep in sync)
+3. Move `[Unreleased]` entries to new version section with date in `CHANGELOG.md`
+4. Commit: `git add -A && git commit -m "chore: release vX.Y.Z"`
+5. Tag: `git tag vX.Y.Z`
+6. Push: `git push origin main && git push --tags`
+7. Create GitHub release: `gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <(extract_changelog_section) --latest`
