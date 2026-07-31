@@ -16,6 +16,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Unmatched messages counter from stats page — was a lifetime counter, misleading since unmatched messages eventually get handled
 
+## [0.7.0] - 2026-07-31
+
+### Added
+- Body content matching in rules engine (`body` field)
+- Arbitrary header matching in rules engine (`header:X-Name` field)
+- Date matching operators: older_than, newer_than, before, after
+- Forward rule action (IMAP raw fetch + SMTP send with message/rfc822 attachment)
+- Delete rule action (auto-detect Trash folder via \Trash flag)
+- remove_flag action for rule conditions
+- IMAP connection health with exponential backoff reconnect (5s→10s→20s→40s→60s)
+- Activity log search, filter by rule/status, and pagination (25/50/100 per page)
+- Poller dashboard status card with auto-refresh every 30s (HTMX)
+- Mobile responsive CSS (<768px breakpoints)
+- HTMX loading spinners on async buttons (Seed Contacts, Run Poll, Backup Now)
+- Inline rule deletion via hx-confirm (no separate confirmation page)
+- 7 new MCP tools: enable_rule, disable_rule, get_poller_status, import_rules, list_contacts, clear_activity, seed_contacts
+- Date field on imap.Message struct (from Envelope.Date)
+- Pre-fetch caching of message body/headers for rules evaluation
+
+### Changed
+- Evaluate() and Match() now accept imap.Client parameter for body/header fetching
+- activityHandler accepts rulesRepo for rule filter dropdown
+- Poller.NewPoller() accepts imapEmail and imapConnect factory
+- MCP New() accepts collector and settingsRepo parameters
+- Dashboard status card auto-refreshes every 30s via HTMX
+
+### Removed
+- rules_delete.html template (replaced by inline hx-confirm)
+- GET /rules/{id}/delete route
+- rulesDeleteConfirmHandler
+
 ## [0.6.1] - 2026-07-31
 
 ### Added
@@ -271,7 +302,8 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
-[Unreleased]: https://github.com/mojoaar/icloud-mailflow/compare/v0.6.2...HEAD
+[Unreleased]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/mojoaar/icloud-mailflow/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/mojoaar/icloud-mailflow/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.5.1...v0.6.0

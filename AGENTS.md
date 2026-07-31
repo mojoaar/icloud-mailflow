@@ -37,12 +37,12 @@ docker compose up -d
 - `cmd/mailflow/` - entry point
 - `internal/config/` - JSON config file
 - `internal/db/` - SQLite + migrations + repos
-- `internal/imap/` - IMAP client (go-imap v2), Message types
-- `internal/mcp/` - MCP server (go-mcp) with 12 tools, API key auth middleware
-- `internal/rules/` - rule evaluation engine
+- `internal/imap/` - IMAP client (go-imap v2), Message types with Date field, body/header/raw fetch
+- `internal/mcp/` - MCP server (go-mcp) with 18 tools, API key auth middleware
+- `internal/rules/` - rule evaluation engine with body/header/date matching
 - `internal/contacts/` - email contact collector
 - `internal/carddav/` - iCloud CardDAV contacts importer
-- `internal/poller/` - periodic email polling
+- `internal/poller/` - periodic email polling with forward/delete/remove_flag + IMAP health
 - `internal/smtp/` - SMTP MIME multipart email sender
 - `internal/crypto/` - AES encrypt/decrypt + bcrypt hashing
 - `internal/web/` - chi router, auth, handlers, embedded templates
