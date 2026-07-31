@@ -1,0 +1,46 @@
+@media (max-width: 768px) {
+    nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px;
+    }
+    nav a {
+        display: block;
+        font-size: 0.85rem;
+        padding: 8px;
+    }
+    .flex-between {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .flex-between > * {
+        width: 100%;
+    }
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    th, td {
+        min-width: 80px;
+    }
+    .card {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    input, select, textarea, button, .btn {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    button, .btn {
+        min-height: 44px;
+    }
+    td p, td span, td a, .muted {
+        word-break: break-all;
+        overflow-wrap: anywhere;
+    }
+    h1 {
+        font-size: 1.2rem;
+    }
+}

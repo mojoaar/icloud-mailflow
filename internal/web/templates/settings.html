@@ -127,7 +127,7 @@
     <div class="flex-row">
         <button class="btn btn-primary" hx-post="/settings/backup/now"
             hx-target="#backup-toast" hx-swap="innerHTML">
-            <i data-lucide="send" data-size="14"></i> Backup Now
+            <span class="htmx-indicator spinner"></span> Backup Now
         </button>
         {{if .LastBackup}}<span class="muted">Last backup: {{.LastBackup}}</span>{{end}}
     </div>
