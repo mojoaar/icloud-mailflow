@@ -67,8 +67,9 @@ func dashboardHandler(imapClient imap.Client, p *poller.Poller, rulesRepo *db.Ru
 			"IMAPEmail":    imapEmail,
 			"PollingActive": pollingActive,
 			"NextPoll":     nextPoll,
-			"Processed":    totalProcessed,
-		}
+		"Processed":       totalProcessed,
+		"PollingHealthy":  true,
+	}
 		renderPage(w, r, "Dashboard", "dashboard", data)
 	}
 }

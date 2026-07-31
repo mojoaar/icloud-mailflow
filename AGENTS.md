@@ -88,4 +88,5 @@ iCloud's IMAP implementation has non-standard behavior that must be accounted fo
 5. Commit: `git add -A && git commit -m "chore: release vX.Y.Z"`
 6. Tag: `git tag vX.Y.Z`
 7. Push: `git push origin main && git push --tags`
-8. Create GitHub release: `gh release create vX.Y.Z --title "vX.Y.Z — <brief description>" --notes-file <(extract_changelog_section) --latest`
+8. Create GitHub release: `gh release create vX.Y.Z --title "vX.Y.Z — <brief description>" --notes "$(sed -n '/## \[X\.Y\.Z\]/,/^## \[/p' CHANGELOG.md | sed '$d')" --latest`
+   Release is NOT complete without this step — the git tag alone does not create a GitHub Release. Verify: `gh release view vX.Y.Z`

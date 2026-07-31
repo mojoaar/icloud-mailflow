@@ -1,5 +1,10 @@
 {{define "stats"}}
-<h1>Stats</h1>
+<div class="flex-between" style="margin-bottom:16px">
+<h1 style="margin:0">Stats</h1>
+<button class="btn" onclick="location.reload()">
+    <i data-lucide="refresh-cw" data-size="14"></i> Refresh
+</button>
+</div>
 
 <div class="card" style="text-align:center;padding:32px">
     <div style="font-size:2.5rem;font-weight:700;color:var(--accent)">{{.Total}}</div>
