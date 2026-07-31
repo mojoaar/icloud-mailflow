@@ -12,7 +12,7 @@
     <script>
 (function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme:light)').matches)document.documentElement.setAttribute('data-theme','light')})();
     </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.2/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/static/hljs-dark.css">
     {{if .MonoFont}}<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">{{end}}
     <style>
 :root {
@@ -481,12 +481,10 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.2/highlight.min.js"></script>
+<script src="/static/highlight.min.js"></script>
 <script>
+hljs.highlightAll();
 (function(){
-    function tryHighlight(){ if(typeof hljs!=='undefined')hljs.highlightAll(); }
-    tryHighlight();
-    window.addEventListener('load',tryHighlight);
     var o=new IntersectionObserver((entries)=>{
         entries.forEach(e=>{if(e.isIntersecting){
             document.querySelectorAll('.docs-sidebar nav a').forEach(a=>a.classList.remove('active'));
@@ -494,7 +492,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
             if(l)l.classList.add('active');
         }})
     },{rootMargin:'-20% 0px -70% 0px'});
-    document.querySelectorAll('h2[id]').forEach(h=>o.observe(h));
+    document.querySelectorAll('h2[id], h3[id]').forEach(h=>o.observe(h));
 })();
 </script>
 <footer style="text-align:center;padding:24px 0;font-size:0.8rem;color:var(--muted);margin-top:48px;border-top:1px solid var(--border)">
