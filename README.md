@@ -1,12 +1,17 @@
 # iCloud Mailflow
 
+[![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go)](https://go.dev/dl/)
+[![Release](https://img.shields.io/github/v/tag/mojoaar/icloud-mailflow?label=release)](https://github.com/mojoaar/icloud-mailflow/releases)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ED?logo=docker)](https://github.com/mojoaar/icloud-mailflow/pkgs/container/icloud-mailflow)
+
 Apple's iCloud Mail rules are basically useless — a single condition, a single action, and no way to chain anything. Combined with a web client they haven't meaningfully updated in years, managing iCloud mail beyond the basics is a dead end.
 
 Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail through a real rules engine (AND/OR logic, 10 condition operators, multiple actions), and handles it all automatically. Everything Apple should have built, running on your own machine.
 
 ## Features
 
-- **IMAP Rules Engine** — match messages by from/to/cc/subject/attachment with AND/OR logic, execute actions (move to folder, mark as read, mark as unread, set flags)
+- **IMAP Rules Engine** — match messages by from/to/cc/subject/body/headers/attachment with AND/OR logic and 13 operators, execute actions (move, mark read/unread, set/remove flags, forward, delete)
 - **Drag & Drop Rule Reorder** — reorder rules via drag-and-drop on the rules page
 - **CardDAV Contacts Import** — import contacts from iCloud address book
 - **Email Contact Collection** — automatically extract contacts from processed messages
@@ -167,7 +172,7 @@ internal/
   rules/          — rule evaluation engine
   contacts/       — contact collector from email headers
   carddav/        — iCloud CardDAV contacts importer
-  mcp/            — MCP server for AI agent access (12 tools)
+  mcp/            — MCP server for AI agent access (19 tools)
   poller/         — periodic email polling
   smtp/           — SMTP MIME multipart email sender
   web/            — chi router, auth, handlers, templates
