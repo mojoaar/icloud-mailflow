@@ -109,6 +109,11 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		}
 		mcpEnabled, _ := settingsRepo.Get("mcp_enabled")
 		mcpAPIKey, _ := settingsRepo.Get("mcp_api_key")
+		protocol := "http"
+		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+			protocol = "https"
+		}
+		mcpURL := protocol + "://" + r.Host + "/mcp"
 		data := map[string]any{
 			"Folders":      folders,
 			"IMAPEmail":    imapEmail,
@@ -132,7 +137,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"LastBackup":     lastBackup,
 			"MCPEnabled":     mcpEnabled == "true",
 			"MCPAPIKey":      mcpAPIKey,
-			"MCPURL":         "http://" + r.Host + "/mcp",
+			"MCPURL":         mcpURL,
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}

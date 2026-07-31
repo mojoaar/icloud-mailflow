@@ -40,7 +40,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		return resultJSON(ruleList)
+		return resultJSON(map[string]any{"rules": ruleList})
 	})
 
 	s.AddTool(mcp.NewTool("get_rule",
@@ -188,7 +188,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		return resultJSON(entries)
+		return resultJSON(map[string]any{"entries": entries})
 	})
 
 	s.AddTool(mcp.NewTool("get_stats",
@@ -272,7 +272,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 			}
 			result = append(result, e)
 		}
-		return resultJSON(result)
+		return resultJSON(map[string]any{"rules": result})
 	})
 
 	s.AddTool(mcp.NewTool("list_folders",
@@ -294,7 +294,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		for _, f := range folders {
 			result = append(result, folderSummary{f.Name, f.Path, f.Flags})
 		}
-		return resultJSON(result)
+		return resultJSON(map[string]any{"folders": result})
 	})
 
 	s.AddTool(mcp.NewTool("search_contacts",
@@ -306,7 +306,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		return resultJSON(contacts)
+		return resultJSON(map[string]any{"contacts": contacts})
 	})
 
 	s.AddTool(mcp.NewTool("list_contacts",
@@ -316,7 +316,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		return resultJSON(contacts)
+		return resultJSON(map[string]any{"contacts": contacts})
 	})
 
 	s.AddTool(mcp.NewTool("enable_rule",
