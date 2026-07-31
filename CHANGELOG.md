@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `GET /health` endpoint — public JSON health check with status, uptime, DB/IMAP/poller state, and stats
+- MCP `health` tool — same health data available via MCP for agent consumption
+
+### Changed
+- AGENTS.md now has mandatory Documentation Updates section; doc-update convention made more prominent
+
 ### Fixed
 - Docs MCP tool count updated from 12 to 18; missing 7 tools added to reference table
 

@@ -82,6 +82,7 @@ func authMiddleware(sessRepo *db.SessionsRepo) func(http.Handler) http.Handler {
 				strings.HasPrefix(r.URL.Path, "/setup") ||
 				strings.HasPrefix(r.URL.Path, "/mcp") ||
 				strings.HasPrefix(r.URL.Path, "/docs") ||
+				strings.HasPrefix(r.URL.Path, "/health") ||
 				strings.HasPrefix(r.URL.Path, "/static/") {
 				next.ServeHTTP(w, r)
 				return

@@ -154,6 +154,7 @@ pre {
         <a href="#api-backup">Backup</a>
         <a href="#api-contacts">Contacts &amp; Folders</a>
         <a href="#api-activity">Activity</a>
+        <a href="#api-health">Health</a>
         <a href="#api-mcp">MCP Server</a>
     </nav>
 </aside>
@@ -479,6 +480,34 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
       }
     }
   }
+}</code></pre>
+</div>
+
+<h3 class="api-group" id="api-health">Health</h3>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-get">GET</span> GET /health</h4>
+    <p class="desc">System health endpoint. Public — no authentication required. Returns server status, version, uptime, DB connectivity, IMAP state, poller info, and summary stats.</p>
+    <pre><code class="language-bash">curl http://{{.Host}}/health</code></pre>
+    <p class="desc">Example response:</p>
+    <pre><code class="language-json">{
+  "db": "ok",
+  "imap": "connected",
+  "poller": {
+    "active": true,
+    "consecutive_failures": 0,
+    "healthy": true,
+    "last_duration_ms": 1234,
+    "last_tick": "2026-07-31T11:21:00+02:00"
+  },
+  "stats": {
+    "contacts_count": 42,
+    "rules_count": 22,
+    "total_processed": 126
+  },
+  "status": "ok",
+  "uptime_seconds": 3600,
+  "version": "0.7.3"
 }</code></pre>
 </div>
 

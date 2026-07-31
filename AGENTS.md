@@ -38,7 +38,7 @@ docker compose up -d
 - `internal/config/` - JSON config file
 - `internal/db/` - SQLite + migrations + repos
 - `internal/imap/` - IMAP client (go-imap v2), Message types with Date field, body/header/raw fetch
-- `internal/mcp/` - MCP server (go-mcp) with 18 tools, API key auth middleware
+- `internal/mcp/` - MCP server (go-mcp) with 19 tools, API key auth middleware
 - `internal/rules/` - rule evaluation engine with body/header/date matching
 - `internal/contacts/` - email contact collector
 - `internal/carddav/` - iCloud CardDAV contacts importer
@@ -46,6 +46,13 @@ docker compose up -d
 - `internal/smtp/` - SMTP MIME multipart email sender
 - `internal/crypto/` - AES encrypt/decrypt + bcrypt hashing
 - `internal/web/` - chi router, auth, handlers, embedded templates
+
+## Documentation Updates (MANDATORY)
+When adding or changing features, you MUST also update these files:
+- New feature/endpoint/MCP tool → update `docs.html` API reference + sidebar nav
+- New feature → update `README.md` features list
+- New package → update `README.md` architecture tree + AGENTS.md architecture section
+- Changed or removed routes → update `docs.html` and `README.md`
 
 ## Conventions
 - No comments unless essential

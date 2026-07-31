@@ -439,6 +439,55 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		return resultJSON(map[string]int{"folders_scanned": len(folders)})
 	})
 
+	s.AddTool(mcp.NewTool("health",
+		mcp.WithDescription("Get system health: status, version, IMAP connection, poller state, and summary stats"),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		status := "ok"
+		health := map[string]any{
+			"version": version,
+		}
+
+		if err := d.Ping(); err != nil {
+			health["db"] = "error"
+			status = "degraded"
+		} else {
+			health["db"] = "ok"
+		}
+
+		if imapClient != nil {
+			health["imap"] = "connected"
+		} else {
+			health["imap"] = "not_configured"
+		}
+
+		if p != nil {
+			ps := p.Status()
+			health["poller"] = map[string]any{
+				"active":               ps.Active,
+				"healthy":              ps.Healthy,
+				"last_tick":            ps.LastTick.Format("2006-01-02T15:04:05Z07:00"),
+				"last_duration_ms":     ps.LastDuration.Milliseconds(),
+				"consecutive_failures": ps.ConsecutiveFailures,
+			}
+			if !ps.Healthy {
+				status = "degraded"
+			}
+		}
+
+		total, _ := statsRepo.TotalProcessed()
+		contactCount, _ := contactsRepo.Count()
+		rules, _ := rulesRepo.List()
+		health["stats"] = map[string]any{
+			"total_processed": total,
+			"contacts_count":  contactCount,
+			"rules_count":     len(rules),
+		}
+
+		health["status"] = status
+
+		return resultJSON(health)
+	})
+
 	return server.NewStreamableHTTPServer(s)
 }
 
