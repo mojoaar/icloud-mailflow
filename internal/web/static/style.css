@@ -195,14 +195,10 @@ tr[draggable] { cursor: grab; }
 .mt-2 { margin-top: 16px; }
 .mt-3 { margin-top: 24px; }
 
-.htmx-indicator { display: none; }
-.htmx-request .htmx-indicator { display: inline-block; }
-
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
 .spinner {
-    display: inline-block;
     width: 14px;
     height: 14px;
     border: 2px solid var(--muted);
@@ -212,3 +208,6 @@ tr[draggable] { cursor: grab; }
     vertical-align: middle;
     margin-right: 4px;
 }
+
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator { display: inline-block; }

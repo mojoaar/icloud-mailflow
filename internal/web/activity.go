@@ -3,7 +3,9 @@ package web
 import (
 	"log/slog"
 	"net/http"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
@@ -20,7 +22,7 @@ func activityHandler(repo *db.LogRepo, rulesRepo *db.RulesRepo, settingsRepo *db
 
 		perPage, _ := strconv.Atoi(perPageStr)
 		if perPage <= 0 {
-			perPage = 50
+			perPage = 100
 		}
 		page, _ := strconv.Atoi(pageStr)
 		if page <= 0 {
@@ -53,13 +55,14 @@ func activityHandler(repo *db.LogRepo, rulesRepo *db.RulesRepo, settingsRepo *db
 				ruleNames = append(ruleNames, rl.Name)
 			}
 		}
+		sort.Slice(ruleNames, func(i, j int) bool { return strings.ToLower(ruleNames[i]) < strings.ToLower(ruleNames[j]) })
 
 		data := map[string]any{
 			"Entries":      entries,
 			"Search":       search,
 			"Rule":         rule,
 			"Status":       status,
-			"PerPage":      perPageStr,
+			"PerPage":      strconv.Itoa(perPage),
 			"Page":         page,
 			"TotalEntries": total,
 			"TotalPages":   totalPages,
