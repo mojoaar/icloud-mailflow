@@ -11,6 +11,7 @@ go build ./cmd/mailflow/
 - Go 1.25+, chi v5, modernc.org/sqlite (no CGO), html/template
 - HTMX frontend, no JavaScript framework
 - IMAP via github.com/emersion/go-imap/v2 (not v1 - deprecated)
+- MCP via github.com/mark3labs/mcp-go
 
 ## Testing
 ```bash
@@ -62,6 +63,7 @@ iCloud's IMAP implementation has non-standard behavior that must be accounted fo
 - **`STORE \Deleted` is blocked**: iCloud silently rejects `STORE +Flags \Deleted`. Do not use COPY+STORE+EXPUNGE. Use `UID MOVE` with `\Seen` applied first.
 - **Query result cap**: All IMAP queries (`UIDSearch`, `UID FETCH`) return at most ~1 result per call regardless of criteria or range. Process messages in a loop — call `SearchMessages(source, 1)` repeatedly until the folder is empty or batch limit is reached.
 - **Seen/unseen**: `UIDSearch` with empty criteria returns only unseen messages by default. `UID FETCH 1:*` returns all messages. Use `UIDSearch` for automated polling (natural deduplication via `\Seen`). Never use `UID FETCH` with wildcard range (`1:*`) — it hangs on iCloud after an initial successful response on a fresh connection.
+- **Unmatched message deadlock**: Since `UIDSearch` with empty criteria returns only unseen messages, an unmatched unread message blocks the pipeline — it stays unseen and gets returned by every subsequent call. Use `UID >= N` range criteria (the `minUID` parameter on `SearchMessages`) to skip past already-examined UIDs. After each unmatched message, set `minUID = unmatchedUID + 1` so the next `UIDSearch` only returns messages beyond the blocker.
 
 ## Release
 1. Bump version in `cmd/mailflow/main.go` (`const version = "X.Y.Z"`)
