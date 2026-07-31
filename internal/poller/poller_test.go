@@ -26,6 +26,7 @@ type trackedMock struct {
 	rawMessages      map[uint32][]byte
 	messageBodies    map[uint32]string
 	messageHeaders   map[uint32]map[string]string
+	folders          []imap.Folder
 }
 
 type moveCall struct {
@@ -109,7 +110,11 @@ func (m *trackedMock) RemoveFlags(uid uint32, flags []string) error {
 
 func (m *trackedMock) CreateFolder(name string) error { return nil }
 
-func (m *trackedMock) ListFolders() ([]imap.Folder, error) { return nil, nil }
+func (m *trackedMock) ListFolders() ([]imap.Folder, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.folders, nil
+}
 
 func (m *trackedMock) FetchMessageHeader(uid uint32, headerName string) (string, error) {
 	m.mu.Lock()
@@ -727,6 +732,35 @@ func TestUnmatchedDoesNotBlockMatchedMessages(t *testing.T) {
 	}
 	if len(mock.searchFolders) < 4 {
 		t.Fatalf("expected at least 4 search calls (one per UID + empty check), got %d", len(mock.searchFolders))
+	}
+	mock.mu.Unlock()
+}
+
+func TestExecuteActionsDelete(t *testing.T) {
+	mock := &trackedMock{
+		folders: []imap.Folder{
+			{Name: "Trash", Flags: "\\Trash"},
+		},
+	}
+	p := &Poller{imapClient: mock}
+
+	rule := &db.Rule{
+		Name: "test",
+		Actions: []db.Action{
+			{Type: "delete"},
+		},
+	}
+	p.executeActions(rule, 42, nil)
+
+	mock.mu.Lock()
+	if len(mock.moveCalls) != 1 {
+		t.Fatalf("expected 1 move call, got %d", len(mock.moveCalls))
+	}
+	if mock.moveCalls[0].UID != 42 {
+		t.Fatalf("expected move uid 42, got %d", mock.moveCalls[0].UID)
+	}
+	if mock.moveCalls[0].Dest != "Trash" {
+		t.Fatalf("expected dest Trash, got %s", mock.moveCalls[0].Dest)
 	}
 	mock.mu.Unlock()
 }

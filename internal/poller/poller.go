@@ -1,9 +1,12 @@
 package poller
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"mime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -33,6 +36,7 @@ type Poller struct {
 	wg           sync.WaitGroup
 	running      bool
 	processing   atomic.Bool
+	trashFolder  string
 }
 
 func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, settingsRepo *db.SettingsRepo, statsRepo *db.StatsRepo, cfg *config.Config, batchSize int, intervalSec int, source string) *Poller {
@@ -149,7 +153,7 @@ func (p *Poller) process() error {
 			if p.collector != nil {
 				p.collector.CollectFromMessage(msg)
 			}
-			matched, err := rules.Match(ruleList, msg)
+			matched, err := rules.Match(ruleList, msg, p.imapClient)
 			if err != nil {
 				slog.Error("rule matching error", "uid", msg.UID, "error", err)
 				continue
@@ -256,6 +260,54 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 			}
 			if err := p.imapClient.SetFlags(effectiveUID, []string{action.Value}); err != nil {
 				slog.Error("set flag failed", "uid", effectiveUID, "flag", action.Value, "error", err)
+				logAction(effectiveUID, action, "error")
+			} else {
+				logAction(effectiveUID, action, "success")
+			}
+		case "forward":
+			if action.Value == "" {
+				continue
+			}
+			raw, err := p.imapClient.FetchRawMessage(effectiveUID)
+			if err != nil {
+				logAction(effectiveUID, action, "error")
+			} else {
+				subject := "Fwd: " + msg.Subject
+				mimeData := buildForwardMIME(string(raw), subject, p.imapEmail)
+				if err := smtp.SendRaw(action.Value, p.imapEmail, p.cfg.IMAPPassword, mimeData); err != nil {
+					logAction(effectiveUID, action, "error")
+				} else {
+					logAction(effectiveUID, action, "success")
+				}
+			}
+		case "delete":
+			trash, err := p.getTrashFolder()
+			if err != nil {
+				logAction(effectiveUID, action, "error")
+			} else {
+				newUID, err := p.imapClient.MoveMessage(effectiveUID, trash)
+				if err != nil {
+					logAction(effectiveUID, action, "error")
+				} else {
+					logAction(effectiveUID, action, "success")
+					effectiveUID = newUID
+					p.imapClient.SelectMailbox(trash)
+				}
+			}
+		case "remove_flag":
+			if action.Value == "" {
+				continue
+			}
+			flag := action.Value
+			if !strings.HasPrefix(flag, "\\") {
+				if strings.EqualFold(flag, "seen") || strings.EqualFold(flag, "flagged") ||
+					strings.EqualFold(flag, "answered") || strings.EqualFold(flag, "draft") {
+					flag = "\\" + strings.ToUpper(flag[:1]) + strings.ToLower(flag[1:])
+				} else {
+					continue
+				}
+			}
+			if err := p.imapClient.RemoveFlags(effectiveUID, []string{flag}); err != nil {
 				logAction(effectiveUID, action, "error")
 			} else {
 				logAction(effectiveUID, action, "success")
@@ -386,4 +438,50 @@ func (p *Poller) checkBackup() {
 	if err := p.BackupNow(); err != nil {
 		slog.Error("backup failed", "error", err)
 	}
+}
+
+func (p *Poller) getTrashFolder() (string, error) {
+	if p.trashFolder != "" {
+		return p.trashFolder, nil
+	}
+	folders, err := p.imapClient.ListFolders()
+	if err != nil {
+		return "", err
+	}
+	for _, f := range folders {
+		if strings.Contains(f.Flags, "\\Trash") {
+			p.trashFolder = f.Name
+			return p.trashFolder, nil
+		}
+	}
+	for _, f := range folders {
+		if strings.EqualFold(f.Name, "Deleted Messages") {
+			p.trashFolder = f.Name
+			return p.trashFolder, nil
+		}
+	}
+	return "", fmt.Errorf("no trash folder found")
+}
+
+func buildForwardMIME(original, subject, from string) []byte {
+	var buf bytes.Buffer
+	buf.WriteString(fmt.Sprintf("From: %s\r\n", from))
+	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", mime.QEncoding.Encode("utf-8", subject)))
+	buf.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123Z)))
+	buf.WriteString("MIME-Version: 1.0\r\n")
+	boundary := fmt.Sprintf("mailflow-fwd-%d", time.Now().UnixNano())
+	buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n\r\n", boundary))
+	buf.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+	buf.WriteString("Content-Type: text/plain; charset=utf-8\r\n\r\n")
+	buf.WriteString(fmt.Sprintf("Forwarded message from %s\r\n\r\n", from))
+	buf.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+	buf.WriteString("Content-Type: message/rfc822\r\n")
+	buf.WriteString("Content-Disposition: attachment\r\n\r\n")
+	buf.WriteString(original)
+	buf.WriteString(fmt.Sprintf("\r\n--%s--\r\n", boundary))
+	return buf.Bytes()
+}
+
+func (p *Poller) setLastError(err error) {
+	slog.Error("action error", "error", err)
 }

@@ -51,3 +51,10 @@ func Send(to, from, password, subject, body string, attachments ...Attachment) e
 	auth := smtp.PlainAuth("", from, password, server)
 	return smtp.SendMail(host, auth, from, []string{to}, buf.Bytes())
 }
+
+func SendRaw(to, from, password string, raw []byte) error {
+	host := "smtp.mail.me.com:587"
+	server, _, _ := strings.Cut(host, ":")
+	auth := smtp.PlainAuth("", from, password, server)
+	return smtp.SendMail(host, auth, from, []string{to}, raw)
+}

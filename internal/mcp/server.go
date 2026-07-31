@@ -164,7 +164,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string) *s
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		matched, err := rules.Match(ruleList, msg)
+		matched, err := rules.Match(ruleList, msg, nil)
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
