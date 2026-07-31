@@ -4,10 +4,9 @@
 <div class="card" style="text-align:center;padding:32px">
     <div style="font-size:2.5rem;font-weight:700;color:var(--accent)">{{.Total}}</div>
     <div style="color:var(--muted);font-size:0.9rem">messages processed</div>
-    {{if or .Unmatched .Errors}}
+    {{if .Errors}}
     <div style="margin-top:8px;font-size:0.85rem;color:var(--muted)">
-        {{if .Unmatched}}Unmatched: {{.Unmatched}}{{end}}
-        {{range .Errors}}{{if ne .Status "success"}}{{if $.Unmatched}} ·{{end}} {{.Status}}: {{.Count}}{{end}}{{end}}
+        {{range .Errors}}{{if ne .Status "success"}}{{.Status}}: {{.Count}} ·{{end}}{{end}}
     </div>
     {{end}}
 </div>

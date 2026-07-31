@@ -164,9 +164,6 @@ func (p *Poller) process() error {
 					highestSkipped = u + 1
 				}
 				slog.Debug("no rule matched, skipping", "uid", uid)
-			if p.statsRepo != nil {
-				p.statsRepo.IncrementStat("unmatched", "total")
-			}
 			}
 		}
 	}

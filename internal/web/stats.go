@@ -13,7 +13,6 @@ func statsHandler(repo *db.StatsRepo) http.HandlerFunc {
 		senders, _ := repo.TopSenders(10)
 		actions, _ := repo.ActionsBreakdown()
 		daily, _ := repo.DailyVolume(7)
-		unmatched, _ := repo.UnmatchedCount()
 		errors, _ := repo.ErrorBreakdown()
 		folders, _ := repo.FolderDistribution()
 		weekly, _ := repo.WeeklyVolume(4)
@@ -38,7 +37,6 @@ func statsHandler(repo *db.StatsRepo) http.HandlerFunc {
 			"Actions":        actions,
 			"Daily":          daily,
 			"MaxRuleHit":     maxRuleHit,
-			"Unmatched":      unmatched,
 			"Errors":         errors,
 			"Folders":        folders,
 			"MaxFolderCount": maxFolderCount,

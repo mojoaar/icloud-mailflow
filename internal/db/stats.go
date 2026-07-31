@@ -116,12 +116,6 @@ func (r *StatsRepo) DailyVolume(days int) ([]DailyVolume, error) {
 	return out, rows.Err()
 }
 
-func (r *StatsRepo) UnmatchedCount() (int, error) {
-	var n int
-	err := r.DB.QueryRow(`SELECT COALESCE((SELECT value FROM stats WHERE category='unmatched' AND key='total'), 0)`).Scan(&n)
-	return n, err
-}
-
 func (r *StatsRepo) ErrorBreakdown() ([]StatusBreakdown, error) {
 	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category='status'`)
 	if err != nil {
