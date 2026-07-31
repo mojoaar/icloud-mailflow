@@ -107,24 +107,27 @@ func rulesUpdateHandler(repo *db.RulesRepo) http.HandlerFunc {
 	}
 }
 
-func rulesDeleteConfirmHandler(repo *db.RulesRepo) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-		rule, err := repo.Get(id)
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		renderPage(w, r, "Delete Rule", "rules_delete", map[string]any{"Rule": rule})
-	}
-}
-
 func rulesDeleteHandler(repo *db.RulesRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-		repo.Delete(id)
+		id, err := strconv.Atoi(chi.URLParam(r, "id"))
+		if err != nil {
+			if r.Header.Get("HX-Request") == "true" {
+				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "invalid rule id"})
+				return
+			}
+			http.Error(w, "invalid rule id", http.StatusBadRequest)
+			return
+		}
+		if err := repo.Delete(int64(id)); err != nil {
+			if r.Header.Get("HX-Request") == "true" {
+				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		if r.Header.Get("HX-Request") == "true" {
-			rulesListHandler(repo)(w, r)
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 		http.Redirect(w, r, "/rules", http.StatusSeeOther)

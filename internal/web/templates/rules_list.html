@@ -32,7 +32,13 @@
             <td>{{len .Actions}}</td>
             <td style="white-space:nowrap">
                 <a href="/rules/{{.ID}}/edit" class="btn" style="font-size:0.8rem">Edit</a>
-                <a href="/rules/{{.ID}}/delete" class="btn btn-danger" style="font-size:0.8rem">Del</a>
+                <button class="btn btn-danger" style="font-size:0.8rem"
+                    hx-delete="/rules/{{.ID}}"
+                    hx-confirm="Delete rule '{{.Name}}'? This cannot be undone."
+                    hx-target="closest tr"
+                    hx-swap="outerHTML">
+                    Del
+                </button>
             </td>
         </tr>
         {{end}}

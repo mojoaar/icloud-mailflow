@@ -88,7 +88,6 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/rules", rulesCreateHandler(rulesRepo))
 	r.Get("/rules/{id}/edit", rulesEditHandler(rulesRepo, foldersRepo, contactsRepo))
 	r.Put("/rules/{id}", rulesUpdateHandler(rulesRepo))
-	r.Get("/rules/{id}/delete", rulesDeleteConfirmHandler(rulesRepo))
 	r.Delete("/rules/{id}", rulesDeleteHandler(rulesRepo))
 	r.Post("/rules/reorder", rulesReorderHandler(rulesRepo))
 
