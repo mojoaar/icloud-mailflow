@@ -40,12 +40,16 @@ type removeFlagsCall struct {
 	Flags []string
 }
 
-func (m *trackedMock) SearchMessages(folder string, limit int) ([]goimap.UID, error) {
+func (m *trackedMock) SearchMessages(folder string, limit int, minUID uint32) ([]goimap.UID, error) {
 	m.mu.Lock()
 	m.searchFolders = append(m.searchFolders, folder)
 	m.mu.Unlock()
-	if len(m.searchUIDs) > 0 {
+	for len(m.searchUIDs) > 0 {
 		uid := m.searchUIDs[0]
+		if uint32(uid) < minUID {
+			m.searchUIDs = m.searchUIDs[1:]
+			continue
+		}
 		m.searchUIDs = m.searchUIDs[1:]
 		return []goimap.UID{uid}, m.searchErr
 	}
@@ -643,4 +647,52 @@ func TestCheckBackupNotEnabled(t *testing.T) {
 
 	p := &Poller{settingsRepo: settingsRepo}
 	p.checkBackup()
+}
+
+func TestUnmatchedDoesNotBlockMatchedMessages(t *testing.T) {
+	rulesRepo, contactsRepo := openPollerTestDB(t)
+	rule := &db.Rule{
+		Name:    "match-rule",
+		Enabled: true,
+		Groups: []db.ConditionGroup{
+			{Operator: "AND", Conditions: []db.Condition{
+				{Field: "subject", Operator: "contains", Value: "match"},
+			}},
+		},
+		Actions: []db.Action{{Type: "move_to_folder", Value: "Archive"}},
+	}
+	if err := rulesRepo.Create(rule); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	mock := &trackedMock{
+		searchUIDs: []goimap.UID{10, 20, 30, 40},
+		messages: map[uint32]*imap.Message{
+			10: {UID: 10, Subject: "spam message"},
+			20: {UID: 20, Subject: "match me"},
+			30: {UID: 30, Subject: "another spam"},
+			40: {UID: 40, Subject: "match me too"},
+		},
+	}
+	collector := contacts.NewCollector(contactsRepo, mock)
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, 50, 60, "INBOX")
+
+	if err := p.process(); err != nil {
+		t.Fatalf("process: %v", err)
+	}
+
+	mock.mu.Lock()
+	if len(mock.moveCalls) != 2 {
+		t.Fatalf("expected 2 move calls, got %d: %v", len(mock.moveCalls), mock.moveCalls)
+	}
+	if mock.moveCalls[0].UID != 20 || mock.moveCalls[0].Dest != "Archive" {
+		t.Errorf("first move: uid=%d dest=%s, want uid=20 dest=Archive", mock.moveCalls[0].UID, mock.moveCalls[0].Dest)
+	}
+	if mock.moveCalls[1].UID != 40 || mock.moveCalls[1].Dest != "Archive" {
+		t.Errorf("second move: uid=%d dest=%s, want uid=40 dest=Archive", mock.moveCalls[1].UID, mock.moveCalls[1].Dest)
+	}
+	if len(mock.searchFolders) < 4 {
+		t.Fatalf("expected at least 4 search calls (one per UID + empty check), got %d", len(mock.searchFolders))
+	}
+	mock.mu.Unlock()
 }

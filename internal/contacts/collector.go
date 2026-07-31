@@ -54,7 +54,7 @@ func (c *Collector) SeedFromFolder(folder string) error {
 	if c.client == nil {
 		return fmt.Errorf("IMAP not connected")
 	}
-	uids, err := c.client.SearchMessages(folder, 200)
+	uids, err := c.client.SearchMessages(folder, 200, 0)
 	if err != nil {
 		return err
 	}

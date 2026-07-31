@@ -34,7 +34,7 @@ type Message struct {
 }
 
 type Client interface {
-	SearchMessages(folder string, limit int) ([]goimap.UID, error)
+	SearchMessages(folder string, limit int, minUID uint32) ([]goimap.UID, error)
 	FetchMessage(uid uint32) (*Message, error)
 	FetchMessages(uids []goimap.UID) ([]*Message, error)
 	MoveMessage(uid uint32, dest string) (uint32, error)
@@ -104,11 +104,14 @@ func (c *IMAPClient) SelectFolder(name string) (*goimap.SelectData, error) {
 	return c.client.Select(name, nil).Wait()
 }
 
-func (c *IMAPClient) SearchMessages(folder string, limit int) ([]goimap.UID, error) {
+func (c *IMAPClient) SearchMessages(folder string, limit int, minUID uint32) ([]goimap.UID, error) {
 	if _, err := c.SelectFolder(folder); err != nil {
 		return nil, fmt.Errorf("select %s: %w", folder, err)
 	}
 	criteria := &goimap.SearchCriteria{}
+	if minUID > 0 {
+		criteria.UID = []goimap.UIDSet{{{Start: goimap.UID(minUID), Stop: 0}}}
+	}
 	data, err := c.client.UIDSearch(criteria, &goimap.SearchOptions{}).Wait()
 	if err != nil {
 		return nil, fmt.Errorf("search: %w", err)

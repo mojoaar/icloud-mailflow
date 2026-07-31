@@ -17,7 +17,7 @@ type mockClient struct {
 	fetchErr   error
 }
 
-func (m *mockClient) SearchMessages(folder string, limit int) ([]goimap.UID, error) {
+func (m *mockClient) SearchMessages(folder string, limit int, minUID uint32) ([]goimap.UID, error) {
 	return m.searchUIDs, m.searchErr
 }
 

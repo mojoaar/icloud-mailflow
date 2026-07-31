@@ -115,12 +115,14 @@ func (p *Poller) process() error {
 	slog.Debug("rules loaded", "count", len(ruleList))
 
 	skipUIDs := map[uint32]bool{}
+	highestSkipped := uint32(0)
 	for processed := 0; processed < p.batchSize; processed++ {
-		uids, err := p.imapClient.SearchMessages(p.source, 1)
+		minUID := highestSkipped
+		uids, err := p.imapClient.SearchMessages(p.source, 1, minUID)
 		if err != nil {
 			return fmt.Errorf("search: %w", err)
 		}
-		slog.Debug("search result", "found", len(uids))
+		slog.Debug("search result", "found", len(uids), "minUID", minUID)
 		if len(uids) == 0 {
 			slog.Debug("folder empty, tick complete")
 			return nil
@@ -132,8 +134,8 @@ func (p *Poller) process() error {
 			}
 		}
 		if len(remaining) == 0 {
-			slog.Debug("all remaining uids unmatched, exiting")
-			return nil
+			slog.Debug("all results already skipped, continuing")
+			continue
 		}
 		for _, uid := range remaining {
 			msg, err := p.imapClient.FetchMessage(uint32(uid))
@@ -154,7 +156,11 @@ func (p *Poller) process() error {
 				slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
 				p.executeActions(matched, uint32(uid), msg)
 			} else {
-				skipUIDs[uint32(uid)] = true
+				u := uint32(uid)
+				skipUIDs[u] = true
+				if u >= highestSkipped {
+					highestSkipped = u + 1
+				}
 				slog.Debug("no rule matched, skipping", "uid", uid)
 			}
 		}

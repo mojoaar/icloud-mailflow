@@ -14,6 +14,9 @@
 ### Changed
 - Backup schedule checked after each poll tick — persists `last_backup` timestamp to DB across restarts
 
+### Fixed
+- **Unmatched message pipeline deadlock** — unmatched messages no longer block subsequent messages with matching rules. Poller now uses `UID >= N` search range to skip past already-seen unmatched messages instead of bailing early.
+
 ## [0.5.0] — Skip-list + DEBUG Logging
 
 ### Fixed

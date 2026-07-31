@@ -18,7 +18,7 @@ type mockIMAPClient struct {
 	messages    map[uint32]*imap.Message
 }
 
-func (m *mockIMAPClient) SearchMessages(folder string, limit int) ([]goimap.UID, error) {
+func (m *mockIMAPClient) SearchMessages(folder string, limit int, minUID uint32) ([]goimap.UID, error) {
 	return m.searchUIDs, nil
 }
 
