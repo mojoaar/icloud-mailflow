@@ -1,4 +1,125 @@
-{{define "docs"}}
+{{define "docs"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation — iCloud Mailflow</title>
+    <script>
+(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme:light)').matches)document.documentElement.setAttribute('data-theme','light')})();
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.2/styles/atom-one-dark.min.css">
+    {{if .MonoFont}}<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">{{end}}
+    <style>
+:root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #c9d1d9; --muted: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --red: #f85149; --radius: 6px;
+}
+[data-theme="light"] {
+    --bg: #ffffff; --surface: #f6f8fa; --border: #d0d7de;
+    --text: #24292f; --muted: #656d76; --accent: #0969da;
+    --green: #1a7f37; --red: #cf222e;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.6;
+}
+{{if .MonoFont}}pre, code { font-family:'JetBrains Mono',monospace; }
+{{else}}pre, code { font-family:'Fira Code',Menlo,Consolas,monospace; }
+{{end}}
+.docs-wrap {
+    display:flex; min-height:100vh;
+}
+.docs-sidebar {
+    position:sticky; top:0; width:220px; height:100vh; flex-shrink:0;
+    background:var(--surface); border-right:1px solid var(--border);
+    padding:24px 16px; overflow-y:auto;
+}
+.docs-sidebar h3 {
+    font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em;
+    color:var(--muted); margin-bottom:8px;
+}
+.docs-sidebar nav a {
+    display:block; padding:4px 8px; font-size:0.85rem;
+    color:var(--muted); text-decoration:none; border-radius:var(--radius);
+    transition:background 0.15s,color 0.15s;
+}
+.docs-sidebar nav a:hover { background:var(--border); color:var(--text); }
+.docs-sidebar nav a.active { color:var(--accent); font-weight:600; }
+.docs-sidebar hr { border:none; border-top:1px solid var(--border); margin:12px 0; }
+
+.docs-content { flex:1; padding:32px 48px; max-width:900px; }
+.docs-content h1 { font-size:1.75rem; margin-bottom:8px; }
+.docs-content h2 {
+    font-size:1.3rem; margin:40px 0 12px;
+    padding-bottom:6px; border-bottom:1px solid var(--border);
+}
+.docs-content h3 { font-size:1rem; margin:24px 0 8px; color:var(--text); }
+.docs-content p { margin-bottom:12px; }
+.docs-content p, .docs-content li { color:var(--muted); }
+.docs-content strong { color:var(--text); }
+.docs-content a { color:var(--accent); text-decoration:none; }
+.docs-content a:hover { text-decoration:underline; }
+.docs-content ul, .docs-content ol { margin:0 0 16px 1.5em; }
+.docs-content li { margin-bottom:4px; }
+
+.docs-content table { width:100%; border-collapse:collapse; margin:12px 0 20px; }
+.docs-content th {
+    text-align:left; padding:8px 12px; border-bottom:1px solid var(--border);
+    font-size:0.8rem; color:var(--muted); font-weight:600;
+    text-transform:uppercase; letter-spacing:0.03em;
+}
+.docs-content td { padding:8px 12px; border-bottom:1px solid var(--border); font-size:0.85rem; color:var(--muted); }
+.docs-content td code { font-size:0.82rem; }
+
+code { background:var(--border); padding:1px 5px; border-radius:3px; font-size:0.88rem; color:var(--accent); }
+pre code { background:none; padding:0; color:var(--text); }
+pre {
+    background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px 16px; margin:12px 0 20px; overflow-x:auto;
+    font-size:0.82rem; line-height:1.5;
+}
+
+.method-badge {
+    display:inline-block; padding:2px 7px; border-radius:3px;
+    font-size:0.65rem; font-weight:700; margin-right:6px;
+    vertical-align:middle; text-transform:uppercase; letter-spacing:0.03em;
+}
+.method-get  { background:#033a16; color:var(--green); }
+.method-post { background:#042a49; color:var(--accent); }
+.method-put  { background:#3d2a00; color:#d29922; }
+.method-delete { background:#490202; color:var(--red); }
+
+.endpoint {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:16px; margin-bottom:12px;
+}
+.endpoint h4 { font-size:0.9rem; margin-bottom:6px; }
+.endpoint .desc { font-size:0.85rem; color:var(--muted); margin-bottom:8px; }
+.endpoint pre { margin:0; }
+
+.api-section { margin-top:16px; }
+.api-group { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin:32px 0 12px; }
+
+@media (max-width:768px) {
+    .docs-wrap { flex-direction:column; }
+    .docs-sidebar {
+        position:static; width:100%; height:auto;
+        border-right:none; border-bottom:1px solid var(--border); padding:16px;
+    }
+    .docs-sidebar nav { display:flex; flex-wrap:wrap; gap:4px; }
+    .docs-sidebar nav a { font-size:0.8rem; padding:4px 8px; }
+    .docs-sidebar hr { display:none; }
+    .docs-sidebar h3 { display:none; }
+    .docs-content { padding:24px 16px; }
+}
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+    </style>
+</head>
+<body>
 
 <div class="docs-wrap">
 <aside class="docs-sidebar">
@@ -45,7 +166,7 @@
 <h3>1. iCloud Mail Rule</h3>
 <p>Create a rule on iCloud to route all incoming mail to the Processing folder:</p>
 <ol>
-    <li>Go to <a href="https://www.icloud.com/mail" target="_blank">icloud.com/mail</a></li>
+    <li>Go to <a href="https://www.icloud.com/mail">icloud.com/mail</a></li>
     <li>Settings gear → <strong>Rules</strong> → <strong>Add a Rule</strong></li>
     <li>If a message → <strong>is addressed to</strong> → leave address empty</li>
     <li>Then → <strong>Move to Folder</strong> → <strong>New Folder…</strong> → enter <strong>Processing</strong></li>
@@ -53,7 +174,7 @@
 </ol>
 
 <h3>2. App-Specific Password</h3>
-<p>Generate at <a href="https://appleid.apple.com" target="_blank">appleid.apple.com</a> → Sign-In &amp; Security → App-Specific Passwords.</p>
+<p>Generate at <a href="https://appleid.apple.com">appleid.apple.com</a> → Sign-In &amp; Security → App-Specific Passwords.</p>
 
 <h3>3. Start the App</h3>
 <pre><code class="language-bash">go run ./cmd/mailflow/ -data=./data</code></pre>
@@ -355,19 +476,22 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 </main>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.2/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.2/languages/bash.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.2/languages/json.min.js" defer></script>
 <script>
-(function() {
-    var observer = new IntersectionObserver((entries) => {
-        entries.forEach(e => {
-            if (e.isIntersecting) {
-                document.querySelectorAll('.docs-sidebar nav a').forEach(a => a.classList.remove('active'));
-                var link = document.querySelector('.docs-sidebar nav a[href="#' + e.target.id + '"]');
-                if (link) link.classList.add('active');
-            }
-        });
-    }, { rootMargin: '-20% 0px -70% 0px' });
-    document.querySelectorAll('h2[id]').forEach(h => observer.observe(h));
-})();
+window.addEventListener('load',function(){
+    if(typeof hljs!=='undefined')hljs.highlightAll();
+    var o=new IntersectionObserver((entries)=>{
+        entries.forEach(e=>{if(e.isIntersecting){
+            document.querySelectorAll('.docs-sidebar nav a').forEach(a=>a.classList.remove('active'));
+            var l=document.querySelector('.docs-sidebar nav a[href="#'+e.target.id+'"]');
+            if(l)l.classList.add('active');
+        }})
+    },{rootMargin:'-20% 0px -70% 0px'});
+    document.querySelectorAll('h2[id]').forEach(h=>o.observe(h));
+});
 </script>
-
+</body>
+</html>
 {{end}}

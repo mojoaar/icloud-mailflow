@@ -1,9 +1,20 @@
 package web
 
-import "net/http"
+import (
+	"net/http"
 
-func docsHandler() http.HandlerFunc {
+	"github.com/mojoaar/icloud-mailflow/internal/db"
+)
+
+func docsStandaloneHandler(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		renderPage(w, r, "Documentation", "docs", map[string]any{"Host": r.Host})
+		monoFont := false
+		if v, _ := settingsRepo.Get("font_mono"); v == "true" {
+			monoFont = true
+		}
+		tmpl.ExecuteTemplate(w, "docs", map[string]any{
+			"Host":     r.Host,
+			"MonoFont": monoFont,
+		})
 	}
 }
