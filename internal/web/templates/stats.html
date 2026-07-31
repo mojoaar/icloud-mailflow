@@ -30,7 +30,7 @@
 <h2>Top Senders</h2>
 <table>
 {{range .Senders}}
-<tr><td>{{.Email}}</td><td class="muted">{{.Count}}</td></tr>
+<tr><td>{{.Email}}</td><td class="muted" style="text-align:right">{{.Count}}</td></tr>
 {{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
 {{end}}
 </table>
@@ -51,7 +51,7 @@
 <h2>Daily Volume</h2>
 <table>
 {{range .Daily}}
-<tr><td>{{.Date}}</td><td class="muted">{{.Count}}</td></tr>
+<tr><td>{{.Date}}</td><td class="muted" style="text-align:right">{{.Count}}</td></tr>
 {{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
 {{end}}
 </table>
@@ -77,7 +77,7 @@
 <h2>Weekly Volume</h2>
 <table>
 {{range .Weekly}}
-<tr><td>{{.Date}}</td><td class="muted">{{.Count}}</td></tr>
+<tr><td>{{.Date}}</td><td class="muted" style="text-align:right">{{.Count}}</td></tr>
 {{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
 {{end}}
 </table>
