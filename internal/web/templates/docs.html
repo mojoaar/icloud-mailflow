@@ -253,7 +253,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <h2 id="mcp">MCP Server</h2>
 <p>Mailflow exposes a Model Context Protocol (MCP) server so AI agents (Claude Code, OpenCode, Codex) can manage rules, check stats, and trigger polls remotely. Enable it in Settings → MCP Access — you get an API key and ready-to-use config snippets for all platforms.</p>
-<p>The server runs over HTTPS on <code>/mcp</code>. All 12 tools require a Bearer token in the Authorization header.</p>
+<p>The server runs over HTTPS on <code>/mcp</code>. All 18 tools require a Bearer token in the Authorization header.</p>
 <table>
     <tr><th>Tool</th><th>Description</th></tr>
     <tr><td><code>list_rules</code></td><td>List all filtering rules with conditions and actions</td></tr>
@@ -268,6 +268,13 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>backup_rules</code></td><td>Export all rules as JSON</td></tr>
     <tr><td><code>list_folders</code></td><td>List available IMAP folders</td></tr>
     <tr><td><code>search_contacts</code></td><td>Search collected contacts</td></tr>
+    <tr><td><code>list_contacts</code></td><td>List all collected email contacts</td></tr>
+    <tr><td><code>seed_contacts</code></td><td>Scan IMAP folders for contacts</td></tr>
+    <tr><td><code>enable_rule</code></td><td>Enable a rule by ID</td></tr>
+    <tr><td><code>disable_rule</code></td><td>Disable a rule by ID</td></tr>
+    <tr><td><code>import_rules</code></td><td>Import rules from JSON array</td></tr>
+    <tr><td><code>clear_activity</code></td><td>Clear all activity logs</td></tr>
+    <tr><td><code>get_poller_status</code></td><td>Get poller running state, last tick, errors, health</td></tr>
 </table>
 
 <h2 id="settings">Settings Reference</h2>
