@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- Unmatched messages counter from stats page — was a lifetime counter, misleading since unmatched messages eventually get handled
+
 ## [0.6.1] - 2026-07-31
 
 ### Added
