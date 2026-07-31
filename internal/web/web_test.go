@@ -65,6 +65,18 @@ func (m *mockIMAPClient) ListFolders() ([]imap.Folder, error) {
 	return m.folders, nil
 }
 
+func (m *mockIMAPClient) FetchMessageHeader(uid uint32, headerName string) (string, error) {
+	return "", nil
+}
+
+func (m *mockIMAPClient) FetchMessageBody(uid uint32) (string, error) {
+	return "", nil
+}
+
+func (m *mockIMAPClient) FetchRawMessage(uid uint32) ([]byte, error) {
+	return nil, nil
+}
+
 func openWebTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 	return db.NewTestDB(t)

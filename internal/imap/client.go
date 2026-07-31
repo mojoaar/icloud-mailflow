@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	goimap "github.com/emersion/go-imap/v2"
 	"github.com/emersion/go-imap/v2/imapclient"
@@ -31,12 +32,16 @@ type Message struct {
 	Cc        []Address `json:"cc"`
 	HasAttach bool      `json:"has_attachment"`
 	Flags     []string  `json:"flags"`
+	Date      time.Time `json:"date"`
 }
 
 type Client interface {
 	SearchMessages(folder string, limit int, minUID uint32) ([]goimap.UID, error)
 	FetchMessage(uid uint32) (*Message, error)
 	FetchMessages(uids []goimap.UID) ([]*Message, error)
+	FetchMessageHeader(uid uint32, headerName string) (string, error)
+	FetchMessageBody(uid uint32) (string, error)
+	FetchRawMessage(uid uint32) ([]byte, error)
 	MoveMessage(uid uint32, dest string) (uint32, error)
 	SelectMailbox(name string) error
 	SetFlags(uid uint32, flags []string) error
@@ -215,6 +220,7 @@ func convertMessage(buf *imapclient.FetchMessageBuffer) *Message {
 		msg.From = convertAddresses(buf.Envelope.From)
 		msg.To = convertAddresses(buf.Envelope.To)
 		msg.Cc = convertAddresses(buf.Envelope.Cc)
+		msg.Date = buf.Envelope.Date
 	}
 	msg.HasAttach = hasAttachment(buf)
 	return msg
@@ -244,4 +250,67 @@ func hasAttachment(buf *imapclient.FetchMessageBuffer) bool {
 		return true
 	})
 	return found
+}
+
+func (c *IMAPClient) FetchMessageHeader(uid uint32, headerName string) (string, error) {
+	seqSet := goimap.UIDSetNum(goimap.UID(uid))
+	fetchItem := goimap.FetchItemBodySection{
+		Peek:         true,
+		Specifier:    goimap.PartSpecifierHeader,
+		HeaderFields: []string{headerName},
+	}
+	opts := &goimap.FetchOptions{BodySection: []*goimap.FetchItemBodySection{&fetchItem}}
+	raw, err := c.client.Fetch(seqSet, opts).Collect()
+	if err != nil {
+		return "", fmt.Errorf("fetch header %s uid %d: %w", headerName, uid, err)
+	}
+	if len(raw) == 0 {
+		return "", nil
+	}
+	body := raw[0].FindBodySection(&fetchItem)
+	if body != nil {
+		v := string(body)
+		v = strings.TrimPrefix(v, headerName+": ")
+		return strings.TrimSpace(v), nil
+	}
+	return "", nil
+}
+
+func (c *IMAPClient) FetchMessageBody(uid uint32) (string, error) {
+	seqSet := goimap.UIDSetNum(goimap.UID(uid))
+	fetchItem := goimap.FetchItemBodySection{
+		Peek:      true,
+		Specifier: goimap.PartSpecifierText,
+	}
+	opts := &goimap.FetchOptions{BodySection: []*goimap.FetchItemBodySection{&fetchItem}}
+	raw, err := c.client.Fetch(seqSet, opts).Collect()
+	if err != nil {
+		return "", fmt.Errorf("fetch body uid %d: %w", uid, err)
+	}
+	if len(raw) == 0 {
+		return "", nil
+	}
+	body := raw[0].FindBodySection(&fetchItem)
+	if body != nil {
+		return string(body), nil
+	}
+	return "", nil
+}
+
+func (c *IMAPClient) FetchRawMessage(uid uint32) ([]byte, error) {
+	seqSet := goimap.UIDSetNum(goimap.UID(uid))
+	fetchItem := goimap.FetchItemBodySection{}
+	opts := &goimap.FetchOptions{BodySection: []*goimap.FetchItemBodySection{&fetchItem}}
+	raw, err := c.client.Fetch(seqSet, opts).Collect()
+	if err != nil {
+		return nil, fmt.Errorf("fetch raw uid %d: %w", uid, err)
+	}
+	if len(raw) == 0 {
+		return nil, fmt.Errorf("message uid %d not found", uid)
+	}
+	body := raw[0].FindBodySection(&fetchItem)
+	if body != nil {
+		return body, nil
+	}
+	return nil, fmt.Errorf("no body section in raw fetch")
 }

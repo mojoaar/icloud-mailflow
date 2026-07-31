@@ -14,15 +14,18 @@ import (
 )
 
 type trackedMock struct {
-	mu              sync.Mutex
-	searchUIDs      []goimap.UID
-	messages        map[uint32]*imap.Message
-	searchErr       error
-	fetchErr        error
-	moveCalls       []moveCall
-	setFlagsCalls   []setFlagsCall
+	mu               sync.Mutex
+	searchUIDs       []goimap.UID
+	messages         map[uint32]*imap.Message
+	searchErr        error
+	fetchErr         error
+	moveCalls        []moveCall
+	setFlagsCalls    []setFlagsCall
 	removeFlagsCalls []removeFlagsCall
-	searchFolders   []string
+	searchFolders    []string
+	rawMessages      map[uint32][]byte
+	messageBodies    map[uint32]string
+	messageHeaders   map[uint32]map[string]string
 }
 
 type moveCall struct {
@@ -107,6 +110,37 @@ func (m *trackedMock) RemoveFlags(uid uint32, flags []string) error {
 func (m *trackedMock) CreateFolder(name string) error { return nil }
 
 func (m *trackedMock) ListFolders() ([]imap.Folder, error) { return nil, nil }
+
+func (m *trackedMock) FetchMessageHeader(uid uint32, headerName string) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.messageHeaders == nil {
+		return "", nil
+	}
+	hdrs, ok := m.messageHeaders[uid]
+	if !ok {
+		return "", nil
+	}
+	return hdrs[headerName], nil
+}
+
+func (m *trackedMock) FetchMessageBody(uid uint32) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.messageBodies == nil {
+		return "", nil
+	}
+	return m.messageBodies[uid], nil
+}
+
+func (m *trackedMock) FetchRawMessage(uid uint32) ([]byte, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.rawMessages == nil {
+		return nil, nil
+	}
+	return m.rawMessages[uid], nil
+}
 
 func openPollerTestDB(t *testing.T) (*db.RulesRepo, *db.ContactsRepo) {
 	t.Helper()

@@ -52,6 +52,9 @@ func (m *mockClient) SetFlags(uid uint32, flags []string) error  { return nil }
 func (m *mockClient) RemoveFlags(uid uint32, flags []string) error { return nil }
 func (m *mockClient) CreateFolder(name string) error             { return nil }
 func (m *mockClient) ListFolders() ([]imap.Folder, error)       { return nil, nil }
+func (m *mockClient) FetchMessageHeader(uid uint32, headerName string) (string, error) { return "", nil }
+func (m *mockClient) FetchMessageBody(uid uint32) (string, error)                      { return "", nil }
+func (m *mockClient) FetchRawMessage(uid uint32) ([]byte, error)                       { return nil, nil }
 
 func openContactsTestDB(t *testing.T) *db.ContactsRepo {
 	t.Helper()
