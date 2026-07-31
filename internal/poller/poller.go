@@ -26,6 +26,7 @@ type Poller struct {
 	logRepo      *db.LogRepo
 	settingsRepo *db.SettingsRepo
 	statsRepo    *db.StatsRepo
+	foldersRepo  *db.FoldersRepo
 	cfg          *config.Config
 	imapEmail    string
 	interval     time.Duration
@@ -45,7 +46,7 @@ type Poller struct {
 	lastTickDuration    time.Duration
 }
 
-func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, settingsRepo *db.SettingsRepo, statsRepo *db.StatsRepo, cfg *config.Config, batchSize int, intervalSec int, source, imapEmail string, connectFn func() (imap.Client, error)) *Poller {
+func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, settingsRepo *db.SettingsRepo, statsRepo *db.StatsRepo, foldersRepo *db.FoldersRepo, cfg *config.Config, batchSize int, intervalSec int, source, imapEmail string, connectFn func() (imap.Client, error)) *Poller {
 	return &Poller{
 		imapClient:   imapClient,
 		rulesRepo:    rulesRepo,
@@ -53,6 +54,7 @@ func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *conta
 		logRepo:      logRepo,
 		settingsRepo: settingsRepo,
 		statsRepo:    statsRepo,
+		foldersRepo:  foldersRepo,
 		cfg:          cfg,
 		batchSize:    batchSize,
 		interval:     time.Duration(intervalSec) * time.Second,
@@ -183,6 +185,7 @@ func (p *Poller) process() error {
 			}
 		}
 	}
+	p.syncFolders()
 	p.clearLastError()
 	return nil
 }
@@ -548,6 +551,30 @@ func (p *Poller) clearLastError() {
 	p.consecutiveFailures = 0
 	p.backoff = 0
 	p.mu.Unlock()
+}
+
+func (p *Poller) syncFolders() {
+	if p.foldersRepo == nil {
+		return
+	}
+	folders, err := p.imapClient.ListFolders()
+	if err != nil {
+		slog.Warn("poller folder sync failed", "error", err)
+		return
+	}
+	var dbFolders []db.Folder
+	for _, f := range folders {
+		dbFolders = append(dbFolders, db.Folder{
+			Name:  f.Name,
+			Path:  f.Path,
+			Flags: f.Flags,
+		})
+	}
+	if err := p.foldersRepo.Sync(dbFolders); err != nil {
+		slog.Warn("poller folder sync db write failed", "error", err)
+		return
+	}
+	slog.Debug("poller folder sync complete", "count", len(dbFolders))
 }
 
 func (p *Poller) reconnect() {

@@ -112,6 +112,7 @@ func initialize(dataDir string) (*App, error) {
 	contactsCollector := contacts.NewCollector(contactsRepo, imapClient)
 	logRepo := db.NewLogRepo(database)
 	statsRepo := db.NewStatsRepo(database)
+	foldersRepo := db.NewFoldersRepo(database)
 
 	var p *poller.Poller
 	if imapClient != nil {
@@ -122,7 +123,7 @@ func initialize(dataDir string) (*App, error) {
 			}
 		}
 		p = poller.NewPoller(imapClient, rulesRepo, contactsCollector,
-			logRepo, settingsRepo, statsRepo, cfg, batchSize, cfg.PollInterval, cfg.SourceFolder,
+			logRepo, settingsRepo, statsRepo, foldersRepo, cfg, batchSize, cfg.PollInterval, cfg.SourceFolder,
 			imapEmail,
 			func() (imap.Client, error) {
 				conn := imap.New(cfg)
