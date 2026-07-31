@@ -7,9 +7,16 @@
 /demo/mailflow.db
 /demo/config.json
 
+# Superpowers artifacts
+.superpowers/
+docs/superpowers/
+
 # IDE
 .idea/
 .vscode/
 *.swp
 /demo/mailflow.db-shm
 /demo/mailflow.db-wal
+
+# macOS
+**/.DS_Store
