@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Top senders increased from 10 to 15 on stats page and MCP `get_stats`
 
 ### Fixed
+- Dashboard status table uses auto layout — labels compact, values fill width
 - Stats link hidden from footer on login/setup pages
 
 ## [0.7.4] - 2026-07-31
