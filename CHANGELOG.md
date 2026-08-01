@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Chart.js trending graphs on /stats — line chart for daily volume, donut for actions, horizontal bar for folder distribution, with per-section List/Chart toggle persisting to localStorage
+
 ## [0.7.6] - 2026-08-01
 
 ### Added

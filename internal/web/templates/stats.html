@@ -43,17 +43,33 @@
 </div>
 
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
-<div class="card" style="flex:1;min-width:300px">
-<h2>Actions</h2>
+<div class="card chartable" style="flex:1;min-width:300px">
+<div class="flex-between"><h2>Actions</h2>
+<div class="chart-toggle">
+    <button class="toggle-btn toggle-list active" onclick="toggleView('actions','list')">List</button>
+    <button class="toggle-btn toggle-chart" onclick="toggleView('actions','chart')">Chart</button>
+</div>
+</div>
+<div id="actions-list" class="chart-list">
 {{range .Actions}}
 <div style="display:flex;justify-content:space-between;font-size:0.85rem;padding:4px 0;border-bottom:1px solid var(--border)">
     <span>{{.Type}}</span><span class="muted">{{.Count}}</span>
 </div>
 {{else}}<p class="muted">No data yet</p>{{end}}
 </div>
+<div id="actions-chart" class="chart-view" style="display:none">
+    <canvas id="actions-canvas" style="max-height:280px"></canvas>
+</div>
+</div>
 
-<div class="card" style="flex:1;min-width:300px">
-<h2>Daily Volume</h2>
+<div class="card chartable" style="flex:1;min-width:300px">
+<div class="flex-between"><h2>Daily Volume</h2>
+<div class="chart-toggle">
+    <button class="toggle-btn toggle-list active" onclick="toggleView('daily','list')">List</button>
+    <button class="toggle-btn toggle-chart" onclick="toggleView('daily','chart')">Chart</button>
+</div>
+</div>
+<div id="daily-list" class="chart-list">
 <table>
 {{range .Daily}}
 <tr><td>{{.Date}}</td><td class="muted" style="text-align:right">{{.Count}}</td></tr>
@@ -61,11 +77,21 @@
 {{end}}
 </table>
 </div>
+<div id="daily-chart" class="chart-view" style="display:none">
+    <canvas id="daily-canvas" style="max-height:280px"></canvas>
+</div>
+</div>
 </div>
 
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
-<div class="card" style="flex:1;min-width:300px">
-<h2>Messages by Folder</h2>
+<div class="card chartable" style="flex:1;min-width:300px">
+<div class="flex-between"><h2>Messages by Folder</h2>
+<div class="chart-toggle">
+    <button class="toggle-btn toggle-list active" onclick="toggleView('folders','list')">List</button>
+    <button class="toggle-btn toggle-chart" onclick="toggleView('folders','chart')">Chart</button>
+</div>
+</div>
+<div id="folders-list" class="chart-list">
 {{range .Folders}}
 <div style="margin-bottom:8px">
     <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:4px">
@@ -76,6 +102,10 @@
     </div>
 </div>
 {{else}}<p class="muted">No data yet</p>{{end}}
+</div>
+<div id="folders-chart" class="chart-view" style="display:none">
+    <canvas id="folders-canvas" style="max-height:280px"></canvas>
+</div>
 </div>
 
 <div class="card" style="flex:1;min-width:300px">
@@ -88,4 +118,88 @@
 </table>
 </div>
 </div>
+
+<script>
+(function(){
+var dataDaily   = {labels:[{{range .Daily}}"{{.Date}}",{{end}}],vals:[{{range .Daily}}{{.Count}},{{end}}]};
+var dataActions = {labels:[{{range .Actions}}"{{.Type}}",{{end}}],vals:[{{range .Actions}}{{.Count}},{{end}}]};
+var dataFolders = {labels:[{{range .Folders}}"{{.Folder}}",{{end}}],vals:[{{range .Folders}}{{.Count}},{{end}}]};
+
+var dark = document.documentElement.getAttribute('data-theme') !== 'light';
+var textColor  = dark ? '#8b949e' : '#656d76';
+var gridColor  = dark ? '#21262d' : '#d0d7de';
+var accent     = '#58a6ff';
+var accentArr  = ['#58a6ff','#3fb950','#d29922','#f85149','#a371f7','#79c0ff','#56d364','#f0883e','#f778ba','#7ee787'];
+var charts = {};
+
+function chartColors() { return {text:textColor,grid:gridColor,accent:accent}; }
+
+function makeChart(canvasId, type, labels, vals) {
+    var ctx = document.getElementById(canvasId).getContext('2d');
+    var colors = chartColors();
+    if (type === 'line') {
+        return new Chart(ctx, {
+            type:'line',
+            data:{labels:labels,datasets:[{label:'Messages',data:vals,borderColor:colors.accent,backgroundColor:accent+'20',fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:colors.accent}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:colors.text,font:{size:11}},grid:{color:colors.grid}},y:{ticks:{color:colors.text,font:{size:11},precision:0},grid:{color:colors.grid},beginAtZero:true}}}
+        });
+    }
+    if (type === 'doughnut') {
+        return new Chart(ctx, {
+            type:'doughnut',
+            data:{labels:labels,datasets:[{data:vals,backgroundColor:accentArr,borderColor:'transparent'}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:colors.text,padding:12,font:{size:12},usePointStyle:true}}}}
+        });
+    }
+    if (type === 'bar') {
+        return new Chart(ctx, {
+            type:'bar',
+            data:{labels:labels,datasets:[{data:vals,backgroundColor:accent,barThickness:18}]},
+            options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:colors.text,font:{size:11},precision:0},grid:{color:colors.grid}},y:{ticks:{color:colors.text,font:{size:11}},grid:{display:false}}}}
+        });
+    }
+    return null;
+}
+
+function initChart(id, type, labels, vals) {
+    var c = document.getElementById(id+'-canvas');
+    if (!c || !labels.length) return;
+    charts[id] = makeChart(id+'-canvas', type, labels, vals);
+    var view = localStorage.getItem('chart-'+id) || 'list';
+    toggleView(id, view, true);
+    if (view === 'chart' && charts[id]) charts[id].resize();
+}
+
+function toggleView(id, view, init) {
+    var listEl  = document.getElementById(id+'-list');
+    var chartEl = document.getElementById(id+'-chart');
+    if (!listEl || !chartEl) return;
+    if (view === 'chart') {
+        listEl.style.display = 'none';
+        chartEl.style.display = 'block';
+        if (!charts[id] && !init) {
+            var data;
+            if (id==='daily') data = dataDaily;
+            else if (id==='actions') data = dataActions;
+            else data = dataFolders;
+            var type = id==='daily'?'line':(id==='actions'?'doughnut':'bar');
+            if (data.labels.length) charts[id] = makeChart(id+'-canvas', type, data.labels, data.vals);
+        }
+    } else {
+        listEl.style.display = 'block';
+        chartEl.style.display = 'none';
+    }
+    if (!init) localStorage.setItem('chart-'+id, view);
+    var section = listEl.closest('.chartable');
+    if (section) {
+        section.querySelectorAll('.toggle-btn').forEach(function(b){b.classList.remove('active')});
+        section.querySelector(view==='chart'?'.toggle-chart':'.toggle-list').classList.add('active');
+    }
+}
+
+initChart('daily', 'line', dataDaily.labels, dataDaily.vals);
+initChart('actions', 'doughnut', dataActions.labels, dataActions.vals);
+initChart('folders', 'bar', dataFolders.labels, dataFolders.vals);
+})();
+</script>
 {{end}}

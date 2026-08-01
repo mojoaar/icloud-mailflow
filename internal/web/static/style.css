@@ -238,3 +238,29 @@ tr[draggable] { cursor: grab; }
 .skip-link:focus {
     top: 12px;
 }
+
+.chart-toggle {
+    display: flex;
+    gap: 0;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+.toggle-btn {
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    transition: background 0.15s, color 0.15s;
+}
+.toggle-btn.active {
+    background: var(--accent);
+    color: #fff;
+}
+.toggle-btn:not(.active):hover {
+    background: var(--bg);
+    color: var(--fg);
+}
+.chart-view canvas { width: 100% !important; }
