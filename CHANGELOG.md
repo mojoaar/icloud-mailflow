@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Weekly volume retention increased from 4 to 24 weeks (~6 months) on stats page
+- Top senders limit increased from 15 to 20 on stats page and MCP get_stats
 
 ## [0.7.6] - 2026-08-01
 
