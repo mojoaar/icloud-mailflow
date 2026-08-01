@@ -37,8 +37,8 @@
     <footer>
         Crafted with ❤️ by <a href="https://johansen.foo" target="_blank">Morten Johansen</a> ·
         <a href="https://github.com/mojoaar/icloud-mailflow" target="_blank">GitHub</a> ·
-        <a href="https://github.com/mojoaar/icloud-mailflow/blob/main/LICENSE" target="_blank">MIT</a> ·
-        <a href="/stats">Stats</a> ·
+        <a href="https://github.com/mojoaar/icloud-mailflow/blob/main/LICENSE" target="_blank">MIT</a>{{if .ShowNav}} ·{{end}}
+        {{if .ShowNav}}<a href="/stats">Stats</a> ·{{end}}
         <a href="/docs" target="_blank">Docs</a> ·
         v{{.Version}} · © 2026
     </footer>

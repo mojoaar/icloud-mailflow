@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Top senders increased from 10 to 15 on stats page and MCP `get_stats`
 
+### Fixed
+- Stats link hidden from footer on login/setup pages
+
 ## [0.7.4] - 2026-07-31
 
 ### Added
@@ -24,9 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README: added shields.io badges (Go, Release, License, Docker), fixed operator count (10→13), actions list, and MCP tool count (12→19)
 - docs.html: MCP tool count corrected (18→19), added missing health tool, action types, condition fields, date operators, and API endpoints (mcp/toggle, mcp/regenerate, setup, dashboard/status)
 - Poller now auto-syncs IMAP folders on each tick — folder renames, deletions, and new folders are detected automatically
-
-### Fixed
-- Docs MCP tool count updated from 12 to 18; missing 7 tools added to reference table
 
 ## [0.7.3] - 2026-07-31
 
