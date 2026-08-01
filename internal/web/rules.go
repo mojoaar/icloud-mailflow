@@ -53,7 +53,7 @@ func rulesCreateHandler(repo *db.RulesRepo) http.HandlerFunc {
 		parseConditions(r, rule)
 		parseActions(r, rule)
 		if err := repo.Create(rule); err != nil {
-			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "New": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": "OR"})
+			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": "Failed to create rule", "New": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": "OR"})
 			return
 		}
 		repo.EnsureCatchAll()
@@ -99,7 +99,7 @@ func rulesUpdateHandler(repo *db.RulesRepo) http.HandlerFunc {
 			if len(rule.Groups) > 0 {
 				op = rule.Groups[0].Operator
 			}
-			renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "Edit": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": op})
+			renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Error": "Failed to update rule", "Edit": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": op})
 			return
 		}
 		repo.EnsureCatchAll()
@@ -120,10 +120,10 @@ func rulesDeleteHandler(repo *db.RulesRepo) http.HandlerFunc {
 		}
 		if err := repo.Delete(int64(id)); err != nil {
 			if r.Header.Get("HX-Request") == "true" {
-				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Failed to delete rule"})
 				return
 			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal error", http.StatusInternalServerError)
 			return
 		}
 		if r.Header.Get("HX-Request") == "true" {

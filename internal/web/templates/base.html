@@ -26,7 +26,7 @@
             <a href="/activity"><i data-lucide="list" class="nav-icon"></i> Activity</a>
             <a href="/rules"><i data-lucide="git-branch" class="nav-icon"></i> Rules</a>
             <a href="/settings"><i data-lucide="settings" class="nav-icon"></i> Settings</a>
-            <a href="/logout"><i data-lucide="log-out" class="nav-icon"></i> Logout</a>
+            <form method="POST" action="/logout" style="display:inline;margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}"><button type="submit" class="nav-btn"><i data-lucide="log-out" class="nav-icon"></i> Logout</button></form>
             <a href="#" style="font-size:0.85rem;padding:0" onclick="var t=document.documentElement.getAttribute('data-theme')==='light'?'':'light';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);return false" title="Toggle theme">
                 <i data-lucide="moon" class="nav-icon"></i>
             </a>

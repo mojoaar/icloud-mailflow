@@ -79,7 +79,7 @@ func activityHandler(repo *db.LogRepo, rulesRepo *db.RulesRepo, settingsRepo *db
 func activityDeleteHandler(repo *db.LogRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := repo.DeleteAll(); err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Failed to clear activity log"})
 			return
 		}
 		w.Header().Set("HX-Refresh", "true")

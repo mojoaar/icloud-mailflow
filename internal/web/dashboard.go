@@ -121,7 +121,7 @@ func dashboardStatusHandler(p *poller.Poller, settingsRepo *db.SettingsRepo, ima
 func pollerTickHandler(p *poller.Poller) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := p.Tick(); err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Poll failed"})
 			return
 		}
 		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Poll complete"})

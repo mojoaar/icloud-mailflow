@@ -164,7 +164,7 @@ func settingsTestIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 		cfg.IMAPPassword = password
 		temp := imap.New(cfg)
 		if err := temp.Connect(); err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Connection failed"})
 			return
 		}
 		temp.Close()
@@ -292,7 +292,7 @@ func carddavImportHandler(settingsRepo *db.SettingsRepo, cfg *config.Config, con
 		importer := carddav.NewImporter(contactsRepo)
 		count, err := importer.ImportFromiCloud(email, password)
 		if err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Connection failed"})
 			return
 		}
 		if count == 0 {
@@ -332,7 +332,7 @@ func rulesExportHandler(repo *db.RulesRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rules, err := repo.List()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Failed to export rules", http.StatusInternalServerError)
 			return
 		}
 		var exp rulesExport
@@ -383,7 +383,7 @@ func rulesImportHandler(repo *db.RulesRepo) http.HandlerFunc {
 
 		var exp rulesExport
 		if err := json.Unmarshal(data, &exp); err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Invalid JSON: " + err.Error()})
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Invalid JSON format"})
 			return
 		}
 
@@ -411,7 +411,7 @@ func rulesImportHandler(repo *db.RulesRepo) http.HandlerFunc {
 				rule.Actions = append(rule.Actions, db.Action{Type: a.Type, Value: a.Value})
 			}
 			if err := repo.Create(rule); err != nil {
-				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Import failed at '" + re.Name + "': " + err.Error()})
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Import failed"})
 				return
 			}
 			imported++
@@ -456,7 +456,7 @@ func getMemoryMB() string {
 func settingsBackupNow(p *poller.Poller) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := p.BackupNow(); err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Connection failed"})
 			return
 		}
 		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Backup sent"})

@@ -263,7 +263,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <h2 id="mcp">MCP Server</h2>
 <p>Mailflow exposes a Model Context Protocol (MCP) server so AI agents (Claude Code, OpenCode, Codex) can manage rules, check stats, and trigger polls remotely. Enable it in Settings → MCP Access — you get an API key and ready-to-use config snippets for all platforms.</p>
-<p>The server runs over HTTPS on <code>/mcp</code>. All 21 tools require a Bearer token in the Authorization header.</p>
+<p>The server runs over HTTP on <code>/mcp</code>. All 22 tools require a Bearer token in the Authorization header.</p>
 <table>
     <tr><th>Tool</th><th>Description</th></tr>
     <tr><td><code>list_rules</code></td><td>List all filtering rules with conditions and actions</td></tr>
@@ -306,7 +306,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <div class="api-section">
 <h2 id="api">API Reference</h2>
-<p>Base URL: <code>http://{{.Host}}</code>. All endpoints require session cookie from <code>POST /login</code>.</p>
+<p>Base URL: <code>http://{{.Host}}</code>. Most endpoints require a session cookie from <code>POST /login</code>. Public endpoints (<code>/health</code>, <code>/docs</code>, <code>/login</code>, <code>/setup</code>) do not.</p>
 
 <h3 class="api-group" id="api-auth">Authentication</h3>
 
@@ -351,7 +351,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <div class="endpoint">
     <h4><span class="method-badge method-get">GET</span> GET /dashboard/status</h4>
-    <p class="desc">Live poller status JSON (auto-refreshed by dashboard every 30s). Returns running state, health, last tick, last duration, and consecutive failures.</p>
+    <p class="desc">Live poller status HTML fragment (auto-refreshed by dashboard every 30s). Returns running state, health, last tick, last duration, and consecutive failures.</p>
     <pre><code class="language-bash">curl http://{{.Host}}/dashboard/status -b cookies.txt</code></pre>
 </div>
 

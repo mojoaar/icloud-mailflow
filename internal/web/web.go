@@ -29,6 +29,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
+	r.Use(securityHeaders)
 	r.Use(middleware.Timeout(30 * time.Second))
 
 	settingsRepo := db.NewSettingsRepo(d)
@@ -69,7 +70,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 
 	r.Get("/login", loginPage(settingsRepo, sessRepo))
 	r.Post("/login", loginPage(settingsRepo, sessRepo))
-	r.Get("/logout", logoutHandler(sessRepo))
+	r.Post("/logout", logoutHandler(sessRepo))
 
 	r.Get("/setup", setupPage(settingsRepo, d, cfg))
 	r.Post("/setup", setupPage(settingsRepo, d, cfg))
@@ -143,13 +144,14 @@ func csrfToken() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-func csrfCookieWithToken(token string) *http.Cookie {
+func csrfCookieWithToken(token string, r *http.Request) *http.Cookie {
 	return &http.Cookie{
 		Name:     "mailflow_csrf",
 		Value:    token,
 		Path:     "/",
 		SameSite: http.SameSiteStrictMode,
-		HttpOnly: false,
+		HttpOnly: true,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
 	}
 }
 

@@ -2,7 +2,9 @@ package mcp
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
@@ -10,6 +12,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -23,6 +27,31 @@ import (
 
 func resultJSON(v any) (*mcp.CallToolResult, error) {
 	return mcp.NewToolResultJSON(v)
+}
+
+var mcpLimiter = &mcpRateLimiter{entries: map[string]*mcpRateEntry{}}
+
+type mcpRateLimiter struct {
+	mu      sync.Mutex
+	entries map[string]*mcpRateEntry
+}
+
+type mcpRateEntry struct {
+	count   int
+	resetAt time.Time
+}
+
+func (rl *mcpRateLimiter) allow(ip string) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	now := time.Now()
+	e, ok := rl.entries[ip]
+	if !ok || now.After(e.resetAt) {
+		rl.entries[ip] = &mcpRateEntry{count: 1, resetAt: now.Add(time.Minute)}
+		return true
+	}
+	e.count++
+	return e.count <= 100
 }
 
 func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, collector *contacts.Collector, settingsRepo *db.SettingsRepo) *server.StreamableHTTPServer {
@@ -518,11 +547,28 @@ func generateAPIKey() string {
 	return hex.EncodeToString(b)
 }
 
+func hmacEqual(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	h := hmac.New(sha256.New, []byte("mailflow"))
+	h.Write([]byte(a))
+	ha := h.Sum(nil)
+	h.Reset()
+	h.Write([]byte(b))
+	hb := h.Sum(nil)
+	return hmac.Equal(ha, hb)
+}
+
 func NewAuthMiddleware(mcpHandler http.Handler, settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		enabled, _ := settingsRepo.Get("mcp_enabled")
 		if enabled != "true" {
 			http.Error(w, "MCP server is not enabled", http.StatusNotFound)
+			return
+		}
+		if !mcpLimiter.allow(r.RemoteAddr) {
+			http.Error(w, "too many requests", http.StatusTooManyRequests)
 			return
 		}
 		auth := r.Header.Get("Authorization")
@@ -531,7 +577,7 @@ func NewAuthMiddleware(mcpHandler http.Handler, settingsRepo *db.SettingsRepo) h
 			return
 		}
 		key, _ := settingsRepo.Get("mcp_api_key")
-		if key == "" || auth != "Bearer "+key {
+		if key == "" || !hmacEqual(auth, "Bearer "+key) {
 			http.Error(w, "invalid API key", http.StatusUnauthorized)
 			return
 		}

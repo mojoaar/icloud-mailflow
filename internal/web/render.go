@@ -50,7 +50,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	http.SetCookie(w, csrfCookieWithToken(token))
+	http.SetCookie(w, csrfCookieWithToken(token, r))
 	if m, ok := data.(map[string]any); ok {
 		m["CSRFToken"] = token
 	} else {
@@ -58,7 +58,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 	}
 	var buf bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&buf, pageName, data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 	pd := pageData{
@@ -70,7 +70,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 		MonoFont:  useMonoFont,
 	}
 	if err := tmpl.ExecuteTemplate(w, "base.html", pd); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 	}
 }
 
