@@ -61,6 +61,17 @@ nav .brand {
     font-size: 0.9rem;
 }
 .nav-links a:hover { color: var(--accent); }
+.nav-btn {
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: inherit;
+    padding: 0;
+}
+.nav-btn:hover { color: var(--accent); }
+.nav-btn i[data-lucide] { display: inline-flex; vertical-align: -3px; }
 
 .nav-icon { width: 16px; height: 16px; vertical-align: -3px; }
 .btn i[data-lucide] { display: inline-flex; vertical-align: -2px; }
