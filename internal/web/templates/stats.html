@@ -108,8 +108,14 @@
 </div>
 </div>
 
-<div class="card" style="flex:1;min-width:300px">
-<h2>Weekly Volume</h2>
+<div class="card chartable" style="flex:1;min-width:300px">
+<div class="flex-between"><h2>Weekly Volume</h2>
+<div class="chart-toggle">
+    <button class="toggle-btn toggle-list active" onclick="toggleView('weekly','list')">List</button>
+    <button class="toggle-btn toggle-chart" onclick="toggleView('weekly','chart')">Chart</button>
+</div>
+</div>
+<div id="weekly-list" class="chart-list">
 <table>
 {{range .Weekly}}
 <tr><td>{{.Date}}</td><td class="muted" style="text-align:right">{{.Count}}</td></tr>
@@ -117,13 +123,19 @@
 {{end}}
 </table>
 </div>
+<div id="weekly-chart" class="chart-view" style="display:none">
+    <canvas id="weekly-canvas" style="max-height:280px"></canvas>
+</div>
+</div>
 </div>
 
 <script>
+window.addEventListener('load', function() {
 (function(){
 var dataDaily   = {labels:[{{range .Daily}}"{{.Date}}",{{end}}],vals:[{{range .Daily}}{{.Count}},{{end}}]};
 var dataActions = {labels:[{{range .Actions}}"{{.Type}}",{{end}}],vals:[{{range .Actions}}{{.Count}},{{end}}]};
 var dataFolders = {labels:[{{range .Folders}}"{{.Folder}}",{{end}}],vals:[{{range .Folders}}{{.Count}},{{end}}]};
+var dataWeekly  = {labels:[{{range .Weekly}}"{{.Date}}",{{end}}],vals:[{{range .Weekly}}{{.Count}},{{end}}]};
 
 var dark = document.documentElement.getAttribute('data-theme') !== 'light';
 var textColor  = dark ? '#8b949e' : '#656d76';
@@ -158,6 +170,13 @@ function makeChart(canvasId, type, labels, vals) {
             options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:colors.text,font:{size:11},precision:0},grid:{color:colors.grid}},y:{ticks:{color:colors.text,font:{size:11}},grid:{display:false}}}}
         });
     }
+    if (type === 'barv') {
+        return new Chart(ctx, {
+            type:'bar',
+            data:{labels:labels,datasets:[{data:vals,backgroundColor:accent,barThickness:18}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:colors.text,font:{size:11}},grid:{color:colors.grid}},y:{ticks:{color:colors.text,font:{size:11},precision:0},grid:{color:colors.grid},beginAtZero:true}}}
+        });
+    }
     return null;
 }
 
@@ -181,8 +200,9 @@ function toggleView(id, view, init) {
             var data;
             if (id==='daily') data = dataDaily;
             else if (id==='actions') data = dataActions;
-            else data = dataFolders;
-            var type = id==='daily'?'line':(id==='actions'?'doughnut':'bar');
+            else if (id==='folders') data = dataFolders;
+            else data = dataWeekly;
+            var type = id==='daily'?'line':(id==='actions'?'doughnut':(id==='weekly'?'barv':'bar'));
             if (data.labels.length) charts[id] = makeChart(id+'-canvas', type, data.labels, data.vals);
         }
     } else {
@@ -200,6 +220,8 @@ function toggleView(id, view, init) {
 initChart('daily', 'line', dataDaily.labels, dataDaily.vals);
 initChart('actions', 'doughnut', dataActions.labels, dataActions.vals);
 initChart('folders', 'bar', dataFolders.labels, dataFolders.vals);
+initChart('weekly', 'barv', dataWeekly.labels, dataWeekly.vals);
 })();
+});
 </script>
 {{end}}
