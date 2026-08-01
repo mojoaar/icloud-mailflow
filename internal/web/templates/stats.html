@@ -216,6 +216,7 @@ function toggleView(id, view, init) {
         section.querySelector(view==='chart'?'.toggle-chart':'.toggle-list').classList.add('active');
     }
 }
+window.toggleView = toggleView;
 
 initChart('daily', 'line', dataDaily.labels, dataDaily.vals);
 initChart('actions', 'doughnut', dataActions.labels, dataActions.vals);
