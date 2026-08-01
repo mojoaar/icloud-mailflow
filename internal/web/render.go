@@ -5,6 +5,7 @@ import (
 	"embed"
 	"html/template"
 	"net/http"
+	"sync/atomic"
 	"time"
 )
 
@@ -26,7 +27,7 @@ type pageData struct {
 var tmpl *template.Template
 
 var appVersion string
-var useMonoFont bool
+var useMonoFont atomic.Bool
 var startTime time.Time
 
 var templateFuncs = template.FuncMap{
@@ -67,7 +68,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 		CSRFToken: token,
 		ShowNav:   pageName != "login" && pageName != "setup",
 		Version:   appVersion,
-		MonoFont:  useMonoFont,
+		MonoFont:  useMonoFont.Load(),
 	}
 	if err := tmpl.ExecuteTemplate(w, "base.html", pd); err != nil {
 		http.Error(w, "Internal error", http.StatusInternalServerError)

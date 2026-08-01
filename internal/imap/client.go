@@ -68,11 +68,12 @@ func (c *IMAPClient) Connect() error {
 	if c.cfg.IMAPPassword == "" {
 		return fmt.Errorf("imap password is empty")
 	}
-	client := imapclient.New(conn, &imapclient.Options{})
-	if err := client.Login(c.cfg.IMAPEmail, c.cfg.IMAPPassword).Wait(); err != nil {
+	c.client = imapclient.New(conn, &imapclient.Options{})
+	if err := c.client.Login(c.cfg.IMAPEmail, c.cfg.IMAPPassword).Wait(); err != nil {
+		c.client.Close()
+		c.client = nil
 		return fmt.Errorf("login: %w", err)
 	}
-	c.client = client
 	slog.Debug("connected to imap server", "server", addr)
 	return nil
 }

@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Security headers middleware (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)
+- Session cookie Secure flag when behind TLS proxy, constant-time MCP auth comparison
+- Poller reconnect activation — IMAP failures now trigger exponential backoff reconnection
+- Matched-but-not-seen diagnostic — warns when rule matches without mark_as_read
+- UI accessibility: skip-to-main-content link, aria-label/icons, for/id label associations
+- Empty state for folder dropdown when IMAP is disconnected
+
+### Changed
+- MCP tool count updated 22 in docs, dashboard/status described as HTML fragment
+- Auth blanket statement clarified for /health exception, HTTPS→HTTP in MCP description
+- Logout changed GET→POST with CSRF protection
+- MCP auth rate-limited to 100 requests/minute/IP
+- Color contrast improved: muted text, toasts, badges (AA compliant)
+- Lucide pinned to @0.469.0, orphaned web/static/style.css removed
+
+### Fixed
+- TLS connection leak on IMAP login failure — connection now closed on error
+- useMonoFont race condition — replaced with atomic.Bool
+- IMAP \Deleted flag blocked in set_flag action (iCloud silently rejects)
+- Template execution and runtime errors now return generic messages to users
+- Activity clear-logs button refreshes list after deletion
+- Mobile flex-row elements stack vertically
+- fs.Sub error checked at startup; rand.Read error checked in API key generation
+
+### Security
+- 14 instances of err.Error() replaced with generic error messages in toasts and HTTP responses
+- Session cookies automatically cleaned up every hour
+- All forms now include for/id label-input associations
+
 ## [0.7.5] - 2026-08-01
 
 ### Added

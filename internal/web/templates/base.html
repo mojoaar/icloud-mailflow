@@ -18,22 +18,23 @@
     {{if .MonoFont}}<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">{{end}}
 </head>
 <body{{if .MonoFont}} style="font-family:'JetBrains Mono',monospace"{{end}}>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <nav>
         <a href="/dashboard" class="brand">iCloud Mailflow</a>
         {{if .ShowNav}}
         <div class="nav-links">
-            <a href="/dashboard"><i data-lucide="layout-dashboard" class="nav-icon"></i> Dashboard</a>
-            <a href="/activity"><i data-lucide="list" class="nav-icon"></i> Activity</a>
-            <a href="/rules"><i data-lucide="git-branch" class="nav-icon"></i> Rules</a>
-            <a href="/settings"><i data-lucide="settings" class="nav-icon"></i> Settings</a>
-            <form method="POST" action="/logout" style="display:inline;margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}"><button type="submit" class="nav-btn"><i data-lucide="log-out" class="nav-icon"></i> Logout</button></form>
-            <a href="#" style="font-size:0.85rem;padding:0" onclick="var t=document.documentElement.getAttribute('data-theme')==='light'?'':'light';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);return false" title="Toggle theme">
-                <i data-lucide="moon" class="nav-icon"></i>
+            <a href="/dashboard"><i data-lucide="layout-dashboard" class="nav-icon" aria-hidden="true"></i> Dashboard</a>
+            <a href="/activity"><i data-lucide="list" class="nav-icon" aria-hidden="true"></i> Activity</a>
+            <a href="/rules"><i data-lucide="git-branch" class="nav-icon" aria-hidden="true"></i> Rules</a>
+            <a href="/settings"><i data-lucide="settings" class="nav-icon" aria-hidden="true"></i> Settings</a>
+            <form method="POST" action="/logout" style="display:inline;margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}"><button type="submit" class="nav-btn"><i data-lucide="log-out" class="nav-icon" aria-hidden="true"></i> Logout</button></form>
+            <a href="#" style="font-size:0.85rem;padding:0" onclick="var t=document.documentElement.getAttribute('data-theme')==='light'?'':'light';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);return false" aria-label="Toggle theme">
+                <i data-lucide="moon" class="nav-icon" aria-hidden="true"></i>
             </a>
         </div>
         {{end}}
     </nav>
-    <main>{{.Content}}</main>
+    <main id="main-content">{{.Content}}</main>
     <footer>
         Crafted with ❤️ by <a href="https://johansen.foo" target="_blank">Morten Johansen</a> ·
         <a href="https://github.com/mojoaar/icloud-mailflow" target="_blank">GitHub</a> ·
@@ -43,7 +44,7 @@
         v{{.Version}} · © 2026
     </footer>
     <script src="https://unpkg.com/htmx.org@2.0.10/dist/htmx.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
     <script src="/static/highlight.min.js"></script>
     <script>lucide.createIcons();document.body.addEventListener('htmx:afterSettle',()=>{lucide.createIcons();hljs.highlightAll()});hljs.highlightAll()</script>
 </body>

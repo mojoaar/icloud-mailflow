@@ -543,7 +543,9 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 
 func generateAPIKey() string {
 	b := make([]byte, 32)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		panic("crypto/rand.Read failed: " + err.Error())
+	}
 	return hex.EncodeToString(b)
 }
 

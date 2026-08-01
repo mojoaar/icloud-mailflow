@@ -6,7 +6,7 @@
     <i data-lucide="refresh-cw" data-size="14"></i> Refresh
 </button>
 {{if .Entries}}
-<button class="btn btn-danger" hx-post="/activity/delete" hx-target="body" hx-swap="none"
+<button class="btn btn-danger" hx-post="/activity/delete" hx-target="#activity-content" hx-swap="outerHTML"
     hx-confirm="Clear all activity logs? Stats are stored separately and won't be affected.">
     <i data-lucide="trash-2" data-size="14"></i> Clear Logs
 </button>

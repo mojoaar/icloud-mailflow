@@ -9,17 +9,17 @@
     {{if .Edit}}<input type="hidden" name="_method" value="PUT">{{end}}
     <div class="card">
         <div class="form-group">
-            <label>Name</label>
-            <input type="text" name="name" value="{{.Rule.Name}}" required style="width:100%">
+            <label for="rule-name">Name</label>
+            <input type="text" id="rule-name" name="name" value="{{.Rule.Name}}" required style="width:100%">
         </div>
         <div class="form-group">
-            <label>Description</label>
-            <input type="text" name="description" value="{{.Rule.Description}}" style="width:100%">
+            <label for="rule-desc">Description</label>
+            <input type="text" id="rule-desc" name="description" value="{{.Rule.Description}}" style="width:100%">
         </div>
         <div style="display:flex;gap:16px">
             <div class="form-group">
-                <label>Priority</label>
-                <input type="number" name="priority" value="{{.Rule.Priority}}" style="width:80px">
+                <label for="rule-priority">Priority</label>
+                <input type="number" id="rule-priority" name="priority" value="{{.Rule.Priority}}" style="width:80px">
             </div>
             <div class="form-group">
                 <label>&nbsp;</label>

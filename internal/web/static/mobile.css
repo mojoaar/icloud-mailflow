@@ -10,11 +10,11 @@
         font-size: 0.85rem;
         padding: 8px;
     }
-    .flex-between {
+    .flex-between, .flex-row {
         flex-direction: column;
         gap: 8px;
     }
-    .flex-between > * {
+    .flex-between > *, .flex-row > * {
         width: 100%;
     }
     table {

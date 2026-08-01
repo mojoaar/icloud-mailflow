@@ -1,5 +1,9 @@
 {{define "folders_list"}}
+{{if .Folders}}
 {{range .Folders}}
 <option value="{{.Name}}">{{.Name}}</option>
+{{end}}
+{{else}}
+<option value="" disabled>No folders available</option>
 {{end}}
 {{end}}

@@ -103,14 +103,16 @@ func (p *Poller) loop() {
 	defer ticker.Stop()
 	if err := p.process(); err != nil {
 		slog.Error("poller initial tick failed", "error", err)
+		p.setLastError(err)
 	}
 	for {
 		select {
 		case <-ticker.C:
-			if err := p.process(); err != nil {
-				slog.Error("poller tick failed", "error", err)
-			}
-			p.checkBackup()
+		if err := p.process(); err != nil {
+			slog.Error("poller tick failed", "error", err)
+			p.setLastError(err)
+		}
+		p.checkBackup()
 		case <-p.stopCh:
 			return
 		}
@@ -130,6 +132,7 @@ func (p *Poller) process() error {
 	slog.Debug("poller tick start", "source", p.source)
 	ruleList, err := p.rulesRepo.List()
 	if err != nil {
+		p.setLastError(err)
 		return fmt.Errorf("list rules: %w", err)
 	}
 	slog.Debug("rules loaded", "count", len(ruleList))
@@ -140,6 +143,7 @@ func (p *Poller) process() error {
 		minUID := highestSkipped
 		uids, err := p.imapClient.SearchMessages(p.source, 1, minUID)
 		if err != nil {
+			p.setLastError(err)
 			return fmt.Errorf("search: %w", err)
 		}
 		slog.Debug("search result", "found", len(uids), "minUID", minUID)
@@ -181,6 +185,16 @@ func (p *Poller) process() error {
 			}
 			if matched != nil {
 				slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
+				hasMarkRead := false
+				for _, a := range matched.Actions {
+					if a.Type == "mark_as_read" {
+						hasMarkRead = true
+						break
+					}
+				}
+				if !hasMarkRead {
+					slog.Warn("matched rule has no mark_as_read — message may re-process on next tick", "uid", uid, "rule", matched.Name)
+				}
 				p.executeActions(matched, uint32(uid), msg)
 			} else {
 				u := uint32(uid)
@@ -279,6 +293,10 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 		case "set_flag":
 			if action.Value == "" {
 				slog.Warn("set_flag action has empty value, skipping", "uid", effectiveUID, "rule", rule.Name)
+				continue
+			}
+			if action.Value == "\\Deleted" {
+				logAction(effectiveUID, action, "error")
 				continue
 			}
 			if err := p.imapClient.SetFlags(effectiveUID, []string{action.Value}); err != nil {

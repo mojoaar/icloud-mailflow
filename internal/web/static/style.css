@@ -3,7 +3,7 @@
     --surface: #161b22;
     --border: #30363d;
     --text: #c9d1d9;
-    --muted: #8b949e;
+    --muted: #949ba8;
     --accent: #58a6ff;
     --green: #3fb950;
     --red: #f85149;
@@ -15,7 +15,7 @@
     --surface: #f6f8fa;
     --border: #d0d7de;
     --text: #24292f;
-    --muted: #656d76;
+    --muted: #57606a;
     --accent: #0969da;
     --green: #1a7f37;
     --red: #cf222e;
@@ -117,8 +117,8 @@ th { color: var(--muted); font-weight: 600; }
     font-size: 0.75rem;
     font-weight: 600;
 }
-.badge-on { background: #033a16; color: var(--green); }
-.badge-off { background: #490202; color: var(--red); }
+.badge-on { background: #1a4a2e; color: #56d364; }
+.badge-off { background: #5c1010; color: #ff7b72; }
 
 input, select, textarea {
     background: var(--bg);
@@ -129,9 +129,10 @@ input, select, textarea {
     font-size: 0.9rem;
     font-family: inherit;
 }
-input:focus, select:focus, textarea:focus {
+input:focus-visible, select:focus-visible, textarea:focus-visible {
     outline: none;
     border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.3);
 }
 input[type="file"] {
     padding: 5px 8px;
@@ -167,8 +168,8 @@ pre { max-width:100%; overflow-x:auto; }
     cursor: pointer;
     animation: fadeIn 0.2s ease;
 }
-.toast-success { background: #033a16; border: 1px solid var(--green); color: var(--green); }
-.toast-error { background: #490202; border: 1px solid var(--red); color: var(--red); }
+.toast-success { background: #1a4a2e; border: 1px solid #2ea043; color: #7ee787; }
+.toast-error { background: #5c1010; border: 1px solid #da3633; color: #ffa198; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } }
 
@@ -211,3 +212,18 @@ tr[draggable] { cursor: grab; }
 
 .htmx-indicator { display: none; }
 .htmx-request .htmx-indicator { display: inline-block; }
+
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: 12px;
+    background: var(--accent);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    z-index: 1001;
+}
+.skip-link:focus {
+    top: 12px;
+}

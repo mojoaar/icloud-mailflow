@@ -34,9 +34,15 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 
 	settingsRepo := db.NewSettingsRepo(d)
 	if v, _ := settingsRepo.Get("font_mono"); v != "false" {
-		useMonoFont = true
+		useMonoFont.Store(true)
 	}
 	sessRepo := db.NewSessionsRepo(d)
+	go func() {
+		for {
+			time.Sleep(time.Hour)
+			sessRepo.Cleanup()
+		}
+	}()
 	rulesRepo := db.NewRulesRepo(d)
 	foldersRepo := db.NewFoldersRepo(d)
 
@@ -61,7 +67,10 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Handle("/mcp", mcpHandler)
 	r.Handle("/mcp/*", mcpHandler)
 
-	subFS, _ := fs.Sub(staticFS, "static")
+	subFS, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		panic("embedded static directory not found")
+	}
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(subFS))))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {

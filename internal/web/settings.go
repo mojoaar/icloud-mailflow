@@ -438,10 +438,10 @@ func settingsSaveFont(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 		r.ParseForm()
 		if r.FormValue("font") == "mono" {
 			settingsRepo.Set("font_mono", "true")
-			useMonoFont = true
+			useMonoFont.Store(true)
 		} else {
 			settingsRepo.Set("font_mono", "false")
-			useMonoFont = false
+			useMonoFont.Store(false)
 		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
