@@ -165,7 +165,14 @@ func (p *Poller) process() error {
 			}
 			slog.Debug("fetched message", "uid", uid, "subj", msg.Subject)
 			if p.collector != nil {
-				p.collector.CollectFromMessage(msg)
+				collect := true
+				if p.settingsRepo != nil {
+					enabled, _ := p.settingsRepo.Get("contacts_collection_enabled")
+					collect = enabled != "false"
+				}
+				if collect {
+					p.collector.CollectFromMessage(msg)
+				}
 			}
 			matched, err := rules.Match(ruleList, msg, p.imapClient)
 			if err != nil {

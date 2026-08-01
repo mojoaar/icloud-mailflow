@@ -107,6 +107,8 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/settings/backup/now", settingsBackupNow(p))
 	r.Post("/settings/mcp/toggle", settingsMcpToggle(settingsRepo))
 	r.Post("/settings/mcp/regenerate", settingsMcpRegenerate(settingsRepo))
+	r.Post("/settings/contacts/toggle", settingsContactsToggle(settingsRepo))
+	r.Post("/settings/contacts/wipe", settingsContactsWipe(contactsRepo))
 
 	r.Get("/api/contacts", contactsSearchHandler(db.NewContactsRepo(d)))
 	r.Get("/api/folders", foldersListHandler(imapClient, foldersRepo))

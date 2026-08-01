@@ -109,6 +109,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		}
 		mcpEnabled, _ := settingsRepo.Get("mcp_enabled")
 		mcpAPIKey, _ := settingsRepo.Get("mcp_api_key")
+		contactsCollEnabled, _ := settingsRepo.Get("contacts_collection_enabled")
 		protocol := "http"
 		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
 			protocol = "https"
@@ -125,6 +126,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"Timezone":     timezone,
 			"Timezones":    []string{"UTC", "Europe/Copenhagen", "Europe/London", "Europe/Berlin", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "Asia/Tokyo", "Australia/Sydney"},
 			"PollingActive": pollingEnabled != "false",
+			"ContactsCollectionEnabled": contactsCollEnabled != "false",
 			"Contacts":     contactsCount,
 			"MonoFont":     monoFont != "false",
 			"LogKeep":      logKeep,
@@ -495,4 +497,36 @@ func settingsMcpRegenerate(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 		settingsRepo.Set("mcp_api_key", hex.EncodeToString(key))
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
+}
+
+func settingsContactsToggle(settingsRepo *db.SettingsRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		enabled, _ := settingsRepo.Get("contacts_collection_enabled")
+		if enabled == "false" {
+			settingsRepo.Set("contacts_collection_enabled", "true")
+		} else {
+			settingsRepo.Set("contacts_collection_enabled", "false")
+		}
+		w.Header().Set("HX-Refresh", "true")
+		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Contacts collection " + contactsCollectionLabel(settingsRepo)})
+	}
+}
+
+func settingsContactsWipe(contactsRepo *db.ContactsRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := contactsRepo.DeleteAll(); err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Failed to wipe contacts"})
+			return
+		}
+		w.Header().Set("HX-Refresh", "true")
+		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "All contacts wiped"})
+	}
+}
+
+func contactsCollectionLabel(settingsRepo *db.SettingsRepo) string {
+	v, _ := settingsRepo.Get("contacts_collection_enabled")
+	if v == "false" {
+		return "disabled"
+	}
+	return "enabled"
 }

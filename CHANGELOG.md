@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Debug logging across SMTP, IMAP client, DB migrations, and startup — comprehensive visibility when LOG_LEVEL=debug
+- Contacts collection toggle — enable/disable automatic contacts collection from Settings or MCP
+- Contacts wipe — delete all collected contacts from Settings or MCP
 
 ### Changed
 - Top senders increased from 10 to 15 on stats page and MCP `get_stats`

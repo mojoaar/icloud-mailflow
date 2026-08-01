@@ -239,10 +239,12 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 <p>Actions execute strictly in declared order. For iCloud, place <code>mark_as_read</code> before <code>move_to_folder</code> — iCloud requires \Seen before allowing MOVE.</p>
 
 <h2 id="contacts">Contacts</h2>
-<p>Collected automatically from processed messages. Seed from all folders via Dashboard.</p>
+<p>Mailflow automatically collects sender and recipient addresses from processed messages. Automatic collection can be disabled, and contacts can be wiped from Settings or MCP.</p>
 <ul>
+    <li><strong>Automatic Collection</strong> — Emails from, to, and cc addresses are collected during each poll tick (can be disabled via Settings)</li>
     <li><strong>Seed Contacts</strong> — Bulk import across all IMAP folders (newest 200 each)</li>
     <li><strong>iCloud Contacts</strong> — Import address book via CardDAV (Settings)</li>
+    <li><strong>Wipe Contacts</strong> — Delete all collected contacts from Settings or MCP</li>
     <li><strong>Autocomplete</strong> — Contacts suggest in rule condition value inputs</li>
     <li><strong>Count</strong> — Shown on Dashboard and Settings → Server</li>
 </ul>
@@ -261,7 +263,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <h2 id="mcp">MCP Server</h2>
 <p>Mailflow exposes a Model Context Protocol (MCP) server so AI agents (Claude Code, OpenCode, Codex) can manage rules, check stats, and trigger polls remotely. Enable it in Settings → MCP Access — you get an API key and ready-to-use config snippets for all platforms.</p>
-<p>The server runs over HTTPS on <code>/mcp</code>. All 19 tools require a Bearer token in the Authorization header.</p>
+<p>The server runs over HTTPS on <code>/mcp</code>. All 21 tools require a Bearer token in the Authorization header.</p>
 <table>
     <tr><th>Tool</th><th>Description</th></tr>
     <tr><td><code>list_rules</code></td><td>List all filtering rules with conditions and actions</td></tr>
@@ -284,6 +286,8 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>clear_activity</code></td><td>Clear all activity logs</td></tr>
     <tr><td><code>get_poller_status</code></td><td>Get poller running state, last tick, errors, health</td></tr>
     <tr><td><code>health</code></td><td>Get system health, uptime, DB/IMAP/poller state, and stats</td></tr>
+    <tr><td><code>toggle_contacts_collection</code></td><td>Enable or disable automatic contacts collection</td></tr>
+    <tr><td><code>wipe_contacts</code></td><td>Delete all collected contacts</td></tr>
 </table>
 
 <h2 id="settings">Settings Reference</h2>
@@ -294,7 +298,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td>Polling</td><td>Source folder, poll interval, messages per poll, log retention, enable/disable, refresh folders</td></tr>
     <tr><td>Rules</td><td>Export/import rules as JSON</td></tr>
     <tr><td>Backup</td><td>Scheduled rules backup via email — enabled toggle, frequency, recipient, Backup Now button</td></tr>
-    <tr><td>iCloud Contacts</td><td>Import from iCloud address book (CardDAV)</td></tr>
+    <tr><td>Contacts</td><td>Import from iCloud, enable/disable auto-collection, wipe all contacts</td></tr>
     <tr><td>MCP Access</td><td>Enable remote access for AI agents (Claude Code, OpenCode, Codex) with API key auth</td></tr>
     <tr><td>Regional</td><td>Timezone, font (System Default / JetBrains Mono)</td></tr>
     <tr><td>Server</td><td>Listen address, contacts, folders, time, uptime, memory, version</td></tr>
@@ -474,6 +478,18 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <h4><span class="method-badge method-post">POST</span> POST /settings/carddav-import</h4>
     <p class="desc">Import contacts from iCloud address book (CardDAV).</p>
     <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/carddav-import -b cookies.txt</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/contacts/toggle</h4>
+    <p class="desc">Enable or disable automatic contacts collection during email processing.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/contacts/toggle -b cookies.txt</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/contacts/wipe</h4>
+    <p class="desc">Delete all collected contacts.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/contacts/wipe -b cookies.txt</code></pre>
 </div>
 
 <h3 class="api-group" id="api-activity">Activity</h3>

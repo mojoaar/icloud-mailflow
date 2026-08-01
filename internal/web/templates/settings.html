@@ -92,12 +92,23 @@
 </div>
 
 <div class="card">
-    <h2>iCloud Contacts</h2>
-    <p style="color:var(--muted);margin-bottom:12px">Import contacts from your iCloud address book using the same app-specific password.</p>
-    <button class="btn btn-primary" hx-post="/settings/carddav-import"
-        hx-target="#carddav-toast" hx-swap="innerHTML">
-        Import iCloud Contacts
-    </button>
+    <h2>Contacts</h2>
+    <p style="color:var(--muted);margin-bottom:12px">Import from iCloud or manage collected contacts.</p>
+    <div class="flex-row">
+        <button class="btn btn-primary" hx-post="/settings/carddav-import"
+            hx-target="#carddav-toast" hx-swap="innerHTML">
+            Import iCloud Contacts
+        </button>
+        <button type="button" class="btn {{if not .ContactsCollectionEnabled}}btn-danger{{end}}"
+            hx-post="/settings/contacts/toggle" hx-target="#contacts-toggle-toast" hx-swap="innerHTML">
+            {{if .ContactsCollectionEnabled}}Disable Collection{{else}}Enable Collection{{end}}
+        </button>
+        <button class="btn btn-danger" hx-post="/settings/contacts/wipe" hx-confirm="Delete all collected contacts? This cannot be undone."
+            hx-target="#carddav-toast" hx-swap="innerHTML">
+            Wipe Contacts
+        </button>
+    </div>
+    <div id="contacts-toggle-toast" class="mt-1"></div>
     <div id="carddav-toast" class="mt-1"></div>
 </div>
 

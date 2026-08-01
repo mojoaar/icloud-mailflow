@@ -439,6 +439,27 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		return resultJSON(map[string]int{"folders_scanned": len(folders)})
 	})
 
+	s.AddTool(mcp.NewTool("toggle_contacts_collection",
+		mcp.WithDescription("Enable or disable automatic contacts collection during email processing"),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		enabled, _ := settingsRepo.Get("contacts_collection_enabled")
+		if enabled == "false" {
+			settingsRepo.Set("contacts_collection_enabled", "true")
+			return mcp.NewToolResultText("contacts collection enabled"), nil
+		}
+		settingsRepo.Set("contacts_collection_enabled", "false")
+		return mcp.NewToolResultText("contacts collection disabled"), nil
+	})
+
+	s.AddTool(mcp.NewTool("wipe_contacts",
+		mcp.WithDescription("Delete all collected contacts"),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if err := contactsRepo.DeleteAll(); err != nil {
+			return mcp.NewToolResultError("failed to wipe contacts: " + err.Error()), nil
+		}
+		return mcp.NewToolResultText("all contacts wiped"), nil
+	})
+
 	s.AddTool(mcp.NewTool("health",
 		mcp.WithDescription("Get system health: status, version, IMAP connection, poller state, and summary stats"),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {

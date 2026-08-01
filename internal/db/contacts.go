@@ -87,3 +87,8 @@ func (r *ContactsRepo) ListAll() ([]Contact, error) {
 	}
 	return out, rows.Err()
 }
+
+func (r *ContactsRepo) DeleteAll() error {
+	_, err := r.DB.Exec(`DELETE FROM contacts`)
+	return err
+}
