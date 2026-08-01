@@ -15,7 +15,7 @@ func statsHandler(repo *db.StatsRepo) http.HandlerFunc {
 		daily, _ := repo.DailyVolume(7)
 		errors, _ := repo.ErrorBreakdown()
 		folders, _ := repo.FolderDistribution()
-		weekly, _ := repo.WeeklyVolume(4)
+		weekly, _ := repo.WeeklyVolume(24)
 
 		maxRuleHit := 0
 		for _, h := range rules {
