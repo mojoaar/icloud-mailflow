@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.7.6] - 2026-08-01
 
 ### Added
 - Security headers middleware (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)
@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Activity clear-logs button refreshes list after deletion
 - Mobile flex-row elements stack vertically
 - fs.Sub error checked at startup; rand.Read error checked in API key generation
+- Logout button styled to match nav link appearance
 
 ### Security
 - 14 instances of err.Error() replaced with generic error messages in toasts and HTTP responses
@@ -385,6 +386,7 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
+[0.7.6]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.2...v0.7.3
