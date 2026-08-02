@@ -106,12 +106,12 @@ func (c *IMAPClient) ListFolders() ([]Folder, error) {
 	return folders, nil
 }
 
-func (c *IMAPClient) SelectFolder(name string) (*goimap.SelectData, error) {
+func (c *IMAPClient) selectFolder(name string) (*goimap.SelectData, error) {
 	return c.client.Select(name, nil).Wait()
 }
 
 func (c *IMAPClient) SearchMessages(folder string, limit int, minUID uint32) ([]goimap.UID, error) {
-	if _, err := c.SelectFolder(folder); err != nil {
+	if _, err := c.selectFolder(folder); err != nil {
 		return nil, fmt.Errorf("select %s: %w", folder, err)
 	}
 	criteria := &goimap.SearchCriteria{}
@@ -179,7 +179,7 @@ func (c *IMAPClient) MoveMessage(uid uint32, dest string) (uint32, error) {
 }
 
 func (c *IMAPClient) SelectMailbox(name string) error {
-	_, err := c.SelectFolder(name)
+	_, err := c.selectFolder(name)
 	return err
 }
 

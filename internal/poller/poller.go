@@ -552,12 +552,6 @@ func (p *Poller) Status() PollerStatus {
 	}
 }
 
-func (p *Poller) PollingHealthy() bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return p.consecutiveFailures == 0
-}
-
 func (p *Poller) setLastError(err error) {
 	slog.Error("action error", "error", err)
 	p.lastError.Store(err.Error())

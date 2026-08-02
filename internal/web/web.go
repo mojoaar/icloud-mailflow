@@ -86,6 +86,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 
 	r.Get("/dashboard", dashboardHandler(imapClient, p, rulesRepo, foldersRepo, settingsRepo, contactsRepo, cfg))
 	r.Get("/dashboard/status", dashboardStatusHandler(p, settingsRepo, imapClient, rulesRepo, foldersRepo, contactsRepo, cfg))
+	r.Get("/dashboard/rules", dashboardRulesHandler(rulesRepo))
 	r.Post("/poller/tick", pollerTickHandler(p))
 
 	r.Get("/activity", activityHandler(logRepo, rulesRepo, settingsRepo))
@@ -101,6 +102,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Put("/rules/{id}", rulesUpdateHandler(rulesRepo))
 	r.Delete("/rules/{id}", rulesDeleteHandler(rulesRepo))
 	r.Post("/rules/reorder", rulesReorderHandler(rulesRepo))
+	r.Post("/rules/reorder/move", rulesReorderMoveHandler(rulesRepo))
 
 	r.Get("/settings", settingsPage(settingsRepo, foldersRepo, cfg, imapClient, version, contactsRepo))
 	r.Post("/settings/imap", settingsSaveIMAP(cfg, settingsRepo))
@@ -121,7 +123,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/settings/contacts/wipe", settingsContactsWipe(contactsRepo))
 
 	r.Get("/api/contacts", contactsSearchHandler(db.NewContactsRepo(d)))
-	r.Get("/api/folders", foldersListHandler(imapClient, foldersRepo))
+	r.Get("/api/folders", foldersListHandler(imapClient, foldersRepo, settingsRepo))
 	r.Post("/contacts/seed", seedContactsHandler(collector, foldersRepo, contactsRepo))
 
 	return r

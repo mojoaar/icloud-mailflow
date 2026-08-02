@@ -47,6 +47,10 @@
     <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
     <script src="/static/highlight.min.js"></script>
-    <script>lucide.createIcons();document.body.addEventListener('htmx:afterSettle',()=>{lucide.createIcons();hljs.highlightAll()});hljs.highlightAll()</script>
+    <script>lucide.createIcons();document.body.addEventListener('htmx:afterSettle',()=>{lucide.createIcons();hljs.highlightAll()});hljs.highlightAll();
+document.body.addEventListener('htmx:responseError',function(e){var t=document.createElement('div');t.className='toast toast-error';t.textContent=e.detail.xhr.status?'Error '+(e.detail.xhr.status):'Request failed';t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
+document.body.addEventListener('htmx:sendError',function(){var t=document.createElement('div');t.className='toast toast-error';t.textContent='Network error';t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
+document.body.addEventListener('showToast',function(e){var t=document.createElement('div');t.className='toast toast-'+e.detail.type;t.textContent=e.detail.message;t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
+</script>
 </body>
 </html>

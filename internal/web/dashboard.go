@@ -179,3 +179,10 @@ func getPollingLabel(settingsRepo *db.SettingsRepo) string {
 	}
 	return "enabled"
 }
+
+func dashboardRulesHandler(rulesRepo *db.RulesRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rules, _ := rulesRepo.List()
+		renderPartial(w, "dashboard_rules", map[string]any{"Rules": rules})
+	}
+}

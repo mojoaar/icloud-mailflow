@@ -148,6 +148,33 @@ func rulesReorderHandler(repo *db.RulesRepo) http.HandlerFunc {
 	}
 }
 
+func rulesReorderMoveHandler(repo *db.RulesRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		id, _ := strconv.ParseInt(r.FormValue("rule_id"), 10, 64)
+		dir := r.FormValue("direction")
+		rules, _ := repo.List()
+		var ids []int64
+		idx := -1
+		for i, rl := range rules {
+			ids = append(ids, rl.ID)
+			if rl.ID == id {
+				idx = i
+			}
+		}
+		if idx >= 0 {
+			if dir == "up" && idx > 0 {
+				ids[idx], ids[idx-1] = ids[idx-1], ids[idx]
+			}
+			if dir == "down" && idx < len(ids)-1 {
+				ids[idx], ids[idx+1] = ids[idx+1], ids[idx]
+			}
+			repo.Reorder(ids)
+		}
+		rulesListHandler(repo)(w, r)
+	}
+}
+
 func conditionFields() []map[string]string {
 	return []map[string]string{
 		{"value": "from", "label": "From"},

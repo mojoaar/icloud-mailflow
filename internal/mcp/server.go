@@ -3,10 +3,8 @@ package mcp
 import (
 	"context"
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -539,14 +537,6 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 	})
 
 	return server.NewStreamableHTTPServer(s)
-}
-
-func generateAPIKey() string {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		panic("crypto/rand.Read failed: " + err.Error())
-	}
-	return hex.EncodeToString(b)
 }
 
 func hmacEqual(a, b string) bool {

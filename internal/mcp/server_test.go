@@ -83,17 +83,6 @@ func TestAuthMiddleware(t *testing.T) {
 	})
 }
 
-func TestGenerateAPIKey(t *testing.T) {
-	key1 := generateAPIKey()
-	key2 := generateAPIKey()
-	if len(key1) != 64 {
-		t.Errorf("expected 64 chars (32 bytes hex), got %d", len(key1))
-	}
-	if key1 == key2 {
-		t.Error("generated keys should be unique")
-	}
-}
-
 func TestParseRuleInput(t *testing.T) {
 	rule, err := parseRuleInput("Test Rule", 1,
 		`{"operator":"AND","conditions":[{"field":"from","operator":"contains","value":"@example.com"}]}`,

@@ -23,6 +23,12 @@
 <div id="poll-toast"></div>
 
 {{if .Rules}}
+{{template "dashboard_rules" .}}
+{{end}}
+{{end}}
+
+{{define "dashboard_rules"}}
+<div id="dashboard-rules" hx-get="/dashboard/rules" hx-trigger="every 60s" hx-swap="outerHTML">
 <div class="card">
     <h2>Rules <span style="color:var(--muted);font-size:0.9rem;font-weight:normal">({{len .Rules}})</span></h2>
     <table>
@@ -39,7 +45,7 @@
         </tbody>
     </table>
 </div>
-{{end}}
+</div>
 {{end}}
 
 {{define "dashboard_status"}}

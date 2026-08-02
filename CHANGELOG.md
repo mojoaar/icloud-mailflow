@@ -36,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rule search shows result count with aria-live announcement
 - Activity table sender column uses CSS truncation instead of title attribute
 - Docs page now loads shared style.css and mobile.css for consistent mobile UX
+- Global HTMX error handling — network and server errors show toast notifications on all pages
+- Keyboard-accessible rule reorder with Move Up/Move Down buttons
+- Dashboard rules table auto-refreshes every 60 seconds
+- Folders refresh warns when configured source folder is missing from IMAP server
+
+### Removed
+- Dead code: PollingHealthy(), generateAPIKey(), SettingsRepo.GetAll(), unexported SelectFolder
 
 ## [0.7.6] - 2026-08-01
 
