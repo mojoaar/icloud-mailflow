@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stats cards removed `min-width:300px` to fix horizontal overflow on mobile
 - Toggle button styling made consistent (Enable=btn-primary across all sections)
 - Seed Contacts button promoted to btn-primary for visual consistency
+- Search clear (✕) button now toggles correctly on activity page and native browser ✕ suppressed
 
 ### Added
 - `aria-pressed` on chart toggle buttons with live updates via JS

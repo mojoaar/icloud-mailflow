@@ -24,9 +24,11 @@
         <input type="search" name="q" id="activity-search" value="{{.Search}}" placeholder="Search..."
             hx-get="/activity" hx-trigger="keyup changed delay:300ms"
             hx-target="#activity-content" hx-swap="outerHTML" hx-indicator="#activity-spinner"
-            hx-include="[name='rule'],[name='status'],[name='per_page']" style="width:100%;max-width:none">
+            hx-include="[name='rule'],[name='status'],[name='per_page']" style="width:100%;max-width:none"
+            oninput="var b=this.parentNode.querySelector('.search-clear');if(b)b.classList.toggle('visible',this.value.length>0)">
         <button class="search-clear" onclick="var i=document.getElementById('activity-search');i.value='';htmx.trigger(i,'keyup');i.focus()" aria-label="Clear search">&#10005;</button>
     </div>
+    <script>var i=document.getElementById('activity-search');if(i&&i.value)i.dispatchEvent(new Event('input'))</script>
     <select name="rule" hx-get="/activity" hx-trigger="change"
         hx-target="#activity-content" hx-swap="outerHTML" hx-indicator="#activity-spinner"
         hx-include="[name='q'],[name='status'],[name='per_page']">
