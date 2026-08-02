@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Folders refresh warns when configured source folder is missing from IMAP server
 - Search clear (✕) button on /rules and /activity search inputs
 - Column widths on /rules (Actions) and /activity (Status) widened to prevent text truncation
+- Rules table uses `table-layout:auto` to let action buttons size to content
 
 ### Removed
 - Dead code: PollingHealthy(), generateAPIKey(), SettingsRepo.GetAll(), unexported SelectFolder
