@@ -38,7 +38,7 @@ docker compose up -d
 - `internal/config/` - JSON config file
 - `internal/db/` - SQLite + migrations + repos
 - `internal/imap/` - IMAP client (go-imap v2), Message types with Date field, body/header/raw fetch
-- `internal/mcp/` - MCP server (go-mcp) with 21 tools, API key auth middleware
+- `internal/mcp/` - MCP server (go-mcp) with 22 tools, API key auth middleware
 - `internal/rules/` - rule evaluation engine with body/header/date matching
 - `internal/contacts/` - email contact collector
 - `internal/carddav/` - iCloud CardDAV contacts importer
@@ -64,7 +64,7 @@ When adding or changing features, you MUST also update these files:
 
 ## Versioning
 - Semantic versioning per https://semver.org (MAJOR.MINOR.PATCH)
-- Version stored in `cmd/mailflow/main.go` (`const version`) and `VERSION` file — keep both in sync
+- Version stored in `cmd/mailflow/main.go` (`var version`) and `VERSION` file — keep both in sync
 - MAJOR: breaking changes (API, removed features, DB schema breaks)
 - MINOR: new features (new package, new endpoint, new capability)
 - PATCH: bug fixes, performance, refactoring without behavior changes

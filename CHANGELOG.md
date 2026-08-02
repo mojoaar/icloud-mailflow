@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Docs page sidebar nav broken due to global `nav` CSS styles leaking from `style.css`
 - Stats page folder distribution chart skipping every other bar (canvas not resized after reveal)
+- README and AGENTS.md stale MCP tool counts (19/21 → 22)
+- /docs API reference: GET /logout → POST /logout, /dashboard/status description, missing /rules/reorder/move
+- AGENTS.md incorrect `const version` → `var version`
+- README security section now includes security headers, Secure/HttpOnly cookies, POST logout
+- Go version badge and build requirements updated to 1.25.5+
 
 ## [0.7.7] - 2026-08-02
 

@@ -1,6 +1,6 @@
 # iCloud Mailflow
 
-[![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go)](https://go.dev/dl/)
+[![Go Version](https://img.shields.io/badge/Go-1.25.5%2B-00ADD8?logo=go)](https://go.dev/dl/)
 [![Release](https://img.shields.io/github/v/tag/mojoaar/icloud-mailflow?label=release)](https://github.com/mojoaar/icloud-mailflow/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ED?logo=docker)](https://github.com/mojoaar/icloud-mailflow/pkgs/container/icloud-mailflow)
@@ -28,7 +28,7 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **Test Connection** — verify IMAP credentials before saving
 - **Configurable Polling** — adjustable batch size, interval, and on/off toggle
 - **Log Retention** — configure how many activity entries to keep
-- **MCP Server** — remote access for AI agents (Claude Code, OpenCode, Codex) with 21 tools and API key auth
+- **MCP Server** — remote access for AI agents (Claude Code, OpenCode, Codex) with 22 tools and API key auth
 - **Contacts Management** — enable/disable automatic collection, import from CardDAV, wipe all contacts
 - **Server Metrics** — uptime, memory, and server time in Settings
 - **Health Endpoint** — GET /health returns JSON with status, uptime, DB/IMAP/poller state, and stats (public, no auth required)
@@ -39,6 +39,9 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - Rate-limited login (5 attempts/minute/IP)
 - bcrypt hashed admin password
 - SameSite=Strict session cookies
+- Security headers on all responses (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)
+- Secure and HttpOnly cookies when behind TLS
+- Logout requires POST with CSRF (no GET-based logout)
 
 ## Screenshots
 
@@ -147,7 +150,7 @@ Then open http://localhost:8080/dashboard and log in with password `demo123`.
 
 ## Build Requirements
 
-- Go 1.25+
+- Go 1.25.5+
 - No CGO (pure Go SQLite via modernc.org/sqlite)
 
 ## Stack
@@ -173,7 +176,7 @@ internal/
   rules/          — rule evaluation engine
   contacts/       — contact collector from email headers
   carddav/        — iCloud CardDAV contacts importer
-  mcp/            — MCP server for AI agent access (19 tools)
+  mcp/            — MCP server for AI agent access (22 tools)
   poller/         — periodic email polling
   smtp/           — SMTP MIME multipart email sender
   web/            — chi router, auth, handlers, templates

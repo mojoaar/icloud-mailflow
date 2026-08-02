@@ -320,9 +320,9 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 </div>
 
 <div class="endpoint">
-    <h4><span class="method-badge method-get">GET</span> GET /logout</h4>
-    <p class="desc">Clear session cookie and redirect to login.</p>
-    <pre><code class="language-bash">curl http://{{.Host}}/logout -b cookies.txt</code></pre>
+    <h4><span class="method-badge method-post">POST</span> POST /logout</h4>
+    <p class="desc">Clear session cookie and redirect to login. Requires CSRF token.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/logout -b cookies.txt -d "csrf_token=$TOKEN"</code></pre>
 </div>
 
 <div class="endpoint">
@@ -354,7 +354,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <div class="endpoint">
     <h4><span class="method-badge method-get">GET</span> GET /dashboard/status</h4>
-    <p class="desc">Live poller status HTML fragment (auto-refreshed by dashboard every 30s). Returns running state, health, last tick, last duration, and consecutive failures.</p>
+    <p class="desc">Live poller status HTML fragment (auto-refreshed by dashboard every 30s). Returns running state, health, last tick, last duration, and processing status.</p>
     <pre><code class="language-bash">curl http://{{.Host}}/dashboard/status -b cookies.txt</code></pre>
 </div>
 
@@ -385,6 +385,13 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <p class="desc">Reorder rules by priority. Submit <code>rule_ids</code> in the desired order.</p>
     <pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/reorder -b cookies.txt \
   -d "rule_ids=3&rule_ids=1&rule_ids=2"</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /rules/reorder/move</h4>
+    <p class="desc">Move a rule up or down by one position for keyboard-accessible reordering. Submit <code>rule_id</code> and <code>direction</code> (up or down).</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/reorder/move -b cookies.txt \
+  -d "rule_id=3&direction=up"</code></pre>
 </div>
 
 <div class="endpoint">
