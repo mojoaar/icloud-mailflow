@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard-accessible rule reorder with Move Up/Move Down buttons
 - Dashboard rules table auto-refreshes every 60 seconds
 - Folders refresh warns when configured source folder is missing from IMAP server
+- Search clear (✕) button on /rules and /activity search inputs
 
 ### Removed
 - Dead code: PollingHealthy(), generateAPIKey(), SettingsRepo.GetAll(), unexported SelectFolder

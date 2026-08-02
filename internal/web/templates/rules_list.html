@@ -7,7 +7,10 @@
 
 {{if .Rules}}
 <div style="margin-top:12px;margin-bottom:8px">
-    <input type="text" id="rule-search" placeholder="Search rules by name, description, or condition value..." style="width:100%" autocomplete="off" aria-label="Search rules"{{if .Search}} value="{{.Search}}"{{end}}>
+    <div class="search-wrapper">
+        <input type="text" id="rule-search" placeholder="Search rules by name, description, or condition value..." style="width:100%" autocomplete="off" aria-label="Search rules"{{if .Search}} value="{{.Search}}"{{end}}>
+        <button class="search-clear" id="rule-search-clear" onclick="var i=document.getElementById('rule-search');i.value='';i.dispatchEvent(new Event('input'));i.focus()" aria-label="Clear search">&#10005;</button>
+    </div>
     <div id="rule-search-count" class="muted" style="font-size:0.8rem;margin-top:4px" aria-live="polite"></div>
 </div>
 <div class="card mt-2">
@@ -76,7 +79,12 @@
 
     var searchInput = document.getElementById('rule-search');
     if (searchInput) {
+        var clearBtn = document.getElementById('rule-search-clear');
+        function toggleClear() {
+            if (clearBtn) clearBtn.classList.toggle('visible', searchInput.value.length > 0);
+        }
         searchInput.addEventListener('input', function() {
+            toggleClear();
             var query = this.value.toLowerCase();
             var rows = tbody.querySelectorAll('tr[draggable]');
             var found = 0;
