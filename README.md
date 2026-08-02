@@ -11,7 +11,7 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 
 ## Features
 
-- **IMAP Rules Engine** — match messages by from/to/cc/subject/body/headers/attachment with AND/OR logic and 13 operators, execute actions (move, mark read/unread, set/remove flags, forward, delete)
+- **IMAP Rules Engine** — match messages by from/to/cc/subject/body/headers/attachment/content_type with AND/OR logic and 13 operators, execute actions (move, mark read/unread, set/remove flags, auto_reply, forward, delete)
 - **Drag & Drop Rule Reorder** — reorder rules via drag-and-drop on the rules page
 - **CardDAV Contacts Import** — import contacts from iCloud address book
 - **Email Contact Collection** — automatically extract contacts from processed messages
@@ -19,7 +19,8 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **Rules Export/Import** — backup and restore rule configurations as JSON
 - **Scheduled Rules Backup** — email backups of rules as JSON attachments with configurable frequency (daily/weekly/monthly) and recipient
 - **Activity Log** — see every rule match and action result with timestamps
-- **Stats Dashboard** — rule hit counts, top senders, actions breakdown, daily/weekly volume, messages by folder. Stats persist independently from activity logs
+- **Stats Dashboard** — rule hit counts, top senders, actions breakdown, daily/weekly volume, messages by folder, and runtime metrics charts (Memory, CPU %). Stats persist independently from activity logs
+- **Keyboard Shortcuts** — `?` for help dialog, `g` + `d/a/r/s/t` for navigation between pages
 - **Docs Page** — full usage guide and API reference with curl examples and syntax highlighting
 - **Light/Dark Theme** — toggle in the nav bar, respects OS preference on first visit
 - **JetBrains Mono Font** — optional monospace font, toggle in Settings → Regional
@@ -30,13 +31,14 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **Log Retention** — configure how many activity entries to keep
 - **MCP Server** — remote access for AI agents (Claude Code, OpenCode, Codex) with 25 tools and API key auth
 - **Contacts Management** — enable/disable automatic collection, import from CardDAV, wipe all contacts
-- **Server Metrics** — uptime, memory, and server time in Settings
+- **Server Metrics** — uptime, memory, goroutines, and server time in Settings
 - **Health Endpoint** — GET /health returns JSON with status, uptime, DB/IMAP/poller state, and stats (public, no auth required)
 
 ### Security
 - IMAP password encrypted at rest with AES-256-GCM
 - CSRF protection on all forms
-- Rate-limited login (5 attempts/minute/IP)
+- Rate-limited login (5 attempts/minute/IP) and MCP access (100 requests/minute/IP)
+- MCP API key authentication with constant-time comparison
 - bcrypt hashed admin password
 - SameSite=Strict session cookies
 - Security headers on all responses (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)

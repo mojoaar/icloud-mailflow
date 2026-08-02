@@ -135,6 +135,7 @@ pre {
         <a href="#introduction">Introduction</a>
         <a href="#getting-started">Getting Started</a>
         <a href="#how-it-works">How It Works</a>
+        <a href="#shortcuts">Keyboard Shortcuts</a>
     </nav>
     <hr>
     <h3>Reference</h3>
@@ -150,6 +151,7 @@ pre {
     <hr>
     <h3>API</h3>
     <nav>
+        <a href="#api">Overview</a>
         <a href="#api-auth">Authentication</a>
         <a href="#api-polling">Polling</a>
         <a href="#api-rules">Rules</a>
@@ -201,6 +203,19 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <li>First matching rule's actions execute — if none match, the catch-all handles it</li>
     <li>Contacts are auto-collected from message headers (From, To, Cc)</li>
 </ol>
+
+<h2 id="shortcuts">Keyboard Shortcuts</h2>
+<table>
+    <tr><th>Key</th><th>Action</th></tr>
+    <tr><td><kbd>?</kbd></td><td>Show keyboard shortcuts help dialog</td></tr>
+    <tr><td><kbd>g</kbd> <kbd>d</kbd></td><td>Navigate to Dashboard</td></tr>
+    <tr><td><kbd>g</kbd> <kbd>a</kbd></td><td>Navigate to Activity</td></tr>
+    <tr><td><kbd>g</kbd> <kbd>r</kbd></td><td>Navigate to Rules</td></tr>
+    <tr><td><kbd>g</kbd> <kbd>s</kbd></td><td>Navigate to Stats</td></tr>
+    <tr><td><kbd>g</kbd> <kbd>t</kbd></td><td>Navigate to Settings</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Close dialog / cancel action</td></tr>
+</table>
+<p>Press <kbd>g</kbd> followed by a letter within 1.5 seconds to navigate. Shortcuts are disabled while focus is in a form field.</p>
 
 <h2 id="rules">Rules &amp; Conditions</h2>
 <p>Rules are checked in priority order — lowest number runs first. Reorder via drag &amp; drop.</p>
@@ -264,14 +279,14 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 </ul>
 
 <h2 id="stats">Stats Dashboard</h2>
-<p>Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, daily/weekly volume, messages by folder, and more. Stats are stored independently from the activity log — clearing logs preserves all statistics.</p>
+<p>Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, daily/weekly volume, messages by folder, and runtime metrics charts (Memory and CPU %). Charts are interactive (Chart.js) with per-section List/Chart toggle. Stats are stored independently from the activity log — clearing logs preserves all statistics.</p>
 
 <h2 id="mcp">MCP Server</h2>
 <p>Mailflow exposes a Model Context Protocol (MCP) server so AI agents (Claude Code, OpenCode, Codex) can manage rules, check stats, and trigger polls remotely. Enable it in Settings → MCP Access — you get an API key and ready-to-use config snippets for all platforms.</p>
 <p>The server runs over HTTP on <code>/mcp</code>. All 25 tools require a Bearer token in the Authorization header.</p>
 <table>
     <tr><th>Tool</th><th>Description</th></tr>
-    <tr><td><code>list_rules</code></td><td>List all filtering rules with conditions and actions</td></tr>
+    <tr><td><code>list_rules</code></td><td>List all filtering rules with conditions, groups, and actions</td></tr>
     <tr><td><code>get_rule</code></td><td>Get a single rule by ID</td></tr>
     <tr><td><code>create_rule</code></td><td>Create a new filtering rule</td></tr>
     <tr><td><code>update_rule</code></td><td>Update an existing rule</td></tr>
@@ -309,7 +324,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td>Contacts</td><td>Import from iCloud, enable/disable auto-collection, wipe all contacts</td></tr>
     <tr><td>MCP Access</td><td>Enable remote access for AI agents (Claude Code, OpenCode, Codex) with API key auth</td></tr>
     <tr><td>Regional</td><td>Timezone, font (System Default / JetBrains Mono)</td></tr>
-    <tr><td>Server</td><td>Listen address, contacts, folders, time, uptime, memory, version</td></tr>
+    <tr><td>Server</td><td>Listen address, contacts, folders, time, uptime, memory, goroutines, version, repository</td></tr>
 </table>
 
 <div class="api-section">
@@ -361,6 +376,12 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <h4><span class="method-badge method-get">GET</span> GET /dashboard/status</h4>
     <p class="desc">Live poller status HTML fragment (auto-refreshed by dashboard every 30s). Returns running state, health, last tick, last duration, and processing status.</p>
     <pre><code class="language-bash">curl http://{{.Host}}/dashboard/status -b cookies.txt</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-get">GET</span> GET /dashboard/rules</h4>
+    <p class="desc">Rules table HTML fragment (auto-refreshed by dashboard every 60s). Returns each rule's name, conditions summary, and enabled status with Edit buttons.</p>
+    <pre><code class="language-bash">curl http://{{.Host}}/dashboard/rules -b cookies.txt</code></pre>
 </div>
 
 <h3 class="api-group" id="api-rules">Rules</h3>
