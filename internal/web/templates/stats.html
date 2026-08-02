@@ -166,13 +166,13 @@ var charts = {};
 
 function chartColors() { return {text:textColor,grid:gridColor,accent:accent}; }
 
-function makeChart(canvasId, type, labels, vals) {
+function makeChart(canvasId, type, labels, vals, label) {
     var ctx = document.getElementById(canvasId).getContext('2d');
     var colors = chartColors();
     if (type === 'line') {
         return new Chart(ctx, {
             type:'line',
-            data:{labels:labels,datasets:[{label:'Messages',data:vals,borderColor:colors.accent,backgroundColor:accent+'20',fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:colors.accent}]},
+            data:{labels:labels,datasets:[{label:label||'Messages',data:vals,borderColor:colors.accent,backgroundColor:accent+'20',fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:colors.accent}]},
             options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:colors.text,font:{size:11}},grid:{color:colors.grid}},y:{ticks:{color:colors.text,font:{size:11},precision:0},grid:{color:colors.grid},beginAtZero:true}}}
         });
     }
@@ -200,10 +200,10 @@ function makeChart(canvasId, type, labels, vals) {
     return null;
 }
 
-function initChart(id, type, labels, vals) {
+function initChart(id, type, labels, vals, label) {
     var c = document.getElementById(id+'-canvas');
     if (!c || !labels.length) return;
-    charts[id] = makeChart(id+'-canvas', type, labels, vals);
+    charts[id] = makeChart(id+'-canvas', type, labels, vals, label);
     var view = localStorage.getItem('chart-'+id) || 'list';
     toggleView(id, view, true);
     if (view === 'chart' && charts[id]) charts[id].resize();
@@ -226,7 +226,7 @@ function toggleView(id, view, init) {
             else if (id==='metrics-cpu') data = dataCPU;
             else data = dataWeekly;
             var type = id==='daily'?'line':(id==='actions'?'doughnut':(id==='metrics-mem'?'line':(id==='metrics-cpu'?'line':(id==='weekly'?'barv':'bar'))));
-            if (data.labels.length) charts[id] = makeChart(id+'-canvas', type, data.labels, data.vals);
+            if (data.labels.length) charts[id] = makeChart(id+'-canvas', type, data.labels, data.vals, id==='metrics-mem'?'Memory (MB)':(id==='metrics-cpu'?'CPU %':undefined));
         }
     } else {
         listEl.style.display = 'block';
@@ -246,8 +246,8 @@ initChart('daily', 'line', dataDaily.labels, dataDaily.vals);
 initChart('actions', 'doughnut', dataActions.labels, dataActions.vals);
 initChart('folders', 'bar', dataFolders.labels, dataFolders.vals);
 initChart('weekly', 'barv', dataWeekly.labels, dataWeekly.vals);
-initChart('metrics-mem', 'line', dataMem.labels, dataMem.vals);
-if (dataCPU.labels.length) { charts['metrics-cpu'] = makeChart('metrics-cpu-canvas', 'line', dataCPU.labels, dataCPU.vals); }
+initChart('metrics-mem', 'line', dataMem.labels, dataMem.vals, 'Memory (MB)');
+if (dataCPU.labels.length) { charts['metrics-cpu'] = makeChart('metrics-cpu-canvas', 'line', dataCPU.labels, dataCPU.vals, 'CPU %'); }
 })();
 });
 </script>
