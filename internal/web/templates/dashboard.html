@@ -49,7 +49,8 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-primary" hx-post="/contacts/seed"
                 hx-target="#seed-toast" hx-swap="innerHTML"
-                onclick="document.getElementById('seed-toast').innerHTML='Scanning folders...'">
+                hx-on::after-request="if(event.detail.failed)document.getElementById('seed-toast').innerHTML='<div class=\\'toast toast-error\\'>Contact seeding failed</div>'"
+                onclick="document.getElementById('seed-toast').innerHTML='<div class=\\'toast\\'>Scanning folders...</div>'">
                 <span class="htmx-indicator spinner"></span> Seed Contacts
             </button>
             <button class="btn btn-primary" hx-post="/poller/tick"

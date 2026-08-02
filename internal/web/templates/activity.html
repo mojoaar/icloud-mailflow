@@ -22,29 +22,30 @@
 <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
     <input type="search" name="q" value="{{.Search}}" placeholder="Search..."
         hx-get="/activity" hx-trigger="keyup changed delay:300ms"
-        hx-target="#activity-content" hx-swap="outerHTML"
+        hx-target="#activity-content" hx-swap="outerHTML" hx-indicator="#activity-spinner"
         hx-include="[name='rule'],[name='status'],[name='per_page']" style="flex:1;max-width:none">
     <select name="rule" hx-get="/activity" hx-trigger="change"
-        hx-target="#activity-content" hx-swap="outerHTML"
+        hx-target="#activity-content" hx-swap="outerHTML" hx-indicator="#activity-spinner"
         hx-include="[name='q'],[name='status'],[name='per_page']">
         <option value="">All Rules</option>
         {{range .RuleNames}}<option value="{{.}}" {{if eq . $.Rule}}selected{{end}}>{{.}}</option>{{end}}
     </select>
     <select name="status" hx-get="/activity" hx-trigger="change"
-        hx-target="#activity-content" hx-swap="outerHTML"
+        hx-target="#activity-content" hx-swap="outerHTML" hx-indicator="#activity-spinner"
         hx-include="[name='q'],[name='rule'],[name='per_page']">
         <option value="">All Status</option>
         <option value="success" {{if eq .Status "success"}}selected{{end}}>Success</option>
         <option value="error" {{if eq .Status "error"}}selected{{end}}>Error</option>
     </select>
     <select name="per_page" hx-get="/activity" hx-trigger="change"
-        hx-target="#activity-content" hx-swap="outerHTML"
+        hx-target="#activity-content" hx-swap="outerHTML" hx-indicator="#activity-spinner"
         hx-include="[name='q'],[name='rule'],[name='status']">
         <option value="100" {{if or (eq .PerPage "100") (eq .PerPage "")}}selected{{end}}>100</option>
         <option value="250" {{if eq .PerPage "250"}}selected{{end}}>250</option>
         <option value="500" {{if eq .PerPage "500"}}selected{{end}}>500</option>
         <option value="1000" {{if eq .PerPage "1000"}}selected{{end}}>1000</option>
     </select>
+    <span id="activity-spinner" class="htmx-indicator" style="align-self:center;color:var(--muted);margin-left:4px"><span class="spinner"></span></span>
 </div>
 {{if not .Entries}}
 <div class="card">
@@ -76,7 +77,7 @@
         <tr>
             <td style="white-space:nowrap;font-size:0.8rem;color:var(--muted)">{{.CreatedAt}}</td>
             <td>{{.Subject}}</td>
-            <td title="{{.FromAddr}}">{{.FromAddr}}</td>
+            <td style="white-space:nowrap;font-size:0.8rem;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis">{{.FromAddr}}</td>
             <td>{{.RuleName}}</td>
             <td>{{.ActionType}}{{if .ActionValue}} → {{.ActionValue}}{{end}}</td>
             <td>{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>

@@ -1,7 +1,7 @@
 {{define "stats"}}
 <div class="flex-between" style="margin-bottom:16px">
 <h1 style="margin:0">Stats</h1>
-<button class="btn" onclick="location.reload()">
+<button class="btn" hx-get="/stats" hx-target="body" hx-swap="outerHTML">
     <i data-lucide="refresh-cw" data-size="14"></i> Refresh
 </button>
 </div>

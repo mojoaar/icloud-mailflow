@@ -26,8 +26,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `aria-pressed` on chart toggle buttons with live updates via JS
 - `role="tab"`, `aria-selected`, and `aria-controls` on MCP config tab buttons
-- Save icons on Save IMAP Settings and Update Password buttons
-- CSRF hidden input on login form for defense-in-depth
+- Rule delete now returns full rules panel instead of empty body (fixes orphaned headers and stale priorities)
+- Drag reorder preserves search query across reorder requests
+- Stats page refresh uses HTMX instead of full page reload
+- Toast auto-dismiss targets the most recent toast instead of always the first
+- Seed Contacts button shows error toast on failure instead of stuck loading state
+- Rule reorder shows spinner indicator during save
+- Activity search/filter shows loading spinner
+- Rule search shows result count with aria-live announcement
+- Activity table sender column uses CSS truncation instead of title attribute
+- Docs page now loads shared style.css and mobile.css for consistent mobile UX
 
 ## [0.7.6] - 2026-08-01
 

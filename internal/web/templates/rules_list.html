@@ -7,9 +7,11 @@
 
 {{if .Rules}}
 <div style="margin-top:12px;margin-bottom:8px">
-    <input type="text" id="rule-search" placeholder="Search rules by name, description, or condition value..." style="width:100%" autocomplete="off">
+    <input type="text" id="rule-search" placeholder="Search rules by name, description, or condition value..." style="width:100%" autocomplete="off" aria-label="Search rules"{{if .Search}} value="{{.Search}}"{{end}}>
+    <div id="rule-search-count" class="muted" style="font-size:0.8rem;margin-top:4px" aria-live="polite"></div>
 </div>
 <div class="card mt-2">
+    <div id="reorder-spinner" class="htmx-indicator" style="text-align:center;padding:8px;color:var(--muted)"><span class="spinner"></span> Reordering...</div>
     <table>
         <colgroup>
             <col style="width:24px">
@@ -63,13 +65,15 @@
         searchInput.addEventListener('input', function() {
             var query = this.value.toLowerCase();
             var rows = tbody.querySelectorAll('tr[draggable]');
-            var found = false;
+            var found = 0;
             rows.forEach(function(r) {
                 var text = (r.getAttribute('data-search') || '').toLowerCase();
                 var match = !query || text.indexOf(query) !== -1;
                 r.style.display = match ? '' : 'none';
-                if (match) found = true;
+                if (match) found++;
             });
+            var count = document.getElementById('rule-search-count');
+            if (count) count.textContent = query ? found + ' of ' + rows.length + ' rules' : '';
             var noResults = document.getElementById('no-results');
             if (query && !found) {
                 if (!noResults) {
@@ -82,6 +86,7 @@
                 noResults.remove();
             }
         });
+        if (searchInput.value) searchInput.dispatchEvent(new Event('input'));
     }
 
     tbody.addEventListener('dragstart', function(e) {
@@ -138,7 +143,8 @@
         htmx.ajax('POST', '/rules/reorder', {
             target: '#rules-panel',
             swap: 'outerHTML',
-            values: {'rule_ids': ids}
+            indicator: '#reorder-spinner',
+            values: {'rule_ids': ids, 'q': document.getElementById('rule-search')?.value || ''}
         });
     });
 })();

@@ -15,7 +15,7 @@ func rulesListHandler(repo *db.RulesRepo) http.HandlerFunc {
 		if err != nil {
 			rules = []db.Rule{}
 		}
-		data := map[string]any{"Rules": rules}
+		data := map[string]any{"Rules": rules, "Search": r.URL.Query().Get("q")}
 		if r.Header.Get("HX-Request") == "true" {
 			renderPartial(w, "rules_list", data)
 			return
@@ -127,7 +127,8 @@ func rulesDeleteHandler(repo *db.RulesRepo) http.HandlerFunc {
 			return
 		}
 		if r.Header.Get("HX-Request") == "true" {
-			w.WriteHeader(http.StatusOK)
+			rules, _ := repo.List()
+			renderPartial(w, "rules_list", map[string]any{"Rules": rules})
 			return
 		}
 		http.Redirect(w, r, "/rules", http.StatusSeeOther)
