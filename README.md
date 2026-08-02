@@ -28,7 +28,7 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **Test Connection** — verify IMAP credentials before saving
 - **Configurable Polling** — adjustable batch size, interval, and on/off toggle
 - **Log Retention** — configure how many activity entries to keep
-- **MCP Server** — remote access for AI agents (Claude Code, OpenCode, Codex) with 22 tools and API key auth
+- **MCP Server** — remote access for AI agents (Claude Code, OpenCode, Codex) with 23 tools and API key auth
 - **Contacts Management** — enable/disable automatic collection, import from CardDAV, wipe all contacts
 - **Server Metrics** — uptime, memory, and server time in Settings
 - **Health Endpoint** — GET /health returns JSON with status, uptime, DB/IMAP/poller state, and stats (public, no auth required)
@@ -176,7 +176,7 @@ internal/
   rules/          — rule evaluation engine
   contacts/       — contact collector from email headers
   carddav/        — iCloud CardDAV contacts importer
-  mcp/            — MCP server for AI agent access (22 tools)
+  mcp/            — MCP server for AI agent access (23 tools)
   poller/         — periodic email polling
   smtp/           — SMTP MIME multipart email sender
   web/            — chi router, auth, handlers, templates

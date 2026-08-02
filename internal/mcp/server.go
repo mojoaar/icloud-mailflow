@@ -204,39 +204,85 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 	})
 
 	s.AddTool(mcp.NewTool("list_activity",
-		mcp.WithDescription("List recent processing activity log entries"),
-		mcp.WithNumber("limit", mcp.Description("Number of entries to return, default 50")),
+		mcp.WithDescription("List activity log entries with optional filtering and pagination"),
+		mcp.WithString("search", mcp.Description("Search term to match in subject, from address, or rule name")),
+		mcp.WithString("rule", mcp.Description("Filter by rule name")),
+		mcp.WithString("status", mcp.Description("Filter by status (success or error)")),
+		mcp.WithNumber("page", mcp.Description("Page number (1-based, default 1)")),
+		mcp.WithNumber("per_page", mcp.Description("Entries per page (default 50)")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		limit := 50
-		if v, ok := req.GetArguments()["limit"]; ok {
-			limit = int(v.(float64))
+		args := req.GetArguments()
+		search := ""
+		if v, ok := args["search"]; ok {
+			search = v.(string)
 		}
-		entries, err := logRepo.ListRecent(limit)
+		rule := ""
+		if v, ok := args["rule"]; ok {
+			rule = v.(string)
+		}
+		status := ""
+		if v, ok := args["status"]; ok {
+			status = v.(string)
+		}
+		perPage := 50
+		if v, ok := args["per_page"]; ok {
+			perPage = int(v.(float64))
+		}
+		page := 1
+		if v, ok := args["page"]; ok {
+			page = int(v.(float64))
+		}
+		if page < 1 {
+			page = 1
+		}
+		offset := (page - 1) * perPage
+		entries, total, err := logRepo.ListFiltered(perPage, offset, search, rule, status)
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		return resultJSON(map[string]any{"entries": entries})
+		totalPages := 1
+		if perPage > 0 {
+			totalPages = (total + perPage - 1) / perPage
+		}
+		return resultJSON(map[string]any{
+			"entries":       entries,
+			"total_entries": total,
+			"total_pages":   totalPages,
+			"page":          page,
+		})
 	})
 
 	s.AddTool(mcp.NewTool("get_stats",
-		mcp.WithDescription("Get processing statistics: total processed, rule hits, top senders, actions breakdown, daily volume"),
+		mcp.WithDescription("Get processing statistics: total processed, rule hits, top senders, actions breakdown, errors, folder distribution, daily and weekly volume"),
 		mcp.WithNumber("days", mcp.Description("Days of daily volume to return, default 7")),
+		mcp.WithNumber("weeks", mcp.Description("Weeks of weekly volume to return, default 24")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args := req.GetArguments()
 		days := 7
-		if v, ok := req.GetArguments()["days"]; ok {
+		if v, ok := args["days"]; ok {
 			days = int(v.(float64))
+		}
+		weeks := 24
+		if v, ok := args["weeks"]; ok {
+			weeks = int(v.(float64))
 		}
 		total, _ := statsRepo.TotalProcessed()
 		hits, _ := statsRepo.RuleHits()
 		senders, _ := statsRepo.TopSenders(20)
 		breakdown, _ := statsRepo.ActionsBreakdown()
 		volume, _ := statsRepo.DailyVolume(days)
+		errors, _ := statsRepo.ErrorBreakdown()
+		folders, _ := statsRepo.FolderDistribution()
+		weekly, _ := statsRepo.WeeklyVolume(weeks)
 		return resultJSON(map[string]any{
-			"total_processed":   total,
-			"rule_hits":         hits,
-			"top_senders":       senders,
-			"actions_breakdown": breakdown,
-			"daily_volume":      volume,
+			"total_processed":     total,
+			"rule_hits":           hits,
+			"top_senders":         senders,
+			"actions_breakdown":   breakdown,
+			"daily_volume":        volume,
+			"error_breakdown":     errors,
+			"folder_distribution": folders,
+			"weekly_volume":       weekly,
 		})
 	})
 
@@ -250,6 +296,18 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 		return mcp.NewToolResultText("poll cycle completed"), nil
+	})
+
+	s.AddTool(mcp.NewTool("backup_now",
+		mcp.WithDescription("Manually trigger a rules backup email — exports all rules as JSON and emails them to the configured backup recipient"),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if p == nil {
+			return mcp.NewToolResultError("poller not available: IMAP not configured"), nil
+		}
+		if err := p.BackupNow(); err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		return mcp.NewToolResultText("backup completed and email sent"), nil
 	})
 
 	s.AddTool(mcp.NewTool("backup_rules",

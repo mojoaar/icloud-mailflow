@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- MCP `list_activity` now supports filtering and pagination: search, rule, status, page, per_page params
+- MCP `get_stats` now returns error_breakdown, folder_distribution, and weekly_volume with configurable weeks param
+- MCP `backup_now` tool — triggers rules backup email immediately
+
 ### Fixed
 - Docs page sidebar nav broken due to global `nav` CSS styles leaking from `style.css`
 - Stats page folder distribution chart skipping every other bar (canvas not resized after reveal)
