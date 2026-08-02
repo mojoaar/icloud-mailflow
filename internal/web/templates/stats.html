@@ -196,6 +196,7 @@ function toggleView(id, view, init) {
     if (view === 'chart') {
         listEl.style.display = 'none';
         chartEl.style.display = 'block';
+        if (charts[id]) charts[id].resize();
         if (!charts[id] && !init) {
             var data;
             if (id==='daily') data = dataDaily;
