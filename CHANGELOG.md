@@ -5,16 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Added
-- Runtime metrics collection: memory (MB), goroutines, and CPU % sampled every hour with 24-hour auto-pruning
-- Runtime metrics chart card on /stats: memory and CPU % line charts displayed directly
-- Goroutine count displayed in /settings Server section
-
-### Fixed
-- Runtime metrics chart tooltips show correct labels (Memory (MB) / CPU %) instead of generic "Messages"
-
 ## [0.7.8] - 2026-08-02
 
 ### Added
@@ -27,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Web UI condition dropdowns now include body, Content Type, Header: fields and all 4 date operators
 - Web UI action dropdowns now include Auto Reply, Forward, Delete, Remove Flag
 - Keyboard shortcuts: `?` shows modal overlay, `g` + `d/a/r/s/t` for navigation
+- Runtime metrics collection: memory (MB), goroutines, and CPU % sampled every hour with 24-hour auto-pruning
+- Runtime metrics chart card on /stats: memory and CPU % line charts displayed directly
+- Goroutine count displayed in /settings Server section
 
 ### Fixed
 - Docs page sidebar nav broken due to global `nav` CSS styles leaking from `style.css`
@@ -38,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Go version badge and build requirements updated to 1.25.5+
 - Settings "Refresh folders" destroyed `<select>` wrapper causing folder names to render as concatenated text
 - Settings "Refresh folders" would change selected source folder to first option instead of preserving current selection
+- Runtime metrics chart tooltips show correct labels (Memory (MB) / CPU %) instead of generic "Messages"
 
 ## [0.7.7] - 2026-08-02
 
