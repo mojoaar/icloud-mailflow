@@ -44,14 +44,14 @@
                     hx-swap="outerHTML">
                     Delete
                 </button>
-                <button class="btn reorder-btn" style="font-size:0.7rem;padding:2px 6px" aria-label="Move rule up"
+                <button class="reorder-btn" style="font-size:0.7rem" aria-label="Move rule up"
                     hx-post="/rules/reorder/move"
                     hx-vals='{"rule_id":{{.ID}},"direction":"up"}'
                     hx-target="#rules-panel" hx-swap="outerHTML"
                     hx-indicator="#reorder-spinner">
                     <i data-lucide="chevron-up" data-size="12"></i>
                 </button>
-                <button class="btn reorder-btn" style="font-size:0.7rem;padding:2px 6px" aria-label="Move rule down"
+                <button class="reorder-btn" style="font-size:0.7rem" aria-label="Move rule down"
                     hx-post="/rules/reorder/move"
                     hx-vals='{"rule_id":{{.ID}},"direction":"down"}'
                     hx-target="#rules-panel" hx-swap="outerHTML"
