@@ -1,7 +1,7 @@
 {{define "folders_list"}}
 {{if .Folders}}
 {{range .Folders}}
-<option value="{{.Name}}">{{.Name}}</option>
+<option value="{{.Name}}" {{if eq $.SourceFolder .Name}}selected{{end}}>{{.Name}}</option>
 {{end}}
 {{else}}
 <option value="" disabled>No folders available</option>

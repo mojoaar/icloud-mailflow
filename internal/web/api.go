@@ -39,6 +39,6 @@ func foldersListHandler(imapClient imap.Client, repo *db.FoldersRepo, settingsRe
 				w.Header().Set("HX-Trigger", `{"showToast":{"type":"error","message":"Source folder '`+source+`' not found on IMAP server"}}`)
 			}
 		}
-		renderPartial(w, "folders_list", map[string]any{"Folders": folders})
+		renderPartial(w, "folders_list", map[string]any{"Folders": folders, "SourceFolder": source})
 	}
 }
