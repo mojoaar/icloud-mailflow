@@ -1,6 +1,10 @@
 package db
 
-import "database/sql"
+import (
+	"database/sql"
+	"strconv"
+	"time"
+)
 
 type StatsRepo struct{ DB *sql.DB }
 
@@ -165,4 +169,42 @@ func (r *StatsRepo) WeeklyVolume(weeks int) ([]DailyVolume, error) {
 		out = append(out, d)
 	}
 	return out, rows.Err()
+}
+
+func (r *StatsRepo) SetStat(category, key string, value int) error {
+	_, err := r.DB.Exec(`INSERT INTO stats (category, key, value) VALUES (?, ?, ?)
+		ON CONFLICT(category, key) DO UPDATE SET value = excluded.value`, category, key, value)
+	return err
+}
+
+func (r *StatsRepo) PruneStats(category string, before int64) error {
+	_, err := r.DB.Exec(`DELETE FROM stats WHERE category=? AND CAST(key AS INTEGER) < ?`, category, before)
+	return err
+}
+
+func (r *StatsRepo) MetricValues(category string, limit int) ([]DailyVolume, error) {
+	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category=? ORDER BY CAST(key AS INTEGER) ASC LIMIT ?`, category, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []DailyVolume
+	for rows.Next() {
+		var d DailyVolume
+		var k string
+		if err := rows.Scan(&k, &d.Count); err != nil {
+			return nil, err
+		}
+		d.Date = formatMetricKey(k)
+		out = append(out, d)
+	}
+	return out, rows.Err()
+}
+
+func formatMetricKey(unixStr string) string {
+	sec, err := strconv.ParseInt(unixStr, 10, 64)
+	if err != nil {
+		return ""
+	}
+	return time.Unix(sec, 0).UTC().Format("15:04")
 }

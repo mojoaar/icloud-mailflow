@@ -30,18 +30,25 @@ func statsHandler(repo *db.StatsRepo) http.HandlerFunc {
 			}
 		}
 
-		data := map[string]any{
-			"Total":          total,
-			"Rules":          rules,
-			"Senders":        senders,
-			"Actions":        actions,
-			"Daily":          daily,
-			"MaxRuleHit":     maxRuleHit,
-			"Errors":         errors,
-			"Folders":        folders,
-			"MaxFolderCount": maxFolderCount,
-			"Weekly":         weekly,
-		}
+	metricsMem, _ := repo.MetricValues("memory", 1440)
+	metricsGoroutines, _ := repo.MetricValues("goroutines", 1440)
+	metricsCPU, _ := repo.MetricValues("cpu", 1440)
+
+	data := map[string]any{
+		"Total":             total,
+		"Rules":             rules,
+		"Senders":           senders,
+		"Actions":           actions,
+		"Daily":             daily,
+		"MaxRuleHit":        maxRuleHit,
+		"Errors":            errors,
+		"Folders":           folders,
+		"MaxFolderCount":    maxFolderCount,
+		"Weekly":            weekly,
+		"MetricsMem":        metricsMem,
+		"MetricsGoroutines": metricsGoroutines,
+		"MetricsCPU":        metricsCPU,
+	}
 		renderPage(w, r, "Stats", "stats", data)
 	}
 }

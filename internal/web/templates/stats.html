@@ -78,7 +78,40 @@
 </table>
 </div>
 <div id="daily-chart" class="chart-view" style="display:none">
-    <canvas id="daily-canvas" style="max-height:280px"></canvas>
+	<canvas id="daily-canvas" style="max-height:280px"></canvas>
+</div>
+</div>
+</div>
+
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
+<div class="card chartable" style="flex:1">
+<div class="flex-between"><h2>Runtime Metrics</h2>
+<div class="chart-toggle">
+    <button class="toggle-btn toggle-list active" onclick="toggleView('metrics-mem','list')" aria-pressed="true">List</button>
+    <button class="toggle-btn toggle-chart" onclick="toggleView('metrics-mem','chart')" aria-pressed="false">Chart</button>
+</div>
+</div>
+<div style="display:flex;gap:16px;flex-wrap:wrap">
+<div style="flex:1;min-width:260px">
+    <div id="metrics-mem-list" class="chart-list" style="max-height:280px;overflow-y:auto">
+    <table>
+    {{range .MetricsMem}}<tr><td>{{.Date}}</td><td style="text-align:right">{{.Count}} MB</td></tr>{{else}}<tr><td class="muted">No data yet</td></tr>{{end}}
+    </table>
+    </div>
+    <div id="metrics-mem-chart" class="chart-view" style="display:none">
+        <canvas id="metrics-mem-canvas" style="max-height:280px"></canvas>
+    </div>
+</div>
+<div style="flex:1;min-width:260px">
+    <div id="metrics-cpu-list" class="chart-list" style="max-height:280px;overflow-y:auto">
+    <table>
+    {{range .MetricsCPU}}<tr><td>{{.Date}}</td><td style="text-align:right">{{formatCPU .Count}}</td></tr>{{else}}<tr><td class="muted">No data yet</td></tr>{{end}}
+    </table>
+    </div>
+    <div id="metrics-cpu-chart" class="chart-view" style="display:none">
+        <canvas id="metrics-cpu-canvas" style="max-height:280px"></canvas>
+    </div>
+</div>
 </div>
 </div>
 </div>
@@ -136,6 +169,8 @@ var dataDaily   = {labels:[{{range .Daily}}"{{.Date}}",{{end}}],vals:[{{range .D
 var dataActions = {labels:[{{range .Actions}}"{{.Type}}",{{end}}],vals:[{{range .Actions}}{{.Count}},{{end}}]};
 var dataFolders = {labels:[{{range .Folders}}"{{.Folder}}",{{end}}],vals:[{{range .Folders}}{{.Count}},{{end}}]};
 var dataWeekly  = {labels:[{{range .Weekly}}"{{.Date}}",{{end}}],vals:[{{range .Weekly}}{{.Count}},{{end}}]};
+var dataMem     = {labels:[{{range .MetricsMem}}"{{.Date}}",{{end}}],vals:[{{range .MetricsMem}}{{.Count}},{{end}}]};
+var dataCPU     = {labels:[{{range .MetricsCPU}}"{{.Date}}",{{end}}],vals:[{{range .MetricsCPU}}{{.Count}},{{end}}]};
 
 var dark = document.documentElement.getAttribute('data-theme') !== 'light';
 var textColor  = dark ? '#8b949e' : '#656d76';
@@ -202,8 +237,10 @@ function toggleView(id, view, init) {
             if (id==='daily') data = dataDaily;
             else if (id==='actions') data = dataActions;
             else if (id==='folders') data = dataFolders;
+            else if (id==='metrics-mem') data = dataMem;
+            else if (id==='metrics-cpu') data = dataCPU;
             else data = dataWeekly;
-            var type = id==='daily'?'line':(id==='actions'?'doughnut':(id==='weekly'?'barv':'bar'));
+            var type = id==='daily'?'line':(id==='actions'?'doughnut':(id==='metrics-mem'?'line':(id==='metrics-cpu'?'line':(id==='weekly'?'barv':'bar'))));
             if (data.labels.length) charts[id] = makeChart(id+'-canvas', type, data.labels, data.vals);
         }
     } else {
@@ -211,6 +248,23 @@ function toggleView(id, view, init) {
         chartEl.style.display = 'none';
     }
     if (!init) localStorage.setItem('chart-'+id, view);
+    if (id === 'metrics-mem') {
+        var cpuList = document.getElementById('metrics-cpu-list');
+        var cpuChart = document.getElementById('metrics-cpu-chart');
+        if (cpuList && cpuChart) {
+            if (view === 'chart') {
+                cpuList.style.display = 'none';
+                cpuChart.style.display = 'block';
+                if (charts['metrics-cpu']) charts['metrics-cpu'].resize();
+                if (!charts['metrics-cpu'] && !init && dataCPU.labels.length) {
+                    charts['metrics-cpu'] = makeChart('metrics-cpu-canvas', 'line', dataCPU.labels, dataCPU.vals);
+                }
+            } else {
+                cpuList.style.display = 'block';
+                cpuChart.style.display = 'none';
+            }
+        }
+    }
     var section = listEl.closest('.chartable');
     if (section) {
         section.querySelectorAll('.toggle-btn').forEach(function(b){b.classList.remove('active');b.setAttribute('aria-pressed','false')});
@@ -224,6 +278,13 @@ initChart('daily', 'line', dataDaily.labels, dataDaily.vals);
 initChart('actions', 'doughnut', dataActions.labels, dataActions.vals);
 initChart('folders', 'bar', dataFolders.labels, dataFolders.vals);
 initChart('weekly', 'barv', dataWeekly.labels, dataWeekly.vals);
+initChart('metrics-mem', 'line', dataMem.labels, dataMem.vals);
+if (dataCPU.labels.length) { charts['metrics-cpu'] = makeChart('metrics-cpu-canvas', 'line', dataCPU.labels, dataCPU.vals); }
+var mcpView = localStorage.getItem('chart-metrics-mem') || 'list';
+if (mcpView === 'chart') {
+    document.getElementById('metrics-cpu-list').style.display = 'none';
+    document.getElementById('metrics-cpu-chart').style.display = 'block';
+    if (charts['metrics-cpu']) charts['metrics-cpu'].resize();
 })();
 });
 </script>

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/hex"
 	"flag"
@@ -30,9 +31,13 @@ type App struct {
 	ImapConn *imap.IMAPClient
 	Poller   *poller.Poller
 	Router   http.Handler
+	cancel   context.CancelFunc
 }
 
 func (a *App) Close() {
+	if a.cancel != nil {
+		a.cancel()
+	}
 	if a.Poller != nil {
 		a.Poller.Stop()
 	}
@@ -116,6 +121,9 @@ func initialize(dataDir string) (*App, error) {
 	statsRepo := db.NewStatsRepo(database)
 	foldersRepo := db.NewFoldersRepo(database)
 
+	metricsCtx, metricsCancel := context.WithCancel(context.Background())
+	web.StartMetricsCollector(statsRepo, metricsCtx)
+
 	var p *poller.Poller
 	if imapClient != nil {
 		batchSize := 50
@@ -143,11 +151,12 @@ func initialize(dataDir string) (*App, error) {
 	router := web.New(cfg, database, imapClient, contactsCollector, logRepo, statsRepo, version, startTime, p)
 
 	return &App{
-		Config:     cfg,
-		DB:         database,
+		Config:   cfg,
+		DB:       database,
 		ImapConn: imapConn,
-		Poller:     p,
-		Router:     router,
+		Poller:   p,
+		Router:   router,
+		cancel:   metricsCancel,
 	}, nil
 }
 

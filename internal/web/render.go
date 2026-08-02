@@ -3,6 +3,7 @@ package web
 import (
 	"bytes"
 	"embed"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -42,6 +43,10 @@ var templateFuncs = template.FuncMap{
 	"add":        func(a, b int) int { return a + b },
 	"hasPrefix":  strings.HasPrefix,
 	"trimPrefix": strings.TrimPrefix,
+	"formatCPU": func(v int) string {
+		pct := float64(v) / 100.0
+		return fmt.Sprintf("%.1f%%", pct)
+	},
 }
 
 func init() {
