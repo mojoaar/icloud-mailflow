@@ -5,13 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Fixed
-- docs.html: added keyboard shortcuts section, runtime metrics to stats, goroutines/repository to settings reference, /dashboard/rules endpoint, sidebar nav fixes
-- README: added auto_reply action, content_type field, keyboard shortcuts, runtime metrics, MCP rate limiting to security section
-- AGENTS.md: updated poller/rules/MCP architecture descriptions for auto_reply, content_type, rate limiting
-
 ## [0.7.8] - 2026-08-02
 
 ### Added
@@ -39,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings "Refresh folders" destroyed `<select>` wrapper causing folder names to render as concatenated text
 - Settings "Refresh folders" would change selected source folder to first option instead of preserving current selection
 - Runtime metrics chart tooltips show correct labels (Memory (MB) / CPU %) instead of generic "Messages"
+- docs.html: added keyboard shortcuts section, runtime metrics to stats, goroutines/repository to settings reference, /dashboard/rules endpoint, sidebar nav fixes
+- README: added auto_reply action, content_type field, keyboard shortcuts, runtime metrics, MCP rate limiting to security section
+- AGENTS.md: updated poller/rules/MCP architecture descriptions for auto_reply, content_type, rate limiting
 
 ## [0.7.7] - 2026-08-02
 
