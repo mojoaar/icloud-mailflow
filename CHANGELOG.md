@@ -12,6 +12,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Top senders limit increased from 15 to 20 on stats page and MCP get_stats
 - Date formatting standardized to ISO 8601 on activity log, settings page (last backup, server time)
 
+### Fixed
+- Duplicate `class` attributes silently dropping margins on Add Condition, Add Action, and rules list card
+- Theme toggle icon now switches between sun/moon based on active theme
+- Export/Import icons swapped to correct directions (download=export, upload=import)
+- Undefined CSS variable `--fg` fixed to `--text` in chart toggle
+- Inline `<style>` block in dashboard status moved to main stylesheet (prevented DOM accumulation)
+- Dashboard action buttons and export/import form now wrap properly on mobile
+- Stats cards removed `min-width:300px` to fix horizontal overflow on mobile
+- Toggle button styling made consistent (Enable=btn-primary across all sections)
+- Seed Contacts button promoted to btn-primary for visual consistency
+
+### Added
+- `aria-pressed` on chart toggle buttons with live updates via JS
+- `role="tab"`, `aria-selected`, and `aria-controls` on MCP config tab buttons
+- Save icons on Save IMAP Settings and Update Password buttons
+- CSRF hidden input on login form for defense-in-depth
+
 ## [0.7.6] - 2026-08-01
 
 ### Added

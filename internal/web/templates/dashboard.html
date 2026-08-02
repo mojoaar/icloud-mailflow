@@ -43,15 +43,11 @@
 {{end}}
 
 {{define "dashboard_status"}}
-<style>
-#status-table td:first-child{white-space:nowrap}
-#status-table td:last-child{text-align:right}
-</style>
 <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <h2 style="margin:0">Status</h2>
-        <div style="display:flex;gap:8px">
-            <button class="btn" hx-post="/contacts/seed"
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" hx-post="/contacts/seed"
                 hx-target="#seed-toast" hx-swap="innerHTML"
                 onclick="document.getElementById('seed-toast').innerHTML='Scanning folders...'">
                 <span class="htmx-indicator spinner"></span> Seed Contacts

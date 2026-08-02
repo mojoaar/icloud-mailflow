@@ -28,8 +28,8 @@
             <a href="/rules"><i data-lucide="git-branch" class="nav-icon" aria-hidden="true"></i> Rules</a>
             <a href="/settings"><i data-lucide="settings" class="nav-icon" aria-hidden="true"></i> Settings</a>
             <form method="POST" action="/logout" style="display:inline;margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}"><button type="submit" class="nav-btn"><i data-lucide="log-out" class="nav-icon" aria-hidden="true"></i> Logout</button></form>
-            <a href="#" style="font-size:0.85rem;padding:0" onclick="var t=document.documentElement.getAttribute('data-theme')==='light'?'':'light';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);return false" aria-label="Toggle theme">
-                <i data-lucide="moon" class="nav-icon" aria-hidden="true"></i>
+            <a href="#" style="font-size:0.85rem;padding:0" onclick="var t=document.documentElement.getAttribute('data-theme')==='light'?'':'light';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);this.querySelector('i').setAttribute('data-lucide',t?'sun':'moon');lucide.createIcons();return false" aria-label="Toggle theme">
+                <i data-lucide="sun" class="nav-icon" aria-hidden="true"></i>
             </a>
         </div>
         {{end}}

@@ -17,7 +17,7 @@
 </div>
 
 <div style="display:flex;gap:16px;flex-wrap:wrap">
-<div class="card" style="flex:1;min-width:300px">
+<div class="card" style="flex:1">
 <h2>Rule Hits</h2>
 {{range .Rules}}
 <div style="margin-bottom:8px">
@@ -31,7 +31,7 @@
 {{else}}<p class="muted">No data yet</p>{{end}}
 </div>
 
-<div class="card" style="flex:1;min-width:300px">
+<div class="card" style="flex:1">
 <h2>Top Senders</h2>
 <table>
 {{range .Senders}}
@@ -43,11 +43,11 @@
 </div>
 
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
-<div class="card chartable" style="flex:1;min-width:300px">
+<div class="card chartable" style="flex:1">
 <div class="flex-between"><h2>Actions</h2>
 <div class="chart-toggle">
-    <button class="toggle-btn toggle-list active" onclick="toggleView('actions','list')">List</button>
-    <button class="toggle-btn toggle-chart" onclick="toggleView('actions','chart')">Chart</button>
+    <button class="toggle-btn toggle-list active" onclick="toggleView('actions','list')" aria-pressed="true">List</button>
+    <button class="toggle-btn toggle-chart" onclick="toggleView('actions','chart')" aria-pressed="false">Chart</button>
 </div>
 </div>
 <div id="actions-list" class="chart-list">
@@ -62,11 +62,11 @@
 </div>
 </div>
 
-<div class="card chartable" style="flex:1;min-width:300px">
+<div class="card chartable" style="flex:1">
 <div class="flex-between"><h2>Daily Volume</h2>
 <div class="chart-toggle">
-    <button class="toggle-btn toggle-list active" onclick="toggleView('daily','list')">List</button>
-    <button class="toggle-btn toggle-chart" onclick="toggleView('daily','chart')">Chart</button>
+    <button class="toggle-btn toggle-list active" onclick="toggleView('daily','list')" aria-pressed="true">List</button>
+    <button class="toggle-btn toggle-chart" onclick="toggleView('daily','chart')" aria-pressed="false">Chart</button>
 </div>
 </div>
 <div id="daily-list" class="chart-list">
@@ -84,11 +84,11 @@
 </div>
 
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
-<div class="card chartable" style="flex:1;min-width:300px">
+<div class="card chartable" style="flex:1">
 <div class="flex-between"><h2>Messages by Folder</h2>
 <div class="chart-toggle">
-    <button class="toggle-btn toggle-list active" onclick="toggleView('folders','list')">List</button>
-    <button class="toggle-btn toggle-chart" onclick="toggleView('folders','chart')">Chart</button>
+    <button class="toggle-btn toggle-list active" onclick="toggleView('folders','list')" aria-pressed="true">List</button>
+    <button class="toggle-btn toggle-chart" onclick="toggleView('folders','chart')" aria-pressed="false">Chart</button>
 </div>
 </div>
 <div id="folders-list" class="chart-list">
@@ -108,11 +108,11 @@
 </div>
 </div>
 
-<div class="card chartable" style="flex:1;min-width:300px">
+<div class="card chartable" style="flex:1">
 <div class="flex-between"><h2>Weekly Volume</h2>
 <div class="chart-toggle">
-    <button class="toggle-btn toggle-list active" onclick="toggleView('weekly','list')">List</button>
-    <button class="toggle-btn toggle-chart" onclick="toggleView('weekly','chart')">Chart</button>
+    <button class="toggle-btn toggle-list active" onclick="toggleView('weekly','list')" aria-pressed="true">List</button>
+    <button class="toggle-btn toggle-chart" onclick="toggleView('weekly','chart')" aria-pressed="false">Chart</button>
 </div>
 </div>
 <div id="weekly-list" class="chart-list">
@@ -212,8 +212,9 @@ function toggleView(id, view, init) {
     if (!init) localStorage.setItem('chart-'+id, view);
     var section = listEl.closest('.chartable');
     if (section) {
-        section.querySelectorAll('.toggle-btn').forEach(function(b){b.classList.remove('active')});
+        section.querySelectorAll('.toggle-btn').forEach(function(b){b.classList.remove('active');b.setAttribute('aria-pressed','false')});
         section.querySelector(view==='chart'?'.toggle-chart':'.toggle-list').classList.add('active');
+        section.querySelector(view==='chart'?'.toggle-chart':'.toggle-list').setAttribute('aria-pressed','true');
     }
 }
 window.toggleView = toggleView;

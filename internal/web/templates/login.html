@@ -5,7 +5,7 @@
     {{if .Error}}
     <div class="toast toast-error" style="position:static;margin-bottom:12px">{{.Error}}</div>
     {{end}}
-    <form method="POST" action="/login">
+    <form method="POST" action="/login"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required style="width:100%">

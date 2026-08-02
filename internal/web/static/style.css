@@ -156,7 +156,6 @@ pre { max-width:100%; overflow-x:auto; }
 
 .method-badge { display:inline-block; padding:1px 6px; border-radius:3px; font-size:0.7rem; font-weight:700; margin-right:4px; vertical-align:middle; }
 .method-get { background:#033a16; color:var(--green); }
-.method-post { background:#033a16; color:var(--accent); }
 .method-put { background:#3d2a00; color:#d29922; }
 .method-delete { background:#490202; color:var(--red); }
 
@@ -261,6 +260,9 @@ tr[draggable] { cursor: grab; }
 }
 .toggle-btn:not(.active):hover {
     background: var(--bg);
-    color: var(--fg);
+    color: var(--text);
 }
 .chart-view canvas { width: 100% !important; }
+
+#status-table td:first-child { white-space: nowrap; }
+#status-table td:last-child { text-align: right; }

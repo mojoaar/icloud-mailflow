@@ -13,7 +13,7 @@
             <input type="password" id="settings-imap-pass" name="imap_password" placeholder="Leave blank to keep current" style="width:100%">
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
-            <button type="submit" class="btn btn-primary">Save IMAP Settings</button>
+            <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save IMAP Settings</button>
             <button type="button" class="btn" hx-post="/settings/imap/test"
                 hx-include="[name='imap_email'],[name='imap_password']"
                 hx-target="#imap-toast" hx-swap="innerHTML">
@@ -31,7 +31,7 @@
             <label>New Password</label>
             <input type="password" id="settings-password" name="password" placeholder="Leave blank to keep current" style="width:100%">
         </div>
-        <button type="submit" class="btn btn-primary">Update Password</button>
+        <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Update Password</button>
     </form>
 </div>
 
@@ -68,7 +68,7 @@
         </div>
         <div class="flex-row">
             <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save Poll Settings</button>
-            <button type="button" class="btn {{if .PollingActive}}btn-danger{{end}}"
+                <button type="button" class="btn {{if .PollingActive}}btn-danger{{else}}btn-primary{{end}}"
                 hx-post="/settings/poll/toggle" hx-target="#poll-toggle-toast" hx-swap="innerHTML">
                 {{if .PollingActive}}Disable Polling{{else}}Enable Polling{{end}}
             </button>
@@ -81,11 +81,11 @@
     <h2>Rules</h2>
     <p style="color:var(--muted);margin-bottom:12px">Export or import your rule configurations.</p>
     <div class="flex-between">
-        <a href="/settings/rules/export" class="btn" download><i data-lucide="upload" data-size="14"></i> Export</a>
-        <form hx-encoding="multipart/form-data" hx-post="/settings/rules/import"
-            hx-target="#rules-import-toast" hx-swap="innerHTML" style="display:flex;gap:8px;align-items:center;margin:0">
+        <a href="/settings/rules/export" class="btn" download><i data-lucide="download" data-size="14"></i> Export</a>
+            <form hx-encoding="multipart/form-data" hx-post="/settings/rules/import"
+            hx-target="#rules-import-toast" hx-swap="innerHTML" style="display:flex;gap:8px;align-items:center;margin:0;flex-wrap:wrap">
             <input type="file" name="rules_file" accept=".json">
-            <button type="submit" class="btn"><i data-lucide="download" data-size="14"></i> Import</button>
+            <button type="submit" class="btn"><i data-lucide="upload" data-size="14"></i> Import</button>
         </form>
     </div>
     <div id="rules-import-toast" class="mt-1"></div>
@@ -99,7 +99,7 @@
             hx-target="#carddav-toast" hx-swap="innerHTML">
             Import iCloud Contacts
         </button>
-        <button type="button" class="btn {{if not .ContactsCollectionEnabled}}btn-danger{{end}}"
+        <button type="button" class="btn {{if not .ContactsCollectionEnabled}}btn-primary{{else}}btn-danger{{end}}"
             hx-post="/settings/contacts/toggle" hx-target="#contacts-toggle-toast" hx-swap="innerHTML">
             {{if .ContactsCollectionEnabled}}Disable Collection{{else}}Enable Collection{{end}}
         </button>
@@ -176,9 +176,9 @@
     <div class="form-group" style="margin-top:16px">
         <label style="margin-bottom:8px">Platform Config</label>
         <div style="display:flex;gap:4px;margin-bottom:8px">
-            <button type="button" class="btn" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-opencode').style.display='block'">OpenCode</button>
-            <button type="button" class="btn" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-claude').style.display='block'">Claude Code</button>
-            <button type="button" class="btn" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-codex').style.display='block'">Codex</button>
+            <button type="button" class="btn" role="tab" aria-selected="true" aria-controls="mcp-opencode" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-opencode').style.display='block'">OpenCode</button>
+            <button type="button" class="btn" role="tab" aria-selected="false" aria-controls="mcp-claude" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-claude').style.display='block'">Claude Code</button>
+            <button type="button" class="btn" role="tab" aria-selected="false" aria-controls="mcp-codex" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-codex').style.display='block'">Codex</button>
         </div>
         <div id="mcp-opencode" class="mcp-config-snippet" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
             <pre style="margin:0;font-size:0.8rem"><code>{
