@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Runtime metrics collection: memory (MB), goroutines, and CPU % sampled every 60 seconds with 24-hour auto-pruning
+- Runtime metrics collection: memory (MB), goroutines, and CPU % sampled every hour with 24-hour auto-pruning
 - Runtime metrics chart card on /stats: memory (line chart) and CPU % (line chart) with list/chart toggle
 - Goroutine count displayed in /settings Server section
 

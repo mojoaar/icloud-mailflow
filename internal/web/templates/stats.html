@@ -85,39 +85,6 @@
 
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
 <div class="card chartable" style="flex:1">
-<div class="flex-between"><h2>Runtime Metrics</h2>
-<div class="chart-toggle">
-    <button class="toggle-btn toggle-list active" onclick="toggleView('metrics-mem','list')" aria-pressed="true">List</button>
-    <button class="toggle-btn toggle-chart" onclick="toggleView('metrics-mem','chart')" aria-pressed="false">Chart</button>
-</div>
-</div>
-<div style="display:flex;gap:16px;flex-wrap:wrap">
-<div style="flex:1;min-width:260px">
-    <div id="metrics-mem-list" class="chart-list" style="max-height:280px;overflow-y:auto">
-    <table>
-    {{range .MetricsMem}}<tr><td>{{.Date}}</td><td style="text-align:right">{{.Count}} MB</td></tr>{{else}}<tr><td class="muted">No data yet</td></tr>{{end}}
-    </table>
-    </div>
-    <div id="metrics-mem-chart" class="chart-view" style="display:none">
-        <canvas id="metrics-mem-canvas" style="max-height:280px"></canvas>
-    </div>
-</div>
-<div style="flex:1;min-width:260px">
-    <div id="metrics-cpu-list" class="chart-list" style="max-height:280px;overflow-y:auto">
-    <table>
-    {{range .MetricsCPU}}<tr><td>{{.Date}}</td><td style="text-align:right">{{formatCPU .Count}}</td></tr>{{else}}<tr><td class="muted">No data yet</td></tr>{{end}}
-    </table>
-    </div>
-    <div id="metrics-cpu-chart" class="chart-view" style="display:none">
-        <canvas id="metrics-cpu-canvas" style="max-height:280px"></canvas>
-    </div>
-</div>
-</div>
-</div>
-</div>
-
-<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
-<div class="card chartable" style="flex:1">
 <div class="flex-between"><h2>Messages by Folder</h2>
 <div class="chart-toggle">
     <button class="toggle-btn toggle-list active" onclick="toggleView('folders','list')" aria-pressed="true">List</button>
@@ -158,6 +125,39 @@
 </div>
 <div id="weekly-chart" class="chart-view" style="display:none">
     <canvas id="weekly-canvas" style="max-height:280px"></canvas>
+</div>
+</div>
+</div>
+
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
+<div class="card chartable" style="flex:1">
+<div class="flex-between"><h2>Runtime Metrics</h2>
+<div class="chart-toggle">
+    <button class="toggle-btn toggle-list active" onclick="toggleView('metrics-mem','list')" aria-pressed="true">List</button>
+    <button class="toggle-btn toggle-chart" onclick="toggleView('metrics-mem','chart')" aria-pressed="false">Chart</button>
+</div>
+</div>
+<div style="display:flex;gap:16px;flex-wrap:wrap">
+<div style="flex:1;min-width:260px">
+    <div id="metrics-mem-list" class="chart-list" style="max-height:280px;overflow-y:auto">
+    <table>
+    {{range .MetricsMem}}<tr><td>{{.Date}}</td><td style="text-align:right">{{.Count}} MB</td></tr>{{else}}<tr><td class="muted">No data yet</td></tr>{{end}}
+    </table>
+    </div>
+    <div id="metrics-mem-chart" class="chart-view" style="display:none">
+        <canvas id="metrics-mem-canvas" style="max-height:280px"></canvas>
+    </div>
+</div>
+<div style="flex:1;min-width:260px">
+    <div id="metrics-cpu-list" class="chart-list" style="max-height:280px;overflow-y:auto">
+    <table>
+    {{range .MetricsCPU}}<tr><td>{{.Date}}</td><td style="text-align:right">{{formatCPU .Count}}</td></tr>{{else}}<tr><td class="muted">No data yet</td></tr>{{end}}
+    </table>
+    </div>
+    <div id="metrics-cpu-chart" class="chart-view" style="display:none">
+        <canvas id="metrics-cpu-canvas" style="max-height:280px"></canvas>
+    </div>
+</div>
 </div>
 </div>
 </div>

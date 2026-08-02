@@ -21,7 +21,7 @@ func StartMetricsCollector(repo *db.StatsRepo, parentCtx context.Context) {
 
 		collect(repo, &prevUser, &prevSys)
 
-		ticker := time.NewTicker(60 * time.Second)
+		ticker := time.NewTicker(time.Hour)
 		defer ticker.Stop()
 
 		for {
@@ -51,7 +51,7 @@ func collect(repo *db.StatsRepo, prevUser, prevSys *int64) {
 		if *prevUser > 0 {
 			deltaUser := userNano - *prevUser
 			deltaSys := sysNano - *prevSys
-			cpuPct := int((float64(deltaUser+deltaSys) / 60e9) * 10000)
+			cpuPct := int((float64(deltaUser+deltaSys) / 3600e9) * 10000)
 			repo.SetStat("cpu", key, cpuPct)
 		}
 		*prevUser = userNano
