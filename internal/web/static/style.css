@@ -267,14 +267,17 @@ tr[draggable] { cursor: grab; }
 #status-table td:first-child { white-space: nowrap; }
 #status-table td:last-child { text-align: right; }
 
-.reorder-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    margin-left: 2px;
+.reorder-btn { display: none; }
+@media (max-width: 768px) {
+    .reorder-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        margin-left: 2px;
+    }
 }
 
 .search-wrapper { position: relative; }
