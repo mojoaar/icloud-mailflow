@@ -42,12 +42,12 @@
             <label class="flex-between">
                 <span>Source Folder (where rules run on new mail)</span>
                 <button type="button" class="btn" style="font-size:0.75rem;padding:2px 8px"
-                    hx-get="/api/folders" hx-target="#folders-select" hx-swap="innerHTML">
+                    hx-get="/api/folders" hx-target="#source-folder-select" hx-swap="innerHTML">
                     Refresh folders
                 </button>
             </label>
             <div id="folders-select">
-                <select name="source_folder" style="width:100%">
+                <select name="source_folder" id="source-folder-select" style="width:100%">
                     {{range .Folders}}
                     <option value="{{.Name}}" {{if eq $.SourceFolder .Name}}selected{{end}}>{{.Name}}</option>
                     {{end}}

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AGENTS.md incorrect `const version` → `var version`
 - README security section now includes security headers, Secure/HttpOnly cookies, POST logout
 - Go version badge and build requirements updated to 1.25.5+
+- Settings "Refresh folders" destroyed `<select>` wrapper causing folder names to render as concatenated text
 
 ## [0.7.7] - 2026-08-02
 
