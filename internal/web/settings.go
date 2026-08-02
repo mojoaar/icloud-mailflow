@@ -104,7 +104,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		lastBackup, _ := settingsRepo.Get("last_backup")
 		if lastBackup != "" {
 			if t, err := time.Parse(time.RFC3339, lastBackup); err == nil {
-				lastBackup = t.Format("2006-01-02 15:04:05")
+				lastBackup = t.Format("2006-01-02T15:04:05")
 			}
 		}
 		mcpEnabled, _ := settingsRepo.Get("mcp_enabled")
@@ -130,7 +130,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"Contacts":     contactsCount,
 			"MonoFont":     monoFont != "false",
 			"LogKeep":      logKeep,
-			"ServerTime":   time.Now().Format("2006-01-02 15:04:05 MST"),
+			"ServerTime":   time.Now().Format("2006-01-02T15:04:05"),
 			"Uptime":       time.Since(startTime).Truncate(time.Second).String(),
 			"Memory":         getMemoryMB(),
 			"BackupEnabled":  backupEnabled == "true",
