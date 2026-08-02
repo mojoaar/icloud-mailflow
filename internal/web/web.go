@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"io/fs"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -92,7 +93,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Get("/activity", activityHandler(logRepo, rulesRepo, settingsRepo))
 	r.Post("/activity/delete", activityDeleteHandler(logRepo))
 	r.Get("/docs", docsStandaloneHandler(settingsRepo))
-	r.Get("/health", healthHandler(d, p, imapClient, statsRepo, contactsRepo, rulesRepo))
+	r.Get("/health", healthHandler(d, p, imapClient, statsRepo, contactsRepo, rulesRepo, sessRepo))
 	r.Get("/stats", statsHandler(statsRepo))
 
 	r.Get("/rules", rulesListHandler(rulesRepo))
@@ -131,9 +132,9 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 
 var csrfMiddleware = func(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" || r.Method == "HEAD" || r.Header.Get("HX-Request") == "true" ||
-		strings.HasPrefix(r.URL.Path, "/login") || strings.HasPrefix(r.URL.Path, "/setup") ||
-		strings.HasPrefix(r.URL.Path, "/mcp") {
+		if r.Method == "GET" || r.Method == "HEAD" || r.Header.Get("HX-Request") == "true" ||
+			strings.HasPrefix(r.URL.Path, "/login") || strings.HasPrefix(r.URL.Path, "/setup") ||
+			strings.HasPrefix(r.URL.Path, "/mcp") {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -172,8 +173,8 @@ type rateLimiter struct {
 }
 
 type rateEntry struct {
-	count    int
-	resetAt  time.Time
+	count   int
+	resetAt time.Time
 }
 
 func newRateLimiter() *rateLimiter {
@@ -208,3 +209,10 @@ func (rl *rateLimiter) allow(ip string, max int, window time.Duration) bool {
 }
 
 var loginLimiter = newRateLimiter()
+
+func clientIP(r *http.Request) string {
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		return host
+	}
+	return r.RemoteAddr
+}

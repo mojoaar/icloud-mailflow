@@ -23,7 +23,7 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/web"
 )
 
-var version = "0.7.8"
+var version = "0.8.0"
 
 type App struct {
 	Config   *config.Config
@@ -143,6 +143,7 @@ func initialize(dataDir string) (*App, error) {
 				return conn, nil
 			},
 		)
+		p.SetAutoReplyRepo(db.NewAutoReplyRepo(database))
 		if v, _ := settingsRepo.Get("polling_enabled"); v != "false" {
 			p.Start()
 		}

@@ -8,9 +8,11 @@ import (
 
 	goimap "github.com/emersion/go-imap/v2"
 
+	"github.com/mojoaar/icloud-mailflow/internal/config"
 	"github.com/mojoaar/icloud-mailflow/internal/contacts"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
+	"github.com/mojoaar/icloud-mailflow/internal/smtp"
 )
 
 type trackedMock struct {
@@ -763,4 +765,64 @@ func TestExecuteActionsDelete(t *testing.T) {
 		t.Fatalf("expected dest Trash, got %s", mock.moveCalls[0].Dest)
 	}
 	mock.mu.Unlock()
+}
+
+func TestAutoReplyOncePerSenderPerDay(t *testing.T) {
+	database := db.NewTestDB(t)
+	logRepo := db.NewLogRepo(database)
+	var sent []string
+	p := &Poller{
+		imapClient:    &trackedMock{},
+		logRepo:       logRepo,
+		cfg:           &config.Config{},
+		imapEmail:     "me@icloud.com",
+		autoReplyRepo: db.NewAutoReplyRepo(database),
+		sendMail: func(to, from, password, subject, body string, attachments ...smtp.Attachment) error {
+			sent = append(sent, to)
+			return nil
+		},
+	}
+	rule := &db.Rule{Name: "ar", Actions: []db.Action{{Type: "auto_reply", Value: "Away"}}}
+	msg := &imap.Message{From: []imap.Address{{Email: "sender@test.com"}}}
+
+	p.executeActions(rule, 1, msg)
+	p.executeActions(rule, 2, msg)
+
+	if len(sent) != 1 {
+		t.Fatalf("expected exactly 1 auto-reply, got %d", len(sent))
+	}
+	entries, _ := logRepo.ListRecent(10)
+	var skipped int
+	for _, e := range entries {
+		if e.ActionType == "auto_reply" && e.Status == "skipped" {
+			skipped++
+		}
+	}
+	if skipped != 1 {
+		t.Fatalf("expected 1 skipped auto_reply log entry, got %d", skipped)
+	}
+}
+
+func TestAutoReplySkipsSelf(t *testing.T) {
+	database := db.NewTestDB(t)
+	var sent []string
+	p := &Poller{
+		imapClient:    &trackedMock{},
+		logRepo:       db.NewLogRepo(database),
+		cfg:           &config.Config{},
+		imapEmail:     "me@icloud.com",
+		autoReplyRepo: db.NewAutoReplyRepo(database),
+		sendMail: func(to, from, password, subject, body string, attachments ...smtp.Attachment) error {
+			sent = append(sent, to)
+			return nil
+		},
+	}
+	rule := &db.Rule{Name: "ar", Actions: []db.Action{{Type: "auto_reply", Value: "Away"}}}
+	msg := &imap.Message{From: []imap.Address{{Email: "me@icloud.com"}}}
+
+	p.executeActions(rule, 1, msg)
+
+	if len(sent) != 0 {
+		t.Fatalf("expected no auto-reply to self, got %d", len(sent))
+	}
 }

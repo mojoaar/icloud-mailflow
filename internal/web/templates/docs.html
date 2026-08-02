@@ -257,6 +257,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>delete</code></td><td>Move to Trash folder</td><td>None</td></tr>
 </table>
 <p>Actions execute strictly in declared order. For iCloud, place <code>mark_as_read</code> before <code>move_to_folder</code> — iCloud requires \Seen before allowing MOVE.</p>
+<p><code>auto_reply</code> is throttled to at most one reply per sender per day, and replies to the account's own address are skipped to prevent mail loops.</p>
 
 <h2 id="contacts">Contacts</h2>
 <p>Mailflow automatically collects sender and recipient addresses from processed messages. Automatic collection can be disabled, and contacts can be wiped from Settings or MCP.</p>
@@ -578,9 +579,13 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <div class="endpoint">
     <h4><span class="method-badge method-get">GET</span> GET /health</h4>
-    <p class="desc">System health endpoint. Public — no authentication required. Returns server status, version, uptime, DB connectivity, IMAP state, poller info, and summary stats.</p>
+    <p class="desc">System health endpoint. Public — no authentication required. Unauthenticated callers receive only <code>status</code> (<code>ok</code> or <code>degraded</code>) so version and internal details are not disclosed. When called with a valid session cookie it returns the full payload: version, uptime, DB connectivity, IMAP state, poller info, and summary stats.</p>
     <pre><code class="language-bash">curl http://{{.Host}}/health</code></pre>
-    <p class="desc">Example response:</p>
+    <p class="desc">Public (unauthenticated) response:</p>
+    <pre><code class="language-json">{
+  "status": "ok"
+}</code></pre>
+    <p class="desc">Authenticated response:</p>
     <pre><code class="language-json">{
   "db": "ok",
   "imap": "connected",
@@ -598,8 +603,13 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
   },
   "status": "ok",
   "uptime_seconds": 3600,
-  "version": "0.7.3"
+  "version": "0.8.0"
 }</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4>CSRF &amp; HTMX</h4>
+    <p class="desc">State-changing form posts require a <code>csrf_token</code> matching the <code>mailflow_csrf</code> cookie. HTMX-issued requests (<code>HX-Request: true</code>) are exempt from the CSRF token by design and are instead protected by the <code>SameSite=Strict</code> session cookie, which prevents cross-site requests from carrying credentials.</p>
 </div>
 
 </div>

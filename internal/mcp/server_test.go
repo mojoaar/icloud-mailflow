@@ -9,6 +9,21 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 )
 
+func TestClientIPStripsPort(t *testing.T) {
+	cases := map[string]string{
+		"1.2.3.4:5678": "1.2.3.4",
+		"1.2.3.4":      "1.2.3.4",
+		"[::1]:80":     "::1",
+	}
+	for remote, want := range cases {
+		r := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+		r.RemoteAddr = remote
+		if got := clientIP(r); got != want {
+			t.Errorf("clientIP(%q) = %q, want %q", remote, got, want)
+		}
+	}
+}
+
 func TestNew(t *testing.T) {
 	d := db.NewTestDB(t)
 	srvr := New(d, nil, nil, "0.6.0", nil, nil)

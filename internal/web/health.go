@@ -11,30 +11,25 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/poller"
 )
 
-func healthHandler(d *sql.DB, p *poller.Poller, imapClient imap.Client, statsRepo *db.StatsRepo, contactsRepo *db.ContactsRepo, rulesRepo *db.RulesRepo) http.HandlerFunc {
+func healthHandler(d *sql.DB, p *poller.Poller, imapClient imap.Client, statsRepo *db.StatsRepo, contactsRepo *db.ContactsRepo, rulesRepo *db.RulesRepo, sessRepo *db.SessionsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		status := "ok"
-		health := map[string]any{
-			"version":        appVersion,
-			"uptime_seconds": int(time.Since(startTime).Seconds()),
-		}
 
+		dbStatus := "ok"
 		if err := d.Ping(); err != nil {
-			health["db"] = "error"
+			dbStatus = "error"
 			status = "degraded"
-		} else {
-			health["db"] = "ok"
 		}
 
+		imapStatus := "not_configured"
 		if imapClient != nil {
-			health["imap"] = "connected"
-		} else {
-			health["imap"] = "not_configured"
+			imapStatus = "connected"
 		}
 
+		var pollerDetail map[string]any
 		if p != nil {
 			ps := p.Status()
-			health["poller"] = map[string]any{
+			pollerDetail = map[string]any{
 				"active":               ps.Active,
 				"healthy":              ps.Healthy,
 				"last_tick":            ps.LastTick.Format(time.RFC3339),
@@ -46,6 +41,31 @@ func healthHandler(d *sql.DB, p *poller.Poller, imapClient imap.Client, statsRep
 			}
 		}
 
+		authenticated := false
+		if c, err := r.Cookie(sessionCookie); err == nil {
+			if valid, _ := sessRepo.Validate(c.Value); valid {
+				authenticated = true
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+
+		if !authenticated {
+			json.NewEncoder(w).Encode(map[string]any{"status": status})
+			return
+		}
+
+		health := map[string]any{
+			"version":        appVersion,
+			"uptime_seconds": int(time.Since(startTime).Seconds()),
+			"db":             dbStatus,
+			"imap":           imapStatus,
+			"status":         status,
+		}
+		if pollerDetail != nil {
+			health["poller"] = pollerDetail
+		}
+
 		total, _ := statsRepo.TotalProcessed()
 		contacts, _ := contactsRepo.Count()
 		rules, _ := rulesRepo.List()
@@ -55,9 +75,6 @@ func healthHandler(d *sql.DB, p *poller.Poller, imapClient imap.Client, statsRep
 			"rules_count":     len(rules),
 		}
 
-		health["status"] = status
-
-		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(health)
 	}
 }

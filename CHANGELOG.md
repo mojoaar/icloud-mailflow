@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-02
+
+### Added
+- Auto-reply throttle: each sender receives at most one `auto_reply` per day (new `auto_reply_log` table), and replies to the account's own address are skipped to prevent mail loops
+
+### Changed
+- `GET /health` now returns only `{"status": ...}` for unauthenticated callers; the full payload (version, uptime, poller, stats) is exposed only to authenticated sessions
+
+### Security
+- IMAP password encryption now fails loudly instead of silently storing/returning plaintext when the encryption key is missing or a crypto operation fails
+- Login and MCP rate limiters now key on client IP with the port stripped, so a new source port per connection can no longer bypass the limit
+- `/setup` is now locked once an admin password exists (previously required both password and IMAP email), closing an unauthenticated password-overwrite window
+- Removed information disclosure from the public `/health` endpoint (version and internal counts no longer leak to unauthenticated callers)
+
 ### Fixed
 - Top senders on /stats now use `table-layout:auto` — long email addresses no longer truncated
 
@@ -466,6 +480,7 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
+[0.8.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.8...v0.8.0
 [0.7.8]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.7...v0.7.8
 [0.7.7]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.6...v0.7.7
 [0.7.6]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.5...v0.7.6

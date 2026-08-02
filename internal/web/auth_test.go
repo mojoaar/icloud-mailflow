@@ -185,6 +185,34 @@ func TestLogoutHandler(t *testing.T) {
 	}
 }
 
+func TestLoginSessionCreateFailureShowsError(t *testing.T) {
+	database := openWebTestDB(t)
+	settingsRepo := db.NewSettingsRepo(database)
+
+	hash, _ := crypto.HashPassword("correct")
+	settingsRepo.Set("admin_password_hash", hash)
+
+	sessDB := openWebTestDB(t)
+	sessRepo := db.NewSessionsRepo(sessDB)
+	sessDB.Close()
+
+	h := loginPage(settingsRepo, sessRepo)
+	form := url.Values{"password": {"correct"}}
+	req := httptest.NewRequest("POST", "/login", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (error re-render)", rec.Code)
+	}
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == sessionCookie && c.Value != "" {
+			t.Error("no session cookie should be set when Create fails")
+		}
+	}
+}
+
 func TestSetupPageRedirectsWhenConfigured(t *testing.T) {
 	database := openWebTestDB(t)
 	settingsRepo := db.NewSettingsRepo(database)

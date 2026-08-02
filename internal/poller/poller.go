@@ -44,7 +44,11 @@ type Poller struct {
 	backoff             time.Duration
 	imapConnect         func() (imap.Client, error)
 	lastTickDuration    time.Duration
+	autoReplyRepo       *db.AutoReplyRepo
+	sendMail            func(to, from, password, subject, body string, attachments ...smtp.Attachment) error
 }
+
+func (p *Poller) SetAutoReplyRepo(r *db.AutoReplyRepo) { p.autoReplyRepo = r }
 
 func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *contacts.Collector, logRepo *db.LogRepo, settingsRepo *db.SettingsRepo, statsRepo *db.StatsRepo, foldersRepo *db.FoldersRepo, cfg *config.Config, batchSize int, intervalSec int, source, imapEmail string, connectFn func() (imap.Client, error)) *Poller {
 	return &Poller{
@@ -357,12 +361,27 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 			if action.Value == "" || from == "" {
 				continue
 			}
+			if from == p.getIMAPEmail() {
+				logAction(effectiveUID, action, "skipped")
+				continue
+			}
+			if p.autoReplyRepo != nil {
+				ok, err := p.autoReplyRepo.ShouldReply(from)
+				if err == nil && !ok {
+					logAction(effectiveUID, action, "skipped")
+					continue
+				}
+			}
 			replySubject := "Re: " + subject
 			body := action.Value
 			body = strings.ReplaceAll(body, "[subject]", subject)
 			body = strings.ReplaceAll(body, "[from]", from)
 			body = strings.ReplaceAll(body, "[date]", time.Now().Format(time.RFC1123Z))
-			if err := smtp.Send(from, p.getIMAPEmail(), p.cfg.IMAPPassword, replySubject, body); err != nil {
+			send := p.sendMail
+			if send == nil {
+				send = smtp.Send
+			}
+			if err := send(from, p.getIMAPEmail(), p.cfg.IMAPPassword, replySubject, body); err != nil {
 				slog.Error("auto_reply failed", "to", from, "error", err)
 				logAction(effectiveUID, action, "error")
 			} else {

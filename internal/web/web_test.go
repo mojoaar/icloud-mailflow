@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	goimap "github.com/emersion/go-imap/v2"
 
@@ -13,9 +14,9 @@ import (
 )
 
 type mockIMAPClient struct {
-	folders     []imap.Folder
-	searchUIDs  []goimap.UID
-	messages    map[uint32]*imap.Message
+	folders    []imap.Folder
+	searchUIDs []goimap.UID
+	messages   map[uint32]*imap.Message
 }
 
 func (m *mockIMAPClient) SearchMessages(folder string, limit int, minUID uint32) ([]goimap.UID, error) {
@@ -86,4 +87,31 @@ func serveHandler(h http.HandlerFunc, req *http.Request) *httptest.ResponseRecor
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	return rec
+}
+
+func TestClientIPStripsPort(t *testing.T) {
+	cases := map[string]string{
+		"1.2.3.4:5678": "1.2.3.4",
+		"1.2.3.4":      "1.2.3.4",
+		"[::1]:80":     "::1",
+	}
+	for remote, want := range cases {
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r.RemoteAddr = remote
+		if got := clientIP(r); got != want {
+			t.Errorf("clientIP(%q) = %q, want %q", remote, got, want)
+		}
+	}
+}
+
+func TestLoginRateLimitIgnoresPort(t *testing.T) {
+	limiter := newRateLimiter()
+	for i := 0; i < 5; i++ {
+		if !limiter.allow("9.9.9.9", 5, time.Minute) {
+			t.Fatalf("attempt %d should be allowed", i+1)
+		}
+	}
+	if limiter.allow("9.9.9.9", 5, time.Minute) {
+		t.Fatal("6th attempt from same host must be limited")
+	}
 }

@@ -2,12 +2,12 @@ package mcp
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
+	"crypto/subtle"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -714,17 +714,11 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 	return server.NewStreamableHTTPServer(s)
 }
 
-func hmacEqual(a, b string) bool {
-	if len(a) != len(b) {
-		return false
+func clientIP(r *http.Request) string {
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		return host
 	}
-	h := hmac.New(sha256.New, []byte("mailflow"))
-	h.Write([]byte(a))
-	ha := h.Sum(nil)
-	h.Reset()
-	h.Write([]byte(b))
-	hb := h.Sum(nil)
-	return hmac.Equal(ha, hb)
+	return r.RemoteAddr
 }
 
 func NewAuthMiddleware(mcpHandler http.Handler, settingsRepo *db.SettingsRepo) http.HandlerFunc {
@@ -734,7 +728,7 @@ func NewAuthMiddleware(mcpHandler http.Handler, settingsRepo *db.SettingsRepo) h
 			http.Error(w, "MCP server is not enabled", http.StatusNotFound)
 			return
 		}
-		if !mcpLimiter.allow(r.RemoteAddr) {
+		if !mcpLimiter.allow(clientIP(r)) {
 			http.Error(w, "too many requests", http.StatusTooManyRequests)
 			return
 		}
@@ -744,7 +738,7 @@ func NewAuthMiddleware(mcpHandler http.Handler, settingsRepo *db.SettingsRepo) h
 			return
 		}
 		key, _ := settingsRepo.Get("mcp_api_key")
-		if key == "" || !hmacEqual(auth, "Bearer "+key) {
+		if key == "" || subtle.ConstantTimeCompare([]byte(auth), []byte("Bearer "+key)) != 1 {
 			http.Error(w, "invalid API key", http.StatusUnauthorized)
 			return
 		}

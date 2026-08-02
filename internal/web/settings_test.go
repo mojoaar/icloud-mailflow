@@ -1,7 +1,9 @@
 package web
 
 import (
+	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -9,6 +11,98 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/config"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 )
+
+const testHexKey = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
+
+func TestSetupLockedWhenPasswordSetEmailEmpty(t *testing.T) {
+	database := openWebTestDB(t)
+	settingsRepo := db.NewSettingsRepo(database)
+	settingsRepo.Set("admin_password_hash", "existinghash")
+
+	h := setupPage(settingsRepo, database, &config.Config{})
+
+	req := httptest.NewRequest("GET", "/setup", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("GET status = %d, want 303", rec.Code)
+	}
+
+	form := url.Values{"password": {"attacker"}}
+	preq := httptest.NewRequest("POST", "/setup", strings.NewReader(form.Encode()))
+	preq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	prec := httptest.NewRecorder()
+	h.ServeHTTP(prec, preq)
+
+	if got, _ := settingsRepo.Get("admin_password_hash"); got != "existinghash" {
+		t.Errorf("admin_password_hash overwritten: got %q", got)
+	}
+}
+
+func TestSetupOpenWhenNoPassword(t *testing.T) {
+	database := openWebTestDB(t)
+	settingsRepo := db.NewSettingsRepo(database)
+
+	h := setupPage(settingsRepo, database, &config.Config{})
+	req := httptest.NewRequest("GET", "/setup", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", rec.Code)
+	}
+}
+
+func TestEncryptPasswordEmptyKeyErrors(t *testing.T) {
+	out, err := encryptPassword("secret", "")
+	if err == nil {
+		t.Fatal("expected error with empty key")
+	}
+	if out == "secret" {
+		t.Error("must never return plaintext on error")
+	}
+}
+
+func TestEncryptDecryptRoundTrip(t *testing.T) {
+	enc, err := encryptPassword("hunter2", testHexKey)
+	if err != nil {
+		t.Fatalf("encrypt: %v", err)
+	}
+	if enc == "hunter2" {
+		t.Fatal("ciphertext equals plaintext")
+	}
+	dec, err := decryptPassword(enc, testHexKey)
+	if err != nil {
+		t.Fatalf("decrypt: %v", err)
+	}
+	if dec != "hunter2" {
+		t.Errorf("round-trip = %q, want hunter2", dec)
+	}
+}
+
+func TestDecryptPasswordWrongKeyErrors(t *testing.T) {
+	enc, err := encryptPassword("hunter2", testHexKey)
+	if err != nil {
+		t.Fatalf("encrypt: %v", err)
+	}
+	wrongKey := "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	if _, err := decryptPassword(enc, wrongKey); err == nil {
+		t.Error("expected error decrypting with wrong key")
+	}
+}
+
+func TestStorePasswordEncryptionFailureNotPersisted(t *testing.T) {
+	database := openWebTestDB(t)
+	settingsRepo := db.NewSettingsRepo(database)
+	cfg := &config.Config{EncryptionKey: ""}
+
+	if err := storePassword(settingsRepo, cfg, "app-specific-password"); err == nil {
+		t.Fatal("expected error with empty encryption key")
+	}
+	if got, _ := settingsRepo.Get("imap_password"); got != "" {
+		t.Errorf("imap_password should not be written, got %q", got)
+	}
+}
 
 func TestSettingsPage(t *testing.T) {
 	database := openWebTestDB(t)

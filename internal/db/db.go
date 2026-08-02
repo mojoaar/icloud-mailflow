@@ -12,6 +12,7 @@ func Open(path string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Single writer: SQLite serializes all access to avoid lock contention across the poller and web handlers.
 	db.SetMaxOpenConns(1)
 	return db, nil
 }

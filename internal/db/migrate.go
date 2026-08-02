@@ -74,6 +74,11 @@ var migrations = []string{
 		value INTEGER NOT NULL DEFAULT 0,
 		PRIMARY KEY (category, key)
 	)`,
+	`CREATE TABLE IF NOT EXISTS auto_reply_log (
+		recipient TEXT NOT NULL,
+		reply_date TEXT NOT NULL,
+		PRIMARY KEY (recipient, reply_date)
+	)`,
 	`CREATE INDEX IF NOT EXISTS idx_condition_groups_rule_id ON condition_groups(rule_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_conditions_group_id ON conditions(group_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_actions_rule_id ON actions(rule_id)`,

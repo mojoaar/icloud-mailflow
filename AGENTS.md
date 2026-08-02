@@ -36,7 +36,7 @@ docker compose up -d
 ## Architecture
 - `cmd/mailflow/` - entry point
 - `internal/config/` - JSON config file
-- `internal/db/` - SQLite + migrations + repos
+- `internal/db/` - SQLite + migrations + repos (rules, stats, log, contacts, folders, settings, sessions, autoreply)
 - `internal/imap/` - IMAP client (go-imap v2), Message types with Date field, body/header/raw fetch
 - `internal/mcp/` - MCP server (go-mcp) with 25 tools, API key auth + rate limiting middleware
 - `internal/rules/` - rule evaluation engine with body/header/date/content_type/attachment matching

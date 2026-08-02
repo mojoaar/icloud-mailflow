@@ -39,15 +39,15 @@ func Load(dataDir string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-		key, err := generateKey()
-		if err != nil {
-			return nil, err
-		}
-		cfg.EncryptionKey = key
-		if err := cfg.Save(); err != nil {
-			return nil, err
-		}
-		return cfg, nil
+			key, err := generateKey()
+			if err != nil {
+				return nil, err
+			}
+			cfg.EncryptionKey = key
+			if err := cfg.Save(); err != nil {
+				return nil, err
+			}
+			return cfg, nil
 		}
 		return nil, err
 	}

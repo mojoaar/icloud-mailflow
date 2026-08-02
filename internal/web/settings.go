@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"runtime"
 	"strconv"
@@ -23,24 +24,40 @@ import (
 func setupPage(settingsRepo *db.SettingsRepo, d *sql.DB, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash, _ := settingsRepo.Get("admin_password_hash")
-		email, _ := settingsRepo.Get("imap_email")
-		if hash != "" && email != "" {
+		if hash != "" {
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 		if r.Method == "POST" {
-			r.ParseForm()
+			if err := r.ParseForm(); err != nil {
+				slog.Error("setup parse form failed", "error", err)
+			}
 			password := r.FormValue("password")
 			if password != "" {
-				h, _ := crypto.HashPassword(password)
-				settingsRepo.Set("admin_password_hash", h)
+				h, err := crypto.HashPassword(password)
+				if err != nil {
+					slog.Error("setup hash password failed", "error", err)
+					renderPage(w, r, "Setup", "setup", map[string]string{"Error": "Internal error. Try again."})
+					return
+				}
+				if err := settingsRepo.Set("admin_password_hash", h); err != nil {
+					slog.Error("setup store admin hash failed", "error", err)
+					renderPage(w, r, "Setup", "setup", map[string]string{"Error": "Internal error. Try again."})
+					return
+				}
 				db.NewRulesRepo(d).EnsureCatchAll()
 			}
 			if e := r.FormValue("imap_email"); e != "" {
-				settingsRepo.Set("imap_email", e)
+				if err := settingsRepo.Set("imap_email", e); err != nil {
+					slog.Error("setup store imap_email failed", "error", err)
+				}
 			}
 			if p := r.FormValue("imap_password"); p != "" {
-				storePassword(settingsRepo, cfg, p)
+				if err := storePassword(settingsRepo, cfg, p); err != nil {
+					slog.Error("setup store imap password failed", "error", err)
+					renderPage(w, r, "Setup", "setup", map[string]string{"Error": "Could not securely store the IMAP password."})
+					return
+				}
 			}
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
@@ -62,7 +79,10 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 				}
 			} else {
 				email, _ := settingsRepo.Get("imap_email")
-				password := getPassword(settingsRepo, cfg)
+				password, err := getPassword(settingsRepo, cfg)
+				if err != nil {
+					slog.Error("settings decrypt imap password failed", "error", err)
+				}
 				if email != "" && password != "" {
 					cfg.IMAPEmail = email
 					cfg.IMAPPassword = password
@@ -116,31 +136,31 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		}
 		mcpURL := protocol + "://" + r.Host + "/mcp"
 		data := map[string]any{
-			"Folders":      folders,
-			"IMAPEmail":    imapEmail,
-			"SourceFolder": sourceFolder,
-			"PollInterval": pollInterval,
-			"PollBatch":    pollBatch,
-			"ListenAddr":   r.Host,
-			"Version":      version,
-			"Timezone":     timezone,
-			"Timezones":    []string{"UTC", "Europe/Copenhagen", "Europe/London", "Europe/Berlin", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "Asia/Tokyo", "Australia/Sydney"},
-			"PollingActive": pollingEnabled != "false",
+			"Folders":                   folders,
+			"IMAPEmail":                 imapEmail,
+			"SourceFolder":              sourceFolder,
+			"PollInterval":              pollInterval,
+			"PollBatch":                 pollBatch,
+			"ListenAddr":                r.Host,
+			"Version":                   version,
+			"Timezone":                  timezone,
+			"Timezones":                 []string{"UTC", "Europe/Copenhagen", "Europe/London", "Europe/Berlin", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "Asia/Tokyo", "Australia/Sydney"},
+			"PollingActive":             pollingEnabled != "false",
 			"ContactsCollectionEnabled": contactsCollEnabled != "false",
-			"Contacts":     contactsCount,
-			"MonoFont":     monoFont != "false",
-			"LogKeep":      logKeep,
-			"ServerTime":   time.Now().Format("2006-01-02T15:04:05"),
-			"Uptime":       time.Since(startTime).Truncate(time.Second).String(),
-		"Memory":         getMemoryMB(),
-		"Goroutines":     runtime.NumGoroutine(),
-		"BackupEnabled":  backupEnabled == "true",
-			"BackupFrequency": backupFrequency,
-			"BackupRecipient": backupRecipient,
-			"LastBackup":     lastBackup,
-			"MCPEnabled":     mcpEnabled == "true",
-			"MCPAPIKey":      mcpAPIKey,
-			"MCPURL":         mcpURL,
+			"Contacts":                  contactsCount,
+			"MonoFont":                  monoFont != "false",
+			"LogKeep":                   logKeep,
+			"ServerTime":                time.Now().Format("2006-01-02T15:04:05"),
+			"Uptime":                    time.Since(startTime).Truncate(time.Second).String(),
+			"Memory":                    getMemoryMB(),
+			"Goroutines":                runtime.NumGoroutine(),
+			"BackupEnabled":             backupEnabled == "true",
+			"BackupFrequency":           backupFrequency,
+			"BackupRecipient":           backupRecipient,
+			"LastBackup":                lastBackup,
+			"MCPEnabled":                mcpEnabled == "true",
+			"MCPAPIKey":                 mcpAPIKey,
+			"MCPURL":                    mcpURL,
 		}
 		renderPage(w, r, "Settings", "settings", data)
 	}
@@ -155,7 +175,7 @@ func settingsTestIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 			email, _ = settingsRepo.Get("imap_email")
 		}
 		if password == "" {
-			password = getPassword(settingsRepo, cfg)
+			password, _ = getPassword(settingsRepo, cfg)
 		}
 		if email == "" || password == "" {
 			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Email and password are required"})
@@ -173,60 +193,93 @@ func settingsTestIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 	}
 }
 
-func encryptPassword(plain, hexKey string) string {
+func encryptPassword(plain, hexKey string) (string, error) {
 	if hexKey == "" {
-		return plain
+		return "", fmt.Errorf("encryption key not configured")
 	}
-	key, _ := hex.DecodeString(hexKey)
+	key, err := hex.DecodeString(hexKey)
+	if err != nil {
+		return "", fmt.Errorf("decode encryption key: %w", err)
+	}
 	enc, err := crypto.Encrypt([]byte(plain), key)
 	if err != nil {
-		return plain
+		return "", fmt.Errorf("encrypt: %w", err)
 	}
-	return string(enc)
+	return string(enc), nil
 }
 
-func decryptPassword(encrypted, hexKey string) string {
-	if hexKey == "" {
-		return encrypted
+func decryptPassword(encrypted, hexKey string) (string, error) {
+	if encrypted == "" {
+		return "", nil
 	}
-	key, _ := hex.DecodeString(hexKey)
+	if hexKey == "" {
+		return "", fmt.Errorf("encryption key not configured")
+	}
+	key, err := hex.DecodeString(hexKey)
+	if err != nil {
+		return "", fmt.Errorf("decode encryption key: %w", err)
+	}
 	dec, err := crypto.Decrypt([]byte(encrypted), key)
 	if err != nil {
-		return encrypted
+		return "", fmt.Errorf("decrypt: %w", err)
 	}
-	return string(dec)
+	return string(dec), nil
 }
 
-func storePassword(settingsRepo *db.SettingsRepo, cfg *config.Config, password string) {
-	if password != "" {
-		settingsRepo.Set("imap_password", encryptPassword(password, cfg.EncryptionKey))
+func storePassword(settingsRepo *db.SettingsRepo, cfg *config.Config, password string) error {
+	if password == "" {
+		return nil
 	}
+	enc, err := encryptPassword(password, cfg.EncryptionKey)
+	if err != nil {
+		return err
+	}
+	return settingsRepo.Set("imap_password", enc)
 }
 
-func getPassword(settingsRepo *db.SettingsRepo, cfg *config.Config) string {
+func getPassword(settingsRepo *db.SettingsRepo, cfg *config.Config) (string, error) {
 	p, _ := settingsRepo.Get("imap_password")
 	return decryptPassword(p, cfg.EncryptionKey)
 }
 
 func settingsSaveIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
+		if err := r.ParseForm(); err != nil {
+			slog.Error("settings imap parse form failed", "error", err)
+		}
 		cfg.IMAPEmail = r.FormValue("imap_email")
 		if p := r.FormValue("imap_password"); p != "" {
-			storePassword(settingsRepo, cfg, p)
+			if err := storePassword(settingsRepo, cfg, p); err != nil {
+				slog.Error("settings store imap password failed", "error", err)
+				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Could not securely store the IMAP password."})
+				return
+			}
 		}
-		cfg.Save()
+		if err := cfg.Save(); err != nil {
+			slog.Error("settings save config failed", "error", err)
+		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
 }
 
 func settingsSavePassword(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
+		if err := r.ParseForm(); err != nil {
+			slog.Error("settings password parse form failed", "error", err)
+		}
 		password := r.FormValue("password")
 		if password != "" {
-			hash, _ := crypto.HashPassword(password)
-			settingsRepo.Set("admin_password_hash", hash)
+			hash, err := crypto.HashPassword(password)
+			if err != nil {
+				slog.Error("settings hash password failed", "error", err)
+				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Internal error. Try again."})
+				return
+			}
+			if err := settingsRepo.Set("admin_password_hash", hash); err != nil {
+				slog.Error("settings store admin hash failed", "error", err)
+				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Internal error. Try again."})
+				return
+			}
 		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
@@ -285,7 +338,10 @@ func settingsSavePoll(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 func carddavImportHandler(settingsRepo *db.SettingsRepo, cfg *config.Config, contactsRepo *db.ContactsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		email, _ := settingsRepo.Get("imap_email")
-		password := getPassword(settingsRepo, cfg)
+		password, err := getPassword(settingsRepo, cfg)
+		if err != nil {
+			slog.Error("carddav decrypt imap password failed", "error", err)
+		}
 		if email == "" || password == "" {
 			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "IMAP not configured"})
 			return
@@ -412,7 +468,7 @@ func rulesImportHandler(repo *db.RulesRepo) http.HandlerFunc {
 				rule.Actions = append(rule.Actions, db.Action{Type: a.Type, Value: a.Value})
 			}
 			if err := repo.Create(rule); err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Import failed"})
+				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Import failed"})
 				return
 			}
 			imported++

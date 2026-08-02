@@ -12,6 +12,7 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 ## Features
 
 - **IMAP Rules Engine** — match messages by from/to/cc/subject/body/headers/attachment/content_type with AND/OR logic and 13 operators, execute actions (move, mark read/unread, set/remove flags, auto_reply, forward, delete)
+- **Auto-Reply Throttling** — each sender receives at most one `auto_reply` per day, with self-address skipping to prevent mail loops
 - **Drag & Drop Rule Reorder** — reorder rules via drag-and-drop on the rules page
 - **CardDAV Contacts Import** — import contacts from iCloud address book
 - **Email Contact Collection** — automatically extract contacts from processed messages
