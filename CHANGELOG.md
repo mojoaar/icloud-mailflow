@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard rules table auto-refreshes every 60 seconds
 - Folders refresh warns when configured source folder is missing from IMAP server
 - Search clear (✕) button on /rules and /activity search inputs
+- Column widths on /rules (Actions) and /activity (Status) widened to prevent text truncation
 
 ### Removed
 - Dead code: PollingHealthy(), generateAPIKey(), SettingsRepo.GetAll(), unexported SelectFolder
