@@ -16,6 +16,17 @@
     <link rel="stylesheet" href="/static/mobile.css">
     <link rel="stylesheet" href="/static/hljs-dark.css">
     {{if .MonoFont}}<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">{{end}}
+    <style>
+#kb-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;padding:16px}
+#kb-modal-overlay.open{display:flex}
+#kb-modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:400px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.5)}
+#kb-modal h2{font-size:1.1rem;margin:0 0 16px 0;display:flex;justify-content:space-between;align-items:center}
+#kb-modal h2 button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;padding:0 4px;line-height:1;border-radius:var(--radius)}
+#kb-modal h2 button:hover{color:var(--text);background:var(--bg)}
+#kb-modal .kb-list{display:grid;grid-template-columns:auto 1fr;gap:10px 20px;align-items:center}
+#kb-modal .kb-key{display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.78rem;font-family:'JetBrains Mono','SF Mono','Fira Code',monospace;color:var(--text);line-height:1.4}
+#kb-modal .kb-desc{color:var(--muted);font-size:0.85rem}
+    </style>
 </head>
 <body{{if .MonoFont}} style="font-family:'JetBrains Mono',monospace"{{end}}>
     <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -51,6 +62,30 @@
 document.body.addEventListener('htmx:responseError',function(e){var t=document.createElement('div');t.className='toast toast-error';t.textContent=e.detail.xhr.status?'Error '+(e.detail.xhr.status):'Request failed';t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
 document.body.addEventListener('htmx:sendError',function(){var t=document.createElement('div');t.className='toast toast-error';t.textContent='Network error';t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
 document.body.addEventListener('showToast',function(e){var t=document.createElement('div');t.className='toast toast-'+e.detail.type;t.textContent=e.detail.message;t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
+(function(){var seq='',to=null,nav={d:'/dashboard',a:'/activity',r:'/rules',s:'/stats',t:'/settings'};document.addEventListener('keydown',function(e){if(e.ctrlKey||e.altKey||e.metaKey)return;var t=e.target;if(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable)return;if(e.key==='?'){e.preventDefault();var o=document.getElementById('kb-modal-overlay');if(o)o.classList.add('open');seq='';return}if(e.key==='Escape'){var o=document.getElementById('kb-modal-overlay');if(o&&o.classList.contains('open')){o.classList.remove('open');e.preventDefault()}seq='';if(to){clearTimeout(to);to=null}return}if(e.key==='g'){seq='g';if(to)clearTimeout(to);to=setTimeout(function(){seq='';to=null},1500);return}if(seq==='g'&&nav[e.key]){e.preventDefault();if(to){clearTimeout(to);to=null}window.location.href=nav[e.key];seq='';return}seq=''})})();
 </script>
+<div id="kb-modal-overlay" onclick="if(event.target===this)this.classList.remove('open')" role="dialog" aria-modal="true" aria-labelledby="kb-modal-title">
+    <div id="kb-modal">
+        <h2 id="kb-modal-title">Keyboard Shortcuts
+            <button onclick="document.getElementById('kb-modal-overlay').classList.remove('open')" aria-label="Close">&times;</button>
+        </h2>
+        <div class="kb-list">
+            <span><span class="kb-key">?</span></span>
+            <span class="kb-desc">Show this help</span>
+            <span><span class="kb-key">g</span>&nbsp;<span class="kb-key">d</span></span>
+            <span class="kb-desc">Dashboard</span>
+            <span><span class="kb-key">g</span>&nbsp;<span class="kb-key">a</span></span>
+            <span class="kb-desc">Activity</span>
+            <span><span class="kb-key">g</span>&nbsp;<span class="kb-key">r</span></span>
+            <span class="kb-desc">Rules</span>
+            <span><span class="kb-key">g</span>&nbsp;<span class="kb-key">s</span></span>
+            <span class="kb-desc">Stats</span>
+            <span><span class="kb-key">g</span>&nbsp;<span class="kb-key">t</span></span>
+            <span class="kb-desc">Settings</span>
+            <span><span class="kb-key">Esc</span></span>
+            <span class="kb-desc">Close this dialog</span>
+        </div>
+    </div>
+</div>
 </body>
 </html>

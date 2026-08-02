@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP `list_activity` now supports filtering and pagination: search, rule, status, page, per_page params
 - MCP `get_stats` now returns error_breakdown, folder_distribution, and weekly_volume with configurable weeks param
 - MCP `backup_now` tool — triggers rules backup email immediately
+- MCP `get_settings` and `update_settings` tools — read/write app settings with validation
+- New `auto_reply` action type — sends templated reply to sender via SMTP ([subject], [from], [date])
+- New `content_type` condition field — matches MIME types of attachments (e.g., contains application/pdf)
+- Web UI condition dropdowns now include body, Content Type, Header: fields and all 4 date operators
+- Web UI action dropdowns now include Auto Reply, Forward, Delete, Remove Flag
+- Keyboard shortcuts: `?` shows modal overlay, `g` + `d/a/r/s/t` for navigation
 
 ### Fixed
 - Docs page sidebar nav broken due to global `nav` CSS styles leaking from `style.css`

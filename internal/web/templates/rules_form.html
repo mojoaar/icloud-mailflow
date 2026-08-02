@@ -44,11 +44,12 @@
         {{range $gi, $group := .Rule.Groups}}
         {{range $ci, $cond := $group.Conditions}}
         <div class="condition-row" style="display:flex;gap:8px;margin-bottom:8px">
-            <select name="cond_field">
+            <select name="cond_field" onchange="onFieldChange(this)">
                 {{range $.Fields}}
-                <option value="{{.value}}" {{if eq $cond.Field .value}}selected{{end}}>{{.label}}</option>
+                <option value="{{.value}}" {{if or (eq $cond.Field .value) (and (eq .value "header") (hasPrefix $cond.Field "header:"))}}selected{{end}}>{{.label}}</option>
                 {{end}}
             </select>
+            <input type="text" name="cond_header_name" placeholder="Header name" style="width:120px;{{if not (hasPrefix $cond.Field "header:")}}display:none{{end}}" value="{{if hasPrefix $cond.Field "header:"}}{{trimPrefix $cond.Field "header:"}}{{end}}">
             <select name="cond_op" style="width:140px">
                 <option value="contains" {{if eq $cond.Operator "contains"}}selected{{end}}>contains</option>
                 <option value="not_contains" {{if eq $cond.Operator "not_contains"}}selected{{end}}>doesn't contain</option>
@@ -59,6 +60,10 @@
                 <option value="matches_regex" {{if eq $cond.Operator "matches_regex"}}selected{{end}}>matches regex</option>
                 <option value="exists" {{if eq $cond.Operator "exists"}}selected{{end}}>exists</option>
                 <option value="not_exists" {{if eq $cond.Operator "not_exists"}}selected{{end}}>doesn't exist</option>
+                <option value="older_than" {{if eq $cond.Operator "older_than"}}selected{{end}}>older than (days)</option>
+                <option value="newer_than" {{if eq $cond.Operator "newer_than"}}selected{{end}}>newer than (days)</option>
+                <option value="before" {{if eq $cond.Operator "before"}}selected{{end}}>before (date)</option>
+                <option value="after" {{if eq $cond.Operator "after"}}selected{{end}}>after (date)</option>
             </select>
             <input type="text" name="cond_value" value="{{$cond.Value}}" placeholder="value" list="contact-list" style="flex:1">
             <button type="button" class="btn" style="padding:2px 6px;font-size:0.75rem" onclick="this.closest('.condition-row').remove()">×</button>
@@ -77,11 +82,23 @@
                 <option value="mark_as_read" {{if eq .Type "mark_as_read"}}selected{{end}}>Mark as Read</option>
                 <option value="mark_as_unread" {{if eq .Type "mark_as_unread"}}selected{{end}}>Mark as Unread</option>
                 <option value="set_flag" {{if eq .Type "set_flag"}}selected{{end}}>Set Flag</option>
+                <option value="auto_reply" {{if eq .Type "auto_reply"}}selected{{end}}>Auto Reply</option>
+                <option value="forward" {{if eq .Type "forward"}}selected{{end}}>Forward</option>
+                <option value="delete" {{if eq .Type "delete"}}selected{{end}}>Delete</option>
+                <option value="remove_flag" {{if eq .Type "remove_flag"}}selected{{end}}>Remove Flag</option>
             </select>
             {{if eq .Type "move_to_folder"}}
             <input type="text" name="action_value" value="{{.Value}}" placeholder="Folder name" list="folder-list" style="flex:1">
             {{else if eq .Type "set_flag"}}
             <input type="text" name="action_value" value="{{.Value}}" placeholder="Flag (e.g. \\Flagged)" style="flex:1">
+            {{else if eq .Type "auto_reply"}}
+            <textarea name="action_value" placeholder="Reply body. Templates: [subject], [from], [date]" style="flex:1;min-height:80px">{{.Value}}</textarea>
+            {{else if eq .Type "forward"}}
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Email to forward to" style="flex:1">
+            {{else if eq .Type "remove_flag"}}
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Flag to remove (e.g. \\Flagged)" style="flex:1">
+            {{else if eq .Type "delete"}}
+            <input type="text" name="action_value" value="" placeholder="" style="display:none">
             {{else}}
             <input type="text" name="action_value" value="{{.Value}}" placeholder="Value (optional)" style="display:none">
             {{end}}
@@ -108,8 +125,9 @@ function addCondition() {
     var div = document.createElement('div');
     div.className = 'condition-row';
     div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
-    div.innerHTML = '<select name="cond_field">{{range .Fields}}<option value="{{.value}}">{{.label}}</option>{{end}}</select>' +
-        '<select name="cond_op" style="width:140px"><option value="contains">contains</option><option value="not_contains">doesn\'t contain</option><option value="equals">equals</option><option value="not_equals">doesn\'t equal</option><option value="starts_with">starts with</option><option value="ends_with">ends with</option><option value="matches_regex">matches regex</option><option value="exists">exists</option><option value="not_exists">doesn\'t exist</option></select>' +
+    div.innerHTML = '<select name="cond_field" onchange="onFieldChange(this)">{{range .Fields}}<option value="{{.value}}">{{.label}}</option>{{end}}</select>' +
+        '<input type="text" name="cond_header_name" placeholder="Header name" style="width:120px;display:none">' +
+        '<select name="cond_op" style="width:140px"><option value="contains">contains</option><option value="not_contains">doesn\'t contain</option><option value="equals">equals</option><option value="not_equals">doesn\'t equal</option><option value="starts_with">starts with</option><option value="ends_with">ends with</option><option value="matches_regex">matches regex</option><option value="exists">exists</option><option value="not_exists">doesn\'t exist</option><option value="older_than">older than (days)</option><option value="newer_than">newer than (days)</option><option value="before">before (date)</option><option value="after">after (date)</option></select>' +
         '<input type="text" name="cond_value" placeholder="value" list="contact-list" style="flex:1">' +
         '<button type="button" class="btn" style="padding:2px 6px;font-size:0.75rem" onclick="this.closest(\'.condition-row\').remove()">×</button>';
     document.getElementById('conditions').appendChild(div);
@@ -118,23 +136,36 @@ function addAction() {
     var div = document.createElement('div');
     div.className = 'action-row';
     div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
-    div.innerHTML = '<select name="action_type" style="width:160px" onchange="updateActionInput(this)"><option value="move_to_folder">Move to Folder</option><option value="mark_as_read">Mark as Read</option><option value="mark_as_unread">Mark as Unread</option><option value="set_flag">Set Flag</option></select>' +
+    div.innerHTML = '<select name="action_type" style="width:160px" onchange="updateActionInput(this)"><option value="move_to_folder">Move to Folder</option><option value="mark_as_read">Mark as Read</option><option value="mark_as_unread">Mark as Unread</option><option value="set_flag">Set Flag</option><option value="auto_reply">Auto Reply</option><option value="forward">Forward</option><option value="delete">Delete</option><option value="remove_flag">Remove Flag</option></select>' +
         '<input type="text" name="action_value" placeholder="Folder name" list="folder-list" style="flex:1">' +
         '<button type="button" class="btn" style="padding:2px 6px;font-size:0.75rem" onclick="this.closest(\'.action-row\').remove()">×</button>';
     document.getElementById('actions').appendChild(div);
 }
 function updateActionInput(select) {
     var input = select.closest('.action-row').querySelector('input');
-    input.style.display = '';
-    input.removeAttribute('list');
+    if (!input) { input = select.closest('.action-row').querySelector('textarea'); }
     if (select.value === 'move_to_folder') {
-        input.setAttribute('list', 'folder-list');
-        input.placeholder = 'Folder name';
+        if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Folder name'; inp.setAttribute('list', 'folder-list'); inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
+        else { input.style.display = ''; input.removeAttribute('list'); input.setAttribute('list', 'folder-list'); input.placeholder = 'Folder name'; }
     } else if (select.value === 'set_flag') {
-        input.placeholder = 'Flag (e.g. \\Flagged)';
+        if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Flag (e.g. \\Flagged)'; inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
+        else { input.style.display = ''; input.removeAttribute('list'); input.placeholder = 'Flag (e.g. \\Flagged)'; }
+    } else if (select.value === 'auto_reply') {
+        if (!input || input.tagName !== 'TEXTAREA') { var ta = document.createElement('textarea'); ta.name = 'action_value'; ta.placeholder = 'Reply body. Templates: [subject], [from], [date]'; ta.style.cssText = 'flex:1;min-height:80px'; ta.value = input ? input.value : ''; if (input) input.replaceWith(ta); else select.closest('.action-row').querySelector('button').before(ta); }
+    } else if (select.value === 'forward') {
+        if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Email to forward to'; inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
+        else { input.style.display = ''; input.removeAttribute('list'); input.placeholder = 'Email to forward to'; }
+    } else if (select.value === 'remove_flag') {
+        if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Flag to remove (e.g. \\Flagged)'; inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
+        else { input.style.display = ''; input.removeAttribute('list'); input.placeholder = 'Flag to remove (e.g. \\Flagged)'; }
     } else {
-        input.style.display = 'none';
+        if (input) input.style.display = 'none';
     }
+}
+function onFieldChange(select) {
+    var row = select.closest('.condition-row');
+    var hi = row.querySelector('input[name="cond_header_name"]');
+    if (hi) hi.style.display = select.value === 'header' ? '' : 'none';
 }
 </script>
 {{end}}

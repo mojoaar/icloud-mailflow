@@ -5,6 +5,7 @@ import (
 	"embed"
 	"html/template"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -37,8 +38,10 @@ var templateFuncs = template.FuncMap{
 		}
 		return val * 100 / max
 	},
-	"subtract": func(a, b int) int { return a - b },
-	"add":      func(a, b int) int { return a + b },
+	"subtract":   func(a, b int) int { return a - b },
+	"add":        func(a, b int) int { return a + b },
+	"hasPrefix":  strings.HasPrefix,
+	"trimPrefix": strings.TrimPrefix,
 }
 
 func init() {

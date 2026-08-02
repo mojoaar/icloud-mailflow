@@ -213,6 +213,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>cc</code></td><td>CC email</td><td><code>contains @team.com</code></td></tr>
     <tr><td><code>subject</code></td><td>Message subject</td><td><code>starts_with Re:</code></td></tr>
     <tr><td><code>has_attachment</code></td><td>Has attachment</td><td><code>exists</code> / <code>not_exists</code></td></tr>
+    <tr><td><code>content_type</code></td><td>MIME types of attachments</td><td><code>contains application/pdf</code></td></tr>
     <tr><td><code>body</code></td><td>Message body text</td><td><code>contains invoice</code></td></tr>
     <tr><td><code>header:Name</code></td><td>Arbitrary header field</td><td><code>header:X-Spam-Flag equals YES</code></td></tr>
 </table>
@@ -235,6 +236,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>mark_as_read</code></td><td>Set \Seen on message</td><td>None</td></tr>
     <tr><td><code>mark_as_unread</code></td><td>Remove \Seen</td><td>None</td></tr>
     <tr><td><code>set_flag</code></td><td>Set IMAP flag</td><td>e.g. <code>\Flagged</code>, <code>$Junk</code></td></tr>
+    <tr><td><code>auto_reply</code></td><td>Send templated reply to sender</td><td>Reply body (<code>[subject]</code>, <code>[from]</code>, <code>[date]</code>)</td></tr>
     <tr><td><code>remove_flag</code></td><td>Remove IMAP flag</td><td>e.g. <code>\Flagged</code></td></tr>
     <tr><td><code>forward</code></td><td>Forward message via SMTP</td><td>Recipient email</td></tr>
     <tr><td><code>delete</code></td><td>Move to Trash folder</td><td>None</td></tr>
@@ -266,7 +268,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <h2 id="mcp">MCP Server</h2>
 <p>Mailflow exposes a Model Context Protocol (MCP) server so AI agents (Claude Code, OpenCode, Codex) can manage rules, check stats, and trigger polls remotely. Enable it in Settings → MCP Access — you get an API key and ready-to-use config snippets for all platforms.</p>
-<p>The server runs over HTTP on <code>/mcp</code>. All 23 tools require a Bearer token in the Authorization header.</p>
+<p>The server runs over HTTP on <code>/mcp</code>. All 25 tools require a Bearer token in the Authorization header.</p>
 <table>
     <tr><th>Tool</th><th>Description</th></tr>
     <tr><td><code>list_rules</code></td><td>List all filtering rules with conditions and actions</td></tr>
@@ -292,6 +294,8 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>health</code></td><td>Get system health, uptime, DB/IMAP/poller state, and stats</td></tr>
     <tr><td><code>toggle_contacts_collection</code></td><td>Enable or disable automatic contacts collection</td></tr>
     <tr><td><code>wipe_contacts</code></td><td>Delete all collected contacts</td></tr>
+    <tr><td><code>get_settings</code></td><td>Get all non-sensitive settings</td></tr>
+    <tr><td><code>update_settings</code></td><td>Update settings with validation</td></tr>
 </table>
 
 <h2 id="settings">Settings Reference</h2>

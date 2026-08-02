@@ -30,8 +30,9 @@ type Message struct {
 	From      []Address `json:"from"`
 	To        []Address `json:"to"`
 	Cc        []Address `json:"cc"`
-	HasAttach bool      `json:"has_attachment"`
-	Flags     []string  `json:"flags"`
+	HasAttach    bool      `json:"has_attachment"`
+	ContentTypes []string  `json:"content_types"`
+	Flags        []string  `json:"flags"`
 	Date      time.Time `json:"date"`
 }
 
@@ -237,6 +238,7 @@ func convertMessage(buf *imapclient.FetchMessageBuffer) *Message {
 		msg.Date = buf.Envelope.Date
 	}
 	msg.HasAttach = hasAttachment(buf)
+	msg.ContentTypes = extractContentTypes(buf)
 	return msg
 }
 
@@ -264,6 +266,23 @@ func hasAttachment(buf *imapclient.FetchMessageBuffer) bool {
 		return true
 	})
 	return found
+}
+
+func extractContentTypes(buf *imapclient.FetchMessageBuffer) []string {
+	if buf.BodyStructure == nil {
+		return nil
+	}
+	var types []string
+	seen := map[string]bool{}
+	buf.BodyStructure.Walk(func(path []int, bs goimap.BodyStructure) bool {
+		mt := bs.MediaType()
+		if !seen[mt] {
+			seen[mt] = true
+			types = append(types, mt)
+		}
+		return true
+	})
+	return types
 }
 
 func (c *IMAPClient) FetchMessageHeader(uid uint32, headerName string) (string, error) {

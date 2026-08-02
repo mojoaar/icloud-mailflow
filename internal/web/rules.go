@@ -181,7 +181,10 @@ func conditionFields() []map[string]string {
 		{"value": "to", "label": "To"},
 		{"value": "cc", "label": "CC"},
 		{"value": "subject", "label": "Subject"},
+		{"value": "body", "label": "Body"},
 		{"value": "has_attachment", "label": "Has Attachment"},
+		{"value": "content_type", "label": "Content Type"},
+		{"value": "header", "label": "Header:"},
 	}
 }
 
@@ -199,10 +202,15 @@ func parseConditions(r *http.Request, rule *db.Rule) {
 		operator = "OR"
 	}
 	group := db.ConditionGroup{Operator: operator}
+	headerNames := r.Form["cond_header_name"]
 	for i := range fields {
 		if i < len(ops) && i < len(vals) {
+			field := fields[i]
+			if field == "header" && i < len(headerNames) && headerNames[i] != "" {
+				field = "header:" + headerNames[i]
+			}
 			group.Conditions = append(group.Conditions, db.Condition{
-				Field:    fields[i],
+				Field:    field,
 				Operator: ops[i],
 				Value:    vals[i],
 			})

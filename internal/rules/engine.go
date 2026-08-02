@@ -227,6 +227,8 @@ func getFieldValueWithExtras(field string, msg *imap.Message, extras *msgExtras)
 		return addrsToString(msg.Cc)
 	case "subject":
 		return decodeMIME(msg.Subject)
+	case "content_type":
+		return strings.Join(msg.ContentTypes, ", ")
 	case "body":
 		if extras != nil {
 			return extras.body

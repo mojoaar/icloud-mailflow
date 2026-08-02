@@ -353,6 +353,21 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 			} else {
 				logAction(effectiveUID, action, "success")
 			}
+		case "auto_reply":
+			if action.Value == "" || from == "" {
+				continue
+			}
+			replySubject := "Re: " + subject
+			body := action.Value
+			body = strings.ReplaceAll(body, "[subject]", subject)
+			body = strings.ReplaceAll(body, "[from]", from)
+			body = strings.ReplaceAll(body, "[date]", time.Now().Format(time.RFC1123Z))
+			if err := smtp.Send(from, p.getIMAPEmail(), p.cfg.IMAPPassword, replySubject, body); err != nil {
+				slog.Error("auto_reply failed", "to", from, "error", err)
+				logAction(effectiveUID, action, "error")
+			} else {
+				logAction(effectiveUID, action, "success")
+			}
 		default:
 			slog.Warn("unknown action type", "type", action.Type)
 		}

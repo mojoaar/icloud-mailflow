@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -592,6 +593,122 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		health["status"] = status
 
 		return resultJSON(health)
+	})
+
+	s.AddTool(mcp.NewTool("get_settings",
+		mcp.WithDescription("Get all non-sensitive settings (passwords, hashes, and API keys excluded)"),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if settingsRepo == nil {
+			return mcp.NewToolResultError("settings not available"), nil
+		}
+		all, err := settingsRepo.GetAll()
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		sensitive := map[string]bool{
+			"admin_password_hash": true,
+			"imap_password":       true,
+			"mcp_api_key":         true,
+		}
+		safeSettings := map[string]string{}
+		for k, v := range all {
+			if !sensitive[k] {
+				safeSettings[k] = v
+			}
+		}
+		return resultJSON(map[string]any{"settings": safeSettings})
+	})
+
+	s.AddTool(mcp.NewTool("update_settings",
+		mcp.WithDescription("Update settings. Pass only the settings you want to change as key-value pairs."),
+		mcp.WithString("source_folder", mcp.Description("IMAP folder to poll for new mail")),
+		mcp.WithString("poll_interval", mcp.Description("Poll interval in seconds (minimum 60)")),
+		mcp.WithString("poll_batch", mcp.Description("Max messages per poll (1-200)")),
+		mcp.WithString("log_keep", mcp.Description("Log retention count (minimum 100)")),
+		mcp.WithString("timezone", mcp.Description("Timezone, e.g. UTC or Europe/Copenhagen")),
+		mcp.WithString("backup_enabled", mcp.Description("Set to 'true' or 'false'")),
+		mcp.WithString("backup_frequency", mcp.Description("daily, weekly, or monthly")),
+		mcp.WithString("backup_recipient", mcp.Description("Email address for backup recipient")),
+		mcp.WithString("mcp_enabled", mcp.Description("Set to 'true' or 'false'")),
+		mcp.WithString("contacts_collection_enabled", mcp.Description("Set to 'true' or 'false'")),
+		mcp.WithString("font_mono", mcp.Description("Set to 'true' or 'false'")),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if settingsRepo == nil {
+			return mcp.NewToolResultError("settings not available"), nil
+		}
+		args := req.GetArguments()
+		writable := map[string]bool{
+			"source_folder": true, "poll_interval": true, "poll_batch": true, "log_keep": true,
+			"timezone": true, "backup_enabled": true, "backup_frequency": true,
+			"backup_recipient": true, "mcp_enabled": true, "contacts_collection_enabled": true,
+			"font_mono": true,
+		}
+		validTZ := map[string]bool{
+			"UTC": true, "Europe/Copenhagen": true, "Europe/London": true,
+			"Europe/Berlin": true, "America/New_York": true, "America/Chicago": true,
+			"America/Denver": true, "America/Los_Angeles": true,
+			"Asia/Tokyo": true, "Australia/Sydney": true,
+		}
+		validBool := map[string]bool{"true": true, "false": true}
+		validFreq := map[string]bool{"daily": true, "weekly": true, "monthly": true}
+
+		updated := 0
+		var errors []string
+		for k, v := range args {
+			if !writable[k] {
+				continue
+			}
+			str, ok := v.(string)
+			if !ok {
+				errors = append(errors, k+": value must be a string")
+				continue
+			}
+			switch k {
+			case "timezone":
+				if !validTZ[str] {
+					errors = append(errors, fmt.Sprintf("%s: unsupported timezone %q", k, str))
+					continue
+				}
+			case "backup_enabled", "mcp_enabled", "contacts_collection_enabled", "font_mono":
+				if !validBool[str] {
+					errors = append(errors, k+": must be 'true' or 'false'")
+					continue
+				}
+			case "backup_frequency":
+				if !validFreq[str] {
+					errors = append(errors, k+": must be daily, weekly, or monthly")
+					continue
+				}
+			case "poll_interval":
+				n, e := strconv.Atoi(str)
+				if e != nil || n < 60 {
+					errors = append(errors, k+": must be integer >= 60")
+					continue
+				}
+			case "poll_batch":
+				n, e := strconv.Atoi(str)
+				if e != nil || n < 1 || n > 200 {
+					errors = append(errors, k+": must be integer 1-200")
+					continue
+				}
+			case "log_keep":
+				n, e := strconv.Atoi(str)
+				if e != nil || n < 100 {
+					errors = append(errors, k+": must be integer >= 100")
+					continue
+				}
+			}
+			if err := settingsRepo.Set(k, str); err != nil {
+				errors = append(errors, fmt.Sprintf("%s: %v", k, err))
+				continue
+			}
+			updated++
+		}
+		result := map[string]any{"updated": updated}
+		if len(errors) > 0 {
+			result["errors"] = errors
+		}
+		return resultJSON(result)
 	})
 
 	return server.NewStreamableHTTPServer(s)
