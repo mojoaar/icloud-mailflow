@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.7.8] - 2026-08-02
 
 ### Added
 - MCP `list_activity` now supports filtering and pagination: search, rule, status, page, per_page params
@@ -454,6 +454,7 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
+[0.7.8]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.7...v0.7.8
 [0.7.7]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.6...v0.7.7
 [0.7.6]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.4...v0.7.5
