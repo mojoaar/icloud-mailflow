@@ -33,7 +33,7 @@
 
 <div class="card" style="flex:1">
 <h2>Top Senders</h2>
-<table>
+<table style="table-layout:auto">
 {{range .Senders}}
 <tr><td>{{.Email}}</td><td class="muted" style="text-align:right">{{.Count}}</td></tr>
 {{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
