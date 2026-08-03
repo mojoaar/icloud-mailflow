@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Test Rule section nested inside rule edit form causing broken HTML and "Save" not working in some browsers
+- Test Rule heading now uses `<h2>` outside card matching Conditions/Actions layout; Save/Cancel moved to page bottom
 - Schedule hint text indented incorrectly on rule edit page
 
 ## [0.9.0] - 2026-08-03
