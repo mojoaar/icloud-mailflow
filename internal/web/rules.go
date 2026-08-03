@@ -16,13 +16,14 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/rules"
 )
 
-func rulesListHandler(repo *db.RulesRepo) http.HandlerFunc {
+func rulesListHandler(repo *db.RulesRepo, foldersRepo *db.FoldersRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rules, err := repo.List()
 		if err != nil {
 			rules = []db.Rule{}
 		}
-		data := map[string]any{"Rules": rules, "Search": r.URL.Query().Get("q")}
+		folders, _ := foldersRepo.List()
+		data := map[string]any{"Rules": rules, "Folders": folders, "Search": r.URL.Query().Get("q")}
 		if r.Header.Get("HX-Request") == "true" {
 			renderPartial(w, "rules_list", data)
 			return
@@ -152,7 +153,7 @@ func rulesDeleteHandler(repo *db.RulesRepo) http.HandlerFunc {
 	}
 }
 
-func rulesReorderHandler(repo *db.RulesRepo) http.HandlerFunc {
+func rulesReorderHandler(repo *db.RulesRepo, foldersRepo *db.FoldersRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		var ids []int64
@@ -161,11 +162,11 @@ func rulesReorderHandler(repo *db.RulesRepo) http.HandlerFunc {
 			ids = append(ids, id)
 		}
 		repo.Reorder(ids)
-		rulesListHandler(repo)(w, r)
+		rulesListHandler(repo, foldersRepo)(w, r)
 	}
 }
 
-func rulesReorderMoveHandler(repo *db.RulesRepo) http.HandlerFunc {
+func rulesReorderMoveHandler(repo *db.RulesRepo, foldersRepo *db.FoldersRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		id, _ := strconv.ParseInt(r.FormValue("rule_id"), 10, 64)
@@ -188,7 +189,7 @@ func rulesReorderMoveHandler(repo *db.RulesRepo) http.HandlerFunc {
 			}
 			repo.Reorder(ids)
 		}
-		rulesListHandler(repo)(w, r)
+		rulesListHandler(repo, foldersRepo)(w, r)
 	}
 }
 

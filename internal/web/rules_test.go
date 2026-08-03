@@ -24,7 +24,7 @@ func TestRulesListHandler(t *testing.T) {
 	repo := db.NewRulesRepo(database)
 	repo.Create(&db.Rule{Name: "Rule 1", Priority: 0, Enabled: true})
 
-	h := rulesListHandler(repo)
+	h := rulesListHandler(repo, db.NewFoldersRepo(database))
 	req := httptest.NewRequest("GET", "/rules", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -38,7 +38,7 @@ func TestRulesListHandlerHTMX(t *testing.T) {
 	database := openWebTestDB(t)
 	repo := db.NewRulesRepo(database)
 
-	h := rulesListHandler(repo)
+	h := rulesListHandler(repo, db.NewFoldersRepo(database))
 	req := httptest.NewRequest("GET", "/rules", nil)
 	req.Header.Set("HX-Request", "true")
 	rec := httptest.NewRecorder()
@@ -243,7 +243,7 @@ func TestRulesReorderHandler(t *testing.T) {
 	repo.Create(r1)
 	repo.Create(r2)
 
-	h := rulesReorderHandler(repo)
+	h := rulesReorderHandler(repo, db.NewFoldersRepo(database))
 	form := url.Values{"rule_ids": []string{fmt.Sprintf("%d", r2.ID), fmt.Sprintf("%d", r1.ID)}}
 	req := httptest.NewRequest("POST", "/rules/reorder", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

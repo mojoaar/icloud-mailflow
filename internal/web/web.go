@@ -97,14 +97,14 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Get("/metrics", PromHandler().ServeHTTP)
 	r.Get("/stats", statsHandler(statsRepo))
 
-	r.Get("/rules", rulesListHandler(rulesRepo))
+	r.Get("/rules", rulesListHandler(rulesRepo, foldersRepo))
 	r.Get("/rules/new", rulesNewHandler(foldersRepo, contactsRepo, settingsRepo))
 	r.Post("/rules", rulesCreateHandler(rulesRepo, settingsRepo))
 	r.Get("/rules/{id}/edit", rulesEditHandler(rulesRepo, foldersRepo, contactsRepo, settingsRepo))
 	r.Put("/rules/{id}", rulesUpdateHandler(rulesRepo, settingsRepo))
 	r.Delete("/rules/{id}", rulesDeleteHandler(rulesRepo))
-	r.Post("/rules/reorder", rulesReorderHandler(rulesRepo))
-	r.Post("/rules/reorder/move", rulesReorderMoveHandler(rulesRepo))
+	r.Post("/rules/reorder", rulesReorderHandler(rulesRepo, foldersRepo))
+	r.Post("/rules/reorder/move", rulesReorderMoveHandler(rulesRepo, foldersRepo))
 
 	r.Post("/rules/apply", rulesApplyHandler(rulesRepo, p))
 	r.Get("/rules/apply/status", rulesApplyStatusHandler())
