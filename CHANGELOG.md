@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-08-03
+
 ### Added
 - Handler test coverage for settings toggles, poller tick, dashboard status, docs, and stats pages — web package coverage up to 56%
 - Bulk apply form on `/rules` is now a collapsible toggle with folder dropdown instead of text input
@@ -508,6 +510,7 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
+[0.9.1]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.8...v0.8.0
 [0.7.8]: https://github.com/mojoaar/icloud-mailflow/compare/v0.7.7...v0.7.8
