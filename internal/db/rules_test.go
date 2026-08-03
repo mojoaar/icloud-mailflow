@@ -225,8 +225,8 @@ func TestRulesDeleteCascade(t *testing.T) {
 	repo := NewRulesRepo(db)
 
 	r := &Rule{
-		Name: "test cascade",
-		Groups: []ConditionGroup{{Operator: "AND", Conditions: []Condition{{Field: "subject", Operator: "contains", Value: "hello"}}}},
+		Name:    "test cascade",
+		Groups:  []ConditionGroup{{Operator: "AND", Conditions: []Condition{{Field: "subject", Operator: "contains", Value: "hello"}}}},
 		Actions: []Action{{Type: "move_to_folder", Value: "Test"}},
 	}
 	if err := repo.Create(r); err != nil {
@@ -255,4 +255,61 @@ func TestRulesDeleteCascade(t *testing.T) {
 	if orphaned != 0 {
 		t.Errorf("orphaned actions = %d, want 0", orphaned)
 	}
+}
+
+func TestRulesScheduleRoundTrip(t *testing.T) {
+	db := openTestDB(t)
+	repo := NewRulesRepo(db)
+
+	rule := &Rule{
+		Name:          "Scheduled Rule",
+		Priority:      1,
+		Enabled:       true,
+		ScheduleDays:  "mon,wed,fri",
+		ScheduleStart: "09:00",
+		ScheduleEnd:   "17:00",
+	}
+	if err := repo.Create(rule); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	got, _ := repo.Get(rule.ID)
+	if got.ScheduleDays != "mon,wed,fri" {
+		t.Errorf("ScheduleDays = %q, want mon,wed,fri", got.ScheduleDays)
+	}
+	if got.ScheduleStart != "09:00" {
+		t.Errorf("ScheduleStart = %q, want 09:00", got.ScheduleStart)
+	}
+	if got.ScheduleEnd != "17:00" {
+		t.Errorf("ScheduleEnd = %q, want 17:00", got.ScheduleEnd)
+	}
+
+	got.ScheduleDays = "tue,thu"
+	got.ScheduleStart = "10:00"
+	got.ScheduleEnd = "14:00"
+	if err := repo.Update(got); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	updated, _ := repo.Get(rule.ID)
+	if updated.ScheduleDays != "tue,thu" {
+		t.Errorf("updated ScheduleDays = %q, want tue,thu", updated.ScheduleDays)
+	}
+	if updated.ScheduleStart != "10:00" {
+		t.Errorf("updated ScheduleStart = %q, want 10:00", updated.ScheduleStart)
+	}
+	if updated.ScheduleEnd != "14:00" {
+		t.Errorf("updated ScheduleEnd = %q, want 14:00", updated.ScheduleEnd)
+	}
+
+	rules, _ := repo.List()
+	for _, r := range rules {
+		if r.ID == rule.ID {
+			if r.ScheduleDays != "tue,thu" {
+				t.Errorf("List ScheduleDays = %q, want tue,thu", r.ScheduleDays)
+			}
+			return
+		}
+	}
+	t.Error("rule not found in List")
 }

@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mojoaar/icloud-mailflow/internal/contacts"
 	"github.com/mojoaar/icloud-mailflow/internal/config"
+	"github.com/mojoaar/icloud-mailflow/internal/contacts"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
 	"github.com/mojoaar/icloud-mailflow/internal/rules"
@@ -20,24 +20,24 @@ import (
 )
 
 type Poller struct {
-	imapClient   imap.Client
-	rulesRepo    *db.RulesRepo
-	collector    *contacts.Collector
-	logRepo      *db.LogRepo
-	settingsRepo *db.SettingsRepo
-	statsRepo    *db.StatsRepo
-	foldersRepo  *db.FoldersRepo
-	cfg          *config.Config
-	imapEmail    string
-	interval     time.Duration
-	lastTick     atomic.Int64
-	batchSize    int
-	source       string
-	stopCh       chan struct{}
-	wg           sync.WaitGroup
-	running      bool
-	processing   atomic.Bool
-	trashFolder  string
+	imapClient          imap.Client
+	rulesRepo           *db.RulesRepo
+	collector           *contacts.Collector
+	logRepo             *db.LogRepo
+	settingsRepo        *db.SettingsRepo
+	statsRepo           *db.StatsRepo
+	foldersRepo         *db.FoldersRepo
+	cfg                 *config.Config
+	imapEmail           string
+	interval            time.Duration
+	lastTick            atomic.Int64
+	batchSize           int
+	source              string
+	stopCh              chan struct{}
+	wg                  sync.WaitGroup
+	running             bool
+	processing          atomic.Bool
+	trashFolder         string
 	mu                  sync.Mutex
 	lastError           atomic.Value
 	consecutiveFailures int
@@ -112,11 +112,11 @@ func (p *Poller) loop() {
 	for {
 		select {
 		case <-ticker.C:
-		if err := p.process(); err != nil {
-			slog.Error("poller tick failed", "error", err)
-			p.setLastError(err)
-		}
-		p.checkBackup()
+			if err := p.process(); err != nil {
+				slog.Error("poller tick failed", "error", err)
+				p.setLastError(err)
+			}
+			p.checkBackup()
 		case <-p.stopCh:
 			return
 		}
@@ -182,7 +182,7 @@ func (p *Poller) process() error {
 					p.collector.CollectFromMessage(msg)
 				}
 			}
-			matched, err := rules.Match(ruleList, msg, p.imapClient)
+			matched, err := rules.Match(ruleList, msg, p.imapClient, p.timeLocation())
 			if err != nil {
 				slog.Error("rule matching error", "uid", msg.UID, "error", err)
 				continue
@@ -398,6 +398,18 @@ func (p *Poller) getIMAPEmail() string {
 		return p.imapEmail
 	}
 	return p.cfg.IMAPEmail
+}
+
+func (p *Poller) timeLocation() *time.Location {
+	if p.settingsRepo == nil {
+		return time.UTC
+	}
+	tz, _ := p.settingsRepo.Get("timezone")
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		return time.UTC
+	}
+	return loc
 }
 
 func (p *Poller) BackupNow() error {

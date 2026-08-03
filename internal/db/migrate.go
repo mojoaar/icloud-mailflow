@@ -91,6 +91,13 @@ func Migrate(d *sql.DB) error {
 		}
 	}
 	slog.Debug("migrations complete")
+	cols := []string{"schedule_days", "schedule_start", "schedule_end"}
+	for _, col := range cols {
+		var count int
+		if err := d.QueryRow("SELECT COUNT(*) FROM pragma_table_info('rules') WHERE name=?", col).Scan(&count); err == nil && count == 0 {
+			d.Exec("ALTER TABLE rules ADD COLUMN " + col + " TEXT NOT NULL DEFAULT ''")
+		}
+	}
 	return backfillStats(d)
 }
 

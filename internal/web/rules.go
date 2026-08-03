@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -24,16 +25,17 @@ func rulesListHandler(repo *db.RulesRepo) http.HandlerFunc {
 	}
 }
 
-func rulesNewHandler(foldersRepo *db.FoldersRepo, contactsRepo *db.ContactsRepo) http.HandlerFunc {
+func rulesNewHandler(foldersRepo *db.FoldersRepo, contactsRepo *db.ContactsRepo, settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		folders, _ := foldersRepo.List()
 		contacts, _ := contactsRepo.ListAll()
-		data := map[string]any{"Rule": &db.Rule{Enabled: true}, "New": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts, "CondOperator": "OR"}
+		tz, _ := settingsRepo.Get("timezone")
+		data := map[string]any{"Rule": &db.Rule{Enabled: true}, "New": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts, "CondOperator": "OR", "ScheduleDays": []string{}, "ScheduleStart": "", "ScheduleEnd": "", "Timezone": tz}
 		renderPage(w, r, "New Rule", "rules_form", data)
 	}
 }
 
-func rulesCreateHandler(repo *db.RulesRepo) http.HandlerFunc {
+func rulesCreateHandler(repo *db.RulesRepo, settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		rule := &db.Rule{
@@ -50,10 +52,14 @@ func rulesCreateHandler(repo *db.RulesRepo) http.HandlerFunc {
 				}
 			}
 		}
+		rule.ScheduleDays = strings.Join(r.Form["schedule_days"], ",")
+		rule.ScheduleStart = r.FormValue("schedule_start")
+		rule.ScheduleEnd = r.FormValue("schedule_end")
 		parseConditions(r, rule)
 		parseActions(r, rule)
 		if err := repo.Create(rule); err != nil {
-			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": "Failed to create rule", "New": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": "OR"})
+			tz, _ := settingsRepo.Get("timezone")
+			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": "Failed to create rule", "New": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": "OR", "ScheduleDays": []string{}, "ScheduleStart": rule.ScheduleStart, "ScheduleEnd": rule.ScheduleEnd, "Timezone": tz})
 			return
 		}
 		repo.EnsureCatchAll()
@@ -61,7 +67,7 @@ func rulesCreateHandler(repo *db.RulesRepo) http.HandlerFunc {
 	}
 }
 
-func rulesEditHandler(repo *db.RulesRepo, foldersRepo *db.FoldersRepo, contactsRepo *db.ContactsRepo) http.HandlerFunc {
+func rulesEditHandler(repo *db.RulesRepo, foldersRepo *db.FoldersRepo, contactsRepo *db.ContactsRepo, settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 		rule, err := repo.Get(id)
@@ -75,11 +81,12 @@ func rulesEditHandler(repo *db.RulesRepo, foldersRepo *db.FoldersRepo, contactsR
 		if len(rule.Groups) > 0 {
 			op = rule.Groups[0].Operator
 		}
-		renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Edit": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts, "CondOperator": op})
+		tz, _ := settingsRepo.Get("timezone")
+		renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Edit": true, "Fields": conditionFields(), "Folders": folders, "Contacts": contacts, "CondOperator": op, "ScheduleDays": strings.Split(rule.ScheduleDays, ","), "ScheduleStart": rule.ScheduleStart, "ScheduleEnd": rule.ScheduleEnd, "Timezone": tz})
 	}
 }
 
-func rulesUpdateHandler(repo *db.RulesRepo) http.HandlerFunc {
+func rulesUpdateHandler(repo *db.RulesRepo, settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 		r.ParseForm()
@@ -92,6 +99,9 @@ func rulesUpdateHandler(repo *db.RulesRepo) http.HandlerFunc {
 		rule.Description = r.FormValue("description")
 		rule.Enabled = r.FormValue("enabled") == "on"
 		rule.Priority, _ = strconv.Atoi(r.FormValue("priority"))
+		rule.ScheduleDays = strings.Join(r.Form["schedule_days"], ",")
+		rule.ScheduleStart = r.FormValue("schedule_start")
+		rule.ScheduleEnd = r.FormValue("schedule_end")
 		parseConditions(r, rule)
 		parseActions(r, rule)
 		if err := repo.Update(rule); err != nil {
@@ -99,7 +109,8 @@ func rulesUpdateHandler(repo *db.RulesRepo) http.HandlerFunc {
 			if len(rule.Groups) > 0 {
 				op = rule.Groups[0].Operator
 			}
-			renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Error": "Failed to update rule", "Edit": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": op})
+			tz, _ := settingsRepo.Get("timezone")
+			renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Error": "Failed to update rule", "Edit": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": op, "ScheduleDays": strings.Split(rule.ScheduleDays, ","), "ScheduleStart": rule.ScheduleStart, "ScheduleEnd": rule.ScheduleEnd, "Timezone": tz})
 			return
 		}
 		repo.EnsureCatchAll()

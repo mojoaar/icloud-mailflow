@@ -50,8 +50,9 @@ func TestRulesNewHandler(t *testing.T) {
 	database := openWebTestDB(t)
 	foldersRepo := db.NewFoldersRepo(database)
 	contactsRepo := db.NewContactsRepo(database)
+	settingsRepo := db.NewSettingsRepo(database)
 
-	h := rulesNewHandler(foldersRepo, contactsRepo)
+	h := rulesNewHandler(foldersRepo, contactsRepo, settingsRepo)
 	req := httptest.NewRequest("GET", "/rules/new", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -64,8 +65,9 @@ func TestRulesNewHandler(t *testing.T) {
 func TestRulesCreateHandler(t *testing.T) {
 	database := openWebTestDB(t)
 	repo := db.NewRulesRepo(database)
+	settingsRepo := db.NewSettingsRepo(database)
 
-	h := rulesCreateHandler(repo)
+	h := rulesCreateHandler(repo, settingsRepo)
 	form := url.Values{
 		"name":        {"Test Rule"},
 		"description": {"A test rule"},
@@ -91,10 +93,11 @@ func TestRulesEditHandler(t *testing.T) {
 	repo := db.NewRulesRepo(database)
 	foldersRepo := db.NewFoldersRepo(database)
 	contactsRepo := db.NewContactsRepo(database)
+	settingsRepo := db.NewSettingsRepo(database)
 	repo.Create(&db.Rule{Name: "Test", Priority: 0, Enabled: true})
 	rules, _ := repo.List()
 
-	h := rulesEditHandler(repo, foldersRepo, contactsRepo)
+	h := rulesEditHandler(repo, foldersRepo, contactsRepo, settingsRepo)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", fmt.Sprintf("%d", rules[0].ID))
 	req := httptest.NewRequest("GET", "/rules/1/edit", nil)
@@ -112,8 +115,9 @@ func TestRulesEditHandlerNotFound(t *testing.T) {
 	repo := db.NewRulesRepo(database)
 	foldersRepo := db.NewFoldersRepo(database)
 	contactsRepo := db.NewContactsRepo(database)
+	settingsRepo := db.NewSettingsRepo(database)
 
-	h := rulesEditHandler(repo, foldersRepo, contactsRepo)
+	h := rulesEditHandler(repo, foldersRepo, contactsRepo, settingsRepo)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "9999")
 	req := httptest.NewRequest("GET", "/rules/9999/edit", nil)
@@ -167,7 +171,7 @@ func TestRulesExportHandler(t *testing.T) {
 	repo := db.NewRulesRepo(database)
 	repo.Create(&db.Rule{
 		Name: "Work Emails", Description: "Sort work mail", Priority: 0, Enabled: true,
-		Groups: []db.ConditionGroup{{Operator: "AND", Conditions: []db.Condition{{Field: "from", Operator: "contains", Value: "@work.com"}}}},
+		Groups:  []db.ConditionGroup{{Operator: "AND", Conditions: []db.Condition{{Field: "from", Operator: "contains", Value: "@work.com"}}}},
 		Actions: []db.Action{{Type: "move_to_folder", Value: "Work"}},
 	})
 
@@ -298,5 +302,89 @@ func TestParseConditionsEmpty(t *testing.T) {
 
 	if len(rule.Groups) != 0 {
 		t.Errorf("Groups len = %d, want 0", len(rule.Groups))
+	}
+}
+
+func TestCreateRuleWithSchedule(t *testing.T) {
+	database := openWebTestDB(t)
+	repo := db.NewRulesRepo(database)
+	settingsRepo := db.NewSettingsRepo(database)
+
+	h := rulesCreateHandler(repo, settingsRepo)
+	form := url.Values{
+		"name":           {"Scheduled Rule"},
+		"schedule_days":  {"mon", "wed", "fri"},
+		"schedule_start": {"09:00"},
+		"schedule_end":   {"17:00"},
+	}
+	req := httptest.NewRequest("POST", "/rules", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Errorf("status = %d, want 303", rec.Code)
+	}
+
+	rules, _ := repo.List()
+	var found *db.Rule
+	for i := range rules {
+		if rules[i].Name == "Scheduled Rule" {
+			found = &rules[i]
+			break
+		}
+	}
+	if found == nil {
+		t.Fatal("scheduled rule not found")
+	}
+	if found.ScheduleDays != "mon,wed,fri" {
+		t.Errorf("ScheduleDays = %q, want mon,wed,fri", found.ScheduleDays)
+	}
+	if found.ScheduleStart != "09:00" {
+		t.Errorf("ScheduleStart = %q, want 09:00", found.ScheduleStart)
+	}
+	if found.ScheduleEnd != "17:00" {
+		t.Errorf("ScheduleEnd = %q, want 17:00", found.ScheduleEnd)
+	}
+}
+
+func TestCreateRulePartialSchedule(t *testing.T) {
+	database := openWebTestDB(t)
+	repo := db.NewRulesRepo(database)
+	settingsRepo := db.NewSettingsRepo(database)
+
+	h := rulesCreateHandler(repo, settingsRepo)
+	form := url.Values{
+		"name":          {"Partial Schedule"},
+		"schedule_days": {"mon", "tue"},
+	}
+	req := httptest.NewRequest("POST", "/rules", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Errorf("status = %d, want 303", rec.Code)
+	}
+
+	rules, _ := repo.List()
+	var found *db.Rule
+	for i := range rules {
+		if rules[i].Name == "Partial Schedule" {
+			found = &rules[i]
+			break
+		}
+	}
+	if found == nil {
+		t.Fatal("partial schedule rule not found")
+	}
+	if found.ScheduleDays != "mon,tue" {
+		t.Errorf("ScheduleDays = %q, want mon,tue", found.ScheduleDays)
+	}
+	if found.ScheduleStart != "" {
+		t.Errorf("ScheduleStart = %q, want empty", found.ScheduleStart)
+	}
+	if found.ScheduleEnd != "" {
+		t.Errorf("ScheduleEnd = %q, want empty", found.ScheduleEnd)
 	}
 }

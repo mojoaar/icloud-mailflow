@@ -31,6 +31,25 @@
         </div>
     </div>
 
+    <div class="card" id="schedule">
+        <h3>Schedule (optional)</h3>
+        <p class="hint">Leave blank to always run. Timezone: {{.Timezone}}</p>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+            {{$days := .ScheduleDays}}
+            <label><input type="checkbox" name="schedule_days" value="mon"{{if hasDay $days "mon"}} checked{{end}}> Mon</label>
+            <label><input type="checkbox" name="schedule_days" value="tue"{{if hasDay $days "tue"}} checked{{end}}> Tue</label>
+            <label><input type="checkbox" name="schedule_days" value="wed"{{if hasDay $days "wed"}} checked{{end}}> Wed</label>
+            <label><input type="checkbox" name="schedule_days" value="thu"{{if hasDay $days "thu"}} checked{{end}}> Thu</label>
+            <label><input type="checkbox" name="schedule_days" value="fri"{{if hasDay $days "fri"}} checked{{end}}> Fri</label>
+            <label><input type="checkbox" name="schedule_days" value="sat"{{if hasDay $days "sat"}} checked{{end}}> Sat</label>
+            <label><input type="checkbox" name="schedule_days" value="sun"{{if hasDay $days "sun"}} checked{{end}}> Sun</label>
+        </div>
+        <div style="display:flex;gap:8px">
+            <label>Start: <input type="time" name="schedule_start" value="{{.ScheduleStart}}"></label>
+            <label>End: <input type="time" name="schedule_end" value="{{.ScheduleEnd}}"></label>
+        </div>
+    </div>
+
     <h2>Conditions</h2>
     <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
         <span style="font-size:0.85rem;color:var(--muted)">Match</span>

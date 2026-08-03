@@ -63,7 +63,7 @@ func TestMatchFirstMatchingRule(t *testing.T) {
 	}
 
 	msg := makeMsg("test", "bob@example.com")
-	matched, err := Match(rules, msg, nil)
+	matched, err := Match(rules, msg, nil, time.UTC)
 	if err != nil {
 		t.Fatalf("Match: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestMatchReturnsFirstMatchingOnly(t *testing.T) {
 	}
 
 	msg := makeMsg("hello world", "a@b.com")
-	matched, err := Match(rules, msg, nil)
+	matched, err := Match(rules, msg, nil, time.UTC)
 	if err != nil {
 		t.Fatalf("Match: %v", err)
 	}
@@ -106,7 +106,7 @@ func TestMatchSkipsDisabledRules(t *testing.T) {
 	}
 
 	msg := makeMsg("test", "a@b.com")
-	matched, err := Match(rules, msg, nil)
+	matched, err := Match(rules, msg, nil, time.UTC)
 	if err != nil {
 		t.Fatalf("Match: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestMatchNoMatch(t *testing.T) {
 	}
 
 	msg := makeMsg("test", "a@b.com")
-	matched, err := Match(rules, msg, nil)
+	matched, err := Match(rules, msg, nil, time.UTC)
 	if err != nil {
 		t.Fatalf("Match: %v", err)
 	}
@@ -133,7 +133,7 @@ func TestMatchNoMatch(t *testing.T) {
 }
 
 func TestMatchEmptyRules(t *testing.T) {
-	matched, err := Match([]db.Rule{}, makeMsg("test", "a@b.com"), nil)
+	matched, err := Match([]db.Rule{}, makeMsg("test", "a@b.com"), nil, time.UTC)
 	if err != nil {
 		t.Fatalf("Match: %v", err)
 	}

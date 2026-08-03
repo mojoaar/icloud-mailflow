@@ -6,15 +6,18 @@ import (
 )
 
 type Rule struct {
-	ID          int64            `json:"id"`
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	Priority    int              `json:"priority"`
-	Enabled     bool             `json:"enabled"`
-	CreatedAt   string           `json:"created_at"`
-	UpdatedAt   string           `json:"updated_at"`
-	Groups      []ConditionGroup `json:"groups,omitempty"`
-	Actions     []Action         `json:"actions,omitempty"`
+	ID            int64            `json:"id"`
+	Name          string           `json:"name"`
+	Description   string           `json:"description"`
+	Priority      int              `json:"priority"`
+	Enabled       bool             `json:"enabled"`
+	ScheduleDays  string           `json:"schedule_days"`
+	ScheduleStart string           `json:"schedule_start"`
+	ScheduleEnd   string           `json:"schedule_end"`
+	CreatedAt     string           `json:"created_at"`
+	UpdatedAt     string           `json:"updated_at"`
+	Groups        []ConditionGroup `json:"groups,omitempty"`
+	Actions       []Action         `json:"actions,omitempty"`
 }
 
 type ConditionGroup struct {
@@ -27,12 +30,12 @@ type ConditionGroup struct {
 }
 
 type Condition struct {
-	ID            int64           `json:"id"`
-	GroupID       int64           `json:"group_id"`
-	Field         string          `json:"field"`
-	Operator      string          `json:"operator"`
-	Value         string          `json:"value"`
-	CompiledRegex *regexp.Regexp  `json:"-"`
+	ID            int64          `json:"id"`
+	GroupID       int64          `json:"group_id"`
+	Field         string         `json:"field"`
+	Operator      string         `json:"operator"`
+	Value         string         `json:"value"`
+	CompiledRegex *regexp.Regexp `json:"-"`
 }
 
 type Action struct {
@@ -47,7 +50,7 @@ type RulesRepo struct{ DB *sql.DB }
 func NewRulesRepo(d *sql.DB) *RulesRepo { return &RulesRepo{DB: d} }
 
 func (r *RulesRepo) List() ([]Rule, error) {
-	rows, err := r.DB.Query(`SELECT id, name, description, priority, enabled, created_at, updated_at FROM rules ORDER BY priority ASC, id ASC`)
+	rows, err := r.DB.Query(`SELECT id, name, description, priority, enabled, schedule_days, schedule_start, schedule_end, created_at, updated_at FROM rules ORDER BY priority ASC, id ASC`)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +58,7 @@ func (r *RulesRepo) List() ([]Rule, error) {
 	var out []Rule
 	for rows.Next() {
 		var rule Rule
-		if err := rows.Scan(&rule.ID, &rule.Name, &rule.Description, &rule.Priority, &rule.Enabled, &rule.CreatedAt, &rule.UpdatedAt); err != nil {
+		if err := rows.Scan(&rule.ID, &rule.Name, &rule.Description, &rule.Priority, &rule.Enabled, &rule.ScheduleDays, &rule.ScheduleStart, &rule.ScheduleEnd, &rule.CreatedAt, &rule.UpdatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, rule)
@@ -76,8 +79,8 @@ func (r *RulesRepo) List() ([]Rule, error) {
 
 func (r *RulesRepo) Get(id int64) (*Rule, error) {
 	var rule Rule
-	err := r.DB.QueryRow(`SELECT id, name, description, priority, enabled, created_at, updated_at FROM rules WHERE id = ?`, id).
-		Scan(&rule.ID, &rule.Name, &rule.Description, &rule.Priority, &rule.Enabled, &rule.CreatedAt, &rule.UpdatedAt)
+	err := r.DB.QueryRow(`SELECT id, name, description, priority, enabled, schedule_days, schedule_start, schedule_end, created_at, updated_at FROM rules WHERE id = ?`, id).
+		Scan(&rule.ID, &rule.Name, &rule.Description, &rule.Priority, &rule.Enabled, &rule.ScheduleDays, &rule.ScheduleStart, &rule.ScheduleEnd, &rule.CreatedAt, &rule.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +100,9 @@ func (r *RulesRepo) Create(rule *Rule) error {
 	}
 	defer tx.Rollback()
 
-	res, err := tx.Exec(`INSERT INTO rules (name, description, priority, enabled) VALUES (?, ?, ?, ?)`,
-		rule.Name, rule.Description, rule.Priority, rule.Enabled)
+	res, err := tx.Exec(`INSERT INTO rules (name, description, priority, enabled, schedule_days, schedule_start, schedule_end) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		rule.Name, rule.Description, rule.Priority, rule.Enabled,
+		rule.ScheduleDays, rule.ScheduleStart, rule.ScheduleEnd)
 	if err != nil {
 		return err
 	}
@@ -119,8 +123,10 @@ func (r *RulesRepo) Update(rule *Rule) error {
 	}
 	defer tx.Rollback()
 
-	_, err = tx.Exec(`UPDATE rules SET name=?, description=?, priority=?, enabled=?, updated_at=datetime('now') WHERE id=?`,
-		rule.Name, rule.Description, rule.Priority, rule.Enabled, rule.ID)
+	_, err = tx.Exec(`UPDATE rules SET name=?, description=?, priority=?, enabled=?, schedule_days=?, schedule_start=?, schedule_end=?, updated_at=datetime('now') WHERE id=?`,
+		rule.Name, rule.Description, rule.Priority, rule.Enabled,
+		rule.ScheduleDays, rule.ScheduleStart, rule.ScheduleEnd,
+		rule.ID)
 	if err != nil {
 		return err
 	}

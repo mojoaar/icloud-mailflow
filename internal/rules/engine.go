@@ -35,7 +35,7 @@ func scanNeeds(g db.ConditionGroup) (needsBody bool, needsHeaders []string) {
 	return
 }
 
-func Match(rules []db.Rule, msg *imap.Message, client imap.Client) (*db.Rule, error) {
+func Match(rules []db.Rule, msg *imap.Message, client imap.Client, loc *time.Location) (*db.Rule, error) {
 	for i := range rules {
 		if !rules[i].Enabled {
 			continue
@@ -45,10 +45,33 @@ func Match(rules []db.Rule, msg *imap.Message, client imap.Client) (*db.Rule, er
 			return nil, fmt.Errorf("rule %d (%s): %w", rules[i].ID, rules[i].Name, err)
 		}
 		if ok {
+			if !inSchedule(&rules[i], loc) {
+				continue
+			}
 			return &rules[i], nil
 		}
 	}
 	return nil, nil
+}
+
+func inSchedule(rule *db.Rule, loc *time.Location) bool {
+	if rule.ScheduleDays == "" && rule.ScheduleStart == "" && rule.ScheduleEnd == "" {
+		return true
+	}
+	now := time.Now().In(loc)
+	day := strings.ToLower(now.Format("mon"))
+	days := strings.ToLower(rule.ScheduleDays)
+	if days != "" && !strings.Contains(days, day) {
+		return false
+	}
+	current := now.Format("15:04")
+	if rule.ScheduleStart != "" && current < rule.ScheduleStart {
+		return false
+	}
+	if rule.ScheduleEnd != "" && current > rule.ScheduleEnd {
+		return false
+	}
+	return true
 }
 
 func Evaluate(rule *db.Rule, msg *imap.Message, client imap.Client) (bool, error) {

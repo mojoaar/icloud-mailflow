@@ -89,6 +89,9 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithString("conditions_json", mcp.Required(), mcp.Description("JSON with conditions and optional operator: {\"operator\":\"OR\",\"conditions\":[{\"field\":\"from\",\"operator\":\"contains\",\"value\":\"@example.com\"}]}")),
 		mcp.WithString("actions_json", mcp.Required(), mcp.Description("JSON array of actions: [{\"type\":\"move_to_folder\",\"value\":\"Archive\"}]")),
 		mcp.WithNumber("priority", mcp.Description("Priority (lower runs first, default 1)")),
+		mcp.WithString("schedule_days", mcp.Description("Comma-separated days: mon,tue,wed,thu,fri,sat,sun (empty = always)")),
+		mcp.WithString("schedule_start", mcp.Description("Start time HH:MM (empty = no start bound)")),
+		mcp.WithString("schedule_end", mcp.Description("End time HH:MM (empty = no end bound)")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
 		name := args["name"].(string)
@@ -99,6 +102,15 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		rule, err := parseRuleInput(name, priority, args["conditions_json"].(string), args["actions_json"].(string))
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid input: %v", err)), nil
+		}
+		if v, ok := args["schedule_days"]; ok {
+			rule.ScheduleDays = v.(string)
+		}
+		if v, ok := args["schedule_start"]; ok {
+			rule.ScheduleStart = v.(string)
+		}
+		if v, ok := args["schedule_end"]; ok {
+			rule.ScheduleEnd = v.(string)
 		}
 		if err := rulesRepo.Create(rule); err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
@@ -114,6 +126,9 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithString("conditions_json", mcp.Description("JSON with conditions and optional operator")),
 		mcp.WithString("actions_json", mcp.Description("JSON array of actions")),
 		mcp.WithNumber("priority", mcp.Description("Priority (lower runs first)")),
+		mcp.WithString("schedule_days", mcp.Description("Comma-separated days: mon,tue,wed,thu,fri,sat,sun (empty = always)")),
+		mcp.WithString("schedule_start", mcp.Description("Start time HH:MM (empty = no start bound)")),
+		mcp.WithString("schedule_end", mcp.Description("End time HH:MM (empty = no end bound)")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
 		id := int64(args["id"].(float64))
@@ -128,6 +143,15 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		}
 		if v, ok := args["priority"]; ok {
 			existing.Priority = int(v.(float64))
+		}
+		if v, ok := args["schedule_days"]; ok {
+			existing.ScheduleDays = v.(string)
+		}
+		if v, ok := args["schedule_start"]; ok {
+			existing.ScheduleStart = v.(string)
+		}
+		if v, ok := args["schedule_end"]; ok {
+			existing.ScheduleEnd = v.(string)
 		}
 		if condsJSON, ok := args["conditions_json"]; ok {
 			actsJSON := `[]`
@@ -194,7 +218,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		matched, err := rules.Match(ruleList, msg, nil)
+		matched, err := rules.Match(ruleList, msg, nil, time.UTC)
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}

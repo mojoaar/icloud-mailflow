@@ -47,6 +47,14 @@ var templateFuncs = template.FuncMap{
 		pct := float64(v) / 100.0
 		return fmt.Sprintf("%.1f%%", pct)
 	},
+	"hasDay": func(days []string, day string) bool {
+		for _, d := range days {
+			if d == day {
+				return true
+			}
+		}
+		return false
+	},
 }
 
 func init() {
