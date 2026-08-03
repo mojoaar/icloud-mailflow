@@ -93,11 +93,19 @@ func authMiddleware(sessRepo *db.SessionsRepo) func(http.Handler) http.Handler {
 			}
 			cookie, err := r.Cookie(sessionCookie)
 			if err != nil {
+				if r.Header.Get("HX-Request") == "true" {
+					w.Header().Set("HX-Redirect", "/login")
+					return
+				}
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
 			valid, _ := sessRepo.Validate(cookie.Value)
 			if !valid {
+				if r.Header.Get("HX-Request") == "true" {
+					w.Header().Set("HX-Redirect", "/login")
+					return
+				}
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}

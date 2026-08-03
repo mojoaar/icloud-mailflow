@@ -107,6 +107,51 @@ func TestAuthMiddlewareAllowsWithValidCookie(t *testing.T) {
 	}
 }
 
+func TestAuthMiddlewareRedirectsHtmxToLoginViaHeader(t *testing.T) {
+	database := openWebTestDB(t)
+	sessRepo := db.NewSessionsRepo(database)
+
+	mw := authMiddleware(sessRepo)
+	handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/dashboard", nil)
+	req.Header.Set("HX-Request", "true")
+	req.AddCookie(&http.Cookie{Name: sessionCookie, Value: "invalid"})
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200 for HX-Redirect", rec.Code)
+	}
+	if redirect := rec.Header().Get("HX-Redirect"); redirect != "/login" {
+		t.Errorf("HX-Redirect = %q, want /login", redirect)
+	}
+}
+
+func TestAuthMiddlewareRedirectsHtmxNoCookieViaHeader(t *testing.T) {
+	database := openWebTestDB(t)
+	sessRepo := db.NewSessionsRepo(database)
+
+	mw := authMiddleware(sessRepo)
+	handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/dashboard", nil)
+	req.Header.Set("HX-Request", "true")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200 for HX-Redirect", rec.Code)
+	}
+	if redirect := rec.Header().Get("HX-Redirect"); redirect != "/login" {
+		t.Errorf("HX-Redirect = %q, want /login", redirect)
+	}
+}
+
 func TestLoginPageGet(t *testing.T) {
 	database := openWebTestDB(t)
 	settingsRepo := db.NewSettingsRepo(database)

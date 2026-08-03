@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - CPU % chart showing 0.0% for idle containers due to `int()` truncation of small deltas
+- Double login form on expired sessions — HTMX polling partials now redirect via `HX-Redirect` header instead of injecting login HTML inline
 
 ## [0.8.0] - 2026-08-02
 
