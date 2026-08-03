@@ -78,6 +78,18 @@
 </div>
 
 <div class="card">
+    <h2>Webhooks</h2>
+    <p style="color:var(--muted);margin-bottom:12px">Shared secret for authenticating outgoing webhook requests.</p>
+    <form method="POST" action="/settings/webhook"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="form-group">
+            <label>Webhook Secret</label>
+            <input type="text" name="webhook_secret" value="{{.WebhookSecret}}" placeholder="Optional X-Webhook-Secret header value" style="width:100%">
+        </div>
+        <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save</button>
+    </form>
+</div>
+
+<div class="card">
     <h2>Rules</h2>
     <p style="color:var(--muted);margin-bottom:12px">Export or import your rule configurations.</p>
     <div class="flex-between">

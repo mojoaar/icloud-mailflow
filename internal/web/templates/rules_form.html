@@ -105,6 +105,7 @@
                 <option value="forward" {{if eq .Type "forward"}}selected{{end}}>Forward</option>
                 <option value="delete" {{if eq .Type "delete"}}selected{{end}}>Delete</option>
                 <option value="remove_flag" {{if eq .Type "remove_flag"}}selected{{end}}>Remove Flag</option>
+                <option value="webhook" {{if eq .Type "webhook"}}selected{{end}}>Post Webhook</option>
             </select>
             {{if eq .Type "move_to_folder"}}
             <input type="text" name="action_value" value="{{.Value}}" placeholder="Folder name" list="folder-list" style="flex:1">
@@ -116,6 +117,8 @@
             <input type="text" name="action_value" value="{{.Value}}" placeholder="Email to forward to" style="flex:1">
             {{else if eq .Type "remove_flag"}}
             <input type="text" name="action_value" value="{{.Value}}" placeholder="Flag to remove (e.g. \\Flagged)" style="flex:1">
+            {{else if eq .Type "webhook"}}
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Webhook URL (e.g. https://ntfy.sh/topic)" style="flex:1">
             {{else if eq .Type "delete"}}
             <input type="text" name="action_value" value="" placeholder="" style="display:none">
             {{else}}
@@ -132,6 +135,26 @@
         {{range .Contacts}}<option value="{{.Email}}">{{if .Name}}{{.Name}} ({{.Email}}){{end}}</option>{{end}}
     </datalist>
     <button type="button" class="btn mt-1" onclick="addAction()">+ Add Action</button>
+
+    {{if .Rule.ID}}
+    <div class="card" id="rule-test" style="margin-top:24px">
+        <h3>Test Rule</h3>
+        <form hx-post="/rules/{{.Rule.ID}}/test" hx-target="#test-result" hx-swap="innerHTML">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <input name="from" placeholder="From email" style="flex:1;min-width:200px">
+                <input name="to" placeholder="To email" style="flex:1;min-width:200px">
+                <input name="cc" placeholder="CC email" style="flex:1;min-width:200px">
+                <input name="subject" placeholder="Subject" style="flex:1;min-width:200px">
+            </div>
+            <button type="submit" class="btn mt-1">Test (Synthetic)</button>
+        </form>
+        <form hx-post="/rules/{{.Rule.ID}}/test-message" hx-target="#test-result" hx-swap="innerHTML" style="margin-top:8px">
+            <input name="folder" placeholder="Folder name" list="folder-list" style="width:200px">
+            <button type="submit" class="btn">Test (Real Message)</button>
+        </form>
+        <div id="test-result"></div>
+    </div>
+    {{end}}
 
     <div style="margin-top:24px;display:flex;gap:8px">
         <button type="submit" class="btn btn-primary">Save Rule</button>
@@ -155,7 +178,7 @@ function addAction() {
     var div = document.createElement('div');
     div.className = 'action-row';
     div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
-    div.innerHTML = '<select name="action_type" style="width:160px" onchange="updateActionInput(this)"><option value="move_to_folder">Move to Folder</option><option value="mark_as_read">Mark as Read</option><option value="mark_as_unread">Mark as Unread</option><option value="set_flag">Set Flag</option><option value="auto_reply">Auto Reply</option><option value="forward">Forward</option><option value="delete">Delete</option><option value="remove_flag">Remove Flag</option></select>' +
+    div.innerHTML = '<select name="action_type" style="width:160px" onchange="updateActionInput(this)"><option value="move_to_folder">Move to Folder</option><option value="mark_as_read">Mark as Read</option><option value="mark_as_unread">Mark as Unread</option><option value="set_flag">Set Flag</option><option value="auto_reply">Auto Reply</option><option value="forward">Forward</option><option value="delete">Delete</option><option value="remove_flag">Remove Flag</option><option value="webhook">Post Webhook</option></select>' +
         '<input type="text" name="action_value" placeholder="Folder name" list="folder-list" style="flex:1">' +
         '<button type="button" class="btn" style="padding:2px 6px;font-size:0.75rem" onclick="this.closest(\'.action-row\').remove()">×</button>';
     document.getElementById('actions').appendChild(div);
@@ -177,6 +200,9 @@ function updateActionInput(select) {
     } else if (select.value === 'remove_flag') {
         if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Flag to remove (e.g. \\Flagged)'; inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
         else { input.style.display = ''; input.removeAttribute('list'); input.placeholder = 'Flag to remove (e.g. \\Flagged)'; }
+    } else if (select.value === 'webhook') {
+        if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Webhook URL (e.g. https://ntfy.sh/topic)'; inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
+        else { input.style.display = ''; input.removeAttribute('list'); input.placeholder = 'Webhook URL (e.g. https://ntfy.sh/topic)'; }
     } else {
         if (input) input.style.display = 'none';
     }

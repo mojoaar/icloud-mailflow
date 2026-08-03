@@ -106,6 +106,9 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/rules/reorder", rulesReorderHandler(rulesRepo))
 	r.Post("/rules/reorder/move", rulesReorderMoveHandler(rulesRepo))
 
+	r.Post("/rules/{id}/test", rulesTestHandler(rulesRepo, imapClient))
+	r.Post("/rules/{id}/test-message", rulesTestMessageHandler(rulesRepo, imapClient))
+
 	r.Get("/settings", settingsPage(settingsRepo, foldersRepo, cfg, imapClient, version, contactsRepo))
 	r.Post("/settings/imap", settingsSaveIMAP(cfg, settingsRepo))
 	r.Post("/settings/imap/test", settingsTestIMAP(cfg, settingsRepo))
@@ -117,6 +120,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/settings/rules/import", rulesImportHandler(rulesRepo))
 	r.Post("/settings/timezone", settingsSaveTimezone(settingsRepo))
 	r.Post("/settings/font", settingsSaveFont(settingsRepo))
+	r.Post("/settings/webhook", settingsSaveWebhook(settingsRepo))
 	r.Post("/settings/backup/save", settingsSaveBackup(settingsRepo))
 	r.Post("/settings/backup/now", settingsBackupNow(p))
 	r.Post("/settings/mcp/toggle", settingsMcpToggle(settingsRepo))

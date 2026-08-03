@@ -880,3 +880,78 @@ func TestAutoReplyTemplateVariables(t *testing.T) {
 		t.Errorf("expected rule_name expansion, got: %s", lastBody)
 	}
 }
+
+func TestExecuteActionsWebhook(t *testing.T) {
+	database := db.NewTestDB(t)
+	var calledURL string
+	var calledBody []byte
+	p := &Poller{
+		imapClient:   &trackedMock{},
+		logRepo:      db.NewLogRepo(database),
+		statsRepo:    db.NewStatsRepo(database),
+		settingsRepo: db.NewSettingsRepo(database),
+		cfg:          &config.Config{},
+		sendWebhook: func(url string, payload []byte, secret string) error {
+			calledURL = url
+			calledBody = payload
+			return nil
+		},
+	}
+	rule := &db.Rule{Name: "webhook-rule", Actions: []db.Action{{Type: "webhook", Value: "https://example.com/hook"}}}
+	msg := &imap.Message{
+		From:    []imap.Address{{Email: "test@example.com"}},
+		Subject: "test",
+		Date:    time.Now(),
+		To:      []imap.Address{{Email: "rcpt@test.com"}},
+		Cc:      []imap.Address{{Email: "cc@test.com"}},
+	}
+	p.executeActions(rule, 1, msg, nil)
+	if calledURL != "https://example.com/hook" {
+		t.Errorf("expected https://example.com/hook, got %s", calledURL)
+	}
+	if !strings.Contains(string(calledBody), "webhook-rule") {
+		t.Error("payload should contain rule name")
+	}
+	if !strings.Contains(string(calledBody), "test@example.com") {
+		t.Error("payload should contain from")
+	}
+	if !strings.Contains(string(calledBody), "rcpt@test.com") {
+		t.Error("payload should contain to")
+	}
+	if !strings.Contains(string(calledBody), "cc@test.com") {
+		t.Error("payload should contain cc")
+	}
+	entries, _ := p.logRepo.ListRecent(10)
+	found := false
+	for _, e := range entries {
+		if e.ActionType == "webhook" && e.Status == "success" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("should have logged webhook success")
+	}
+}
+
+func TestExecuteActionsWebhookEmptyURL(t *testing.T) {
+	database := db.NewTestDB(t)
+	var called bool
+	p := &Poller{
+		imapClient:   &trackedMock{},
+		logRepo:      db.NewLogRepo(database),
+		statsRepo:    db.NewStatsRepo(database),
+		settingsRepo: db.NewSettingsRepo(database),
+		cfg:          &config.Config{},
+		sendWebhook: func(url string, payload []byte, secret string) error {
+			called = true
+			return nil
+		},
+	}
+	rule := &db.Rule{Name: "webhook-empty", Actions: []db.Action{{Type: "webhook", Value: ""}}}
+	msg := &imap.Message{Subject: "test", Date: time.Now()}
+	p.executeActions(rule, 1, msg, nil)
+	if called {
+		t.Error("should not call webhook for empty URL")
+	}
+}

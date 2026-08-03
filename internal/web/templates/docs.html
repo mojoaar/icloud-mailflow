@@ -254,6 +254,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>auto_reply</code></td><td>Send templated reply to sender</td><td>Reply body (<code>[subject]</code>, <code>[from]</code>, <code>[date]</code>)</td></tr>
     <tr><td><code>remove_flag</code></td><td>Remove IMAP flag</td><td>e.g. <code>\Flagged</code></td></tr>
     <tr><td><code>forward</code></td><td>Forward message via SMTP</td><td>Recipient email</td></tr>
+    <tr><td><code>webhook</code></td><td>POST JSON payload to URL</td><td>Webhook URL</td></tr>
     <tr><td><code>delete</code></td><td>Move to Trash folder</td><td>None</td></tr>
 </table>
 <p>Actions execute strictly in declared order. For iCloud, place <code>mark_as_read</code> before <code>move_to_folder</code> — iCloud requires \Seen before allowing MOVE.</p>

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"mime"
+	"net/http"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -46,6 +47,7 @@ type Poller struct {
 	lastTickDuration    time.Duration
 	autoReplyRepo       *db.AutoReplyRepo
 	sendMail            func(to, from, password, subject, body string, attachments ...smtp.Attachment) error
+	sendWebhook         func(url string, payload []byte, secret string) error
 }
 
 func (p *Poller) SetAutoReplyRepo(r *db.AutoReplyRepo) { p.autoReplyRepo = r }
@@ -393,6 +395,31 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 			} else {
 				logAction(effectiveUID, action, "success")
 			}
+		case "webhook":
+			if action.Value == "" {
+				continue
+			}
+			payload := map[string]any{
+				"rule":    rule.Name,
+				"subject": subject,
+				"from":    from,
+				"to":      msgToStr(msg),
+				"cc":      msgCcStr(msg),
+				"date":    msg.Date.Format(time.RFC3339),
+				"uid":     effectiveUID,
+			}
+			body, _ := json.Marshal(payload)
+			secret, _ := p.settingsRepo.Get("webhook_secret")
+			send := p.sendWebhook
+			if send == nil {
+				send = defaultSendWebhook
+			}
+			if err := send(action.Value, body, secret); err != nil {
+				slog.Error("webhook failed", "url", action.Value, "error", err)
+				logAction(effectiveUID, action, "error")
+			} else {
+				logAction(effectiveUID, action, "success")
+			}
 		default:
 			slog.Warn("unknown action type", "type", action.Type)
 		}
@@ -418,6 +445,27 @@ func msgCcStr(msg *imap.Message) string {
 		return ""
 	}
 	return rules.AddrsToString(msg.Cc)
+}
+
+func defaultSendWebhook(url string, payload []byte, secret string) error {
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if secret != "" {
+		req.Header.Set("X-Webhook-Secret", secret)
+	}
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("webhook returned status %d", resp.StatusCode)
+	}
+	return nil
 }
 
 func (p *Poller) timeLocation() *time.Location {

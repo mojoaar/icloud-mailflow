@@ -130,6 +130,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		mcpEnabled, _ := settingsRepo.Get("mcp_enabled")
 		mcpAPIKey, _ := settingsRepo.Get("mcp_api_key")
 		contactsCollEnabled, _ := settingsRepo.Get("contacts_collection_enabled")
+		webhookSecret, _ := settingsRepo.Get("webhook_secret")
 		protocol := "http"
 		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
 			protocol = "https"
@@ -154,6 +155,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"Uptime":                    time.Since(startTime).Truncate(time.Second).String(),
 			"Memory":                    getMemoryMB(),
 			"Goroutines":                runtime.NumGoroutine(),
+			"WebhookSecret":             webhookSecret,
 			"BackupEnabled":             backupEnabled == "true",
 			"BackupFrequency":           backupFrequency,
 			"BackupRecipient":           backupRecipient,
@@ -528,6 +530,14 @@ func settingsSaveBackup(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 			settingsRepo.Set("backup_frequency", freq)
 		}
 		settingsRepo.Set("backup_recipient", r.FormValue("backup_recipient"))
+		http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	}
+}
+
+func settingsSaveWebhook(settingsRepo *db.SettingsRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		settingsRepo.Set("webhook_secret", r.FormValue("webhook_secret"))
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
 }
