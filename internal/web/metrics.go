@@ -12,6 +12,7 @@ import (
 
 func StartMetricsCollector(repo *db.StatsRepo, parentCtx context.Context) {
 	go func() {
+		defer func() { _ = recover() }()
 		var prevUser, prevSys int64
 		var ru syscall.Rusage
 		if err := syscall.Getrusage(syscall.RUSAGE_SELF, &ru); err == nil {
@@ -51,7 +52,7 @@ func collect(repo *db.StatsRepo, prevUser, prevSys *int64) {
 		if *prevUser > 0 {
 			deltaUser := userNano - *prevUser
 			deltaSys := sysNano - *prevSys
-			cpuPct := int((float64(deltaUser+deltaSys) / 3600e9) * 10000)
+			cpuPct := int((float64(deltaUser+deltaSys) / 3600e9) * 1_000_000)
 			repo.SetStat("cpu", key, cpuPct)
 		}
 		*prevUser = userNano

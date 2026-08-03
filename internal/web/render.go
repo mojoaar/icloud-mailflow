@@ -44,7 +44,7 @@ var templateFuncs = template.FuncMap{
 	"hasPrefix":  strings.HasPrefix,
 	"trimPrefix": strings.TrimPrefix,
 	"formatCPU": func(v int) string {
-		pct := float64(v) / 100.0
+		pct := float64(v) / 10000.0
 		return fmt.Sprintf("%.1f%%", pct)
 	},
 	"hasDay": func(days []string, day string) bool {
