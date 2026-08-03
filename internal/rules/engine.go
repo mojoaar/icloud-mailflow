@@ -295,3 +295,219 @@ func decodeMIME(s string) string {
 	}
 	return decoded
 }
+
+type ConditionResult struct {
+	Field    string `json:"field"`
+	Operator string `json:"operator"`
+	Expected string `json:"expected"`
+	Passed   bool   `json:"passed"`
+	Actual   string `json:"actual"`
+}
+
+type GroupResult struct {
+	Operator string            `json:"operator"`
+	Passed   bool              `json:"passed"`
+	Results  []ConditionResult `json:"results,omitempty"`
+	Groups   []GroupResult     `json:"groups,omitempty"`
+}
+
+func EvaluateWithResults(rule *db.Rule, msg *imap.Message, client imap.Client) (bool, map[string]string, []GroupResult, error) {
+	if len(rule.Groups) == 0 {
+		return true, nil, nil, nil
+	}
+	captures := make(map[string]string)
+	extras := &msgExtras{headers: map[string]string{}}
+	for _, group := range rule.Groups {
+		needsBody, needsHeaders := scanNeeds(group)
+		if needsBody && client != nil && extras.body == "" {
+			body, err := client.FetchMessageBody(msg.UID)
+			if err != nil {
+				slog.Warn("failed to fetch body", "uid", msg.UID, "error", err)
+			} else {
+				extras.body = body
+			}
+		}
+		if client != nil {
+			for _, h := range needsHeaders {
+				if _, ok := extras.headers[h]; ok {
+					continue
+				}
+				v, err := client.FetchMessageHeader(msg.UID, h)
+				if err != nil {
+					slog.Warn("failed to fetch header", "uid", msg.UID, "header", h, "error", err)
+				} else {
+					extras.headers[h] = v
+				}
+			}
+		}
+	}
+	allResults := make([]GroupResult, len(rule.Groups))
+	for i, group := range rule.Groups {
+		gr, err := evalGroupWithResults(group, msg, extras, captures)
+		if err != nil {
+			return false, nil, nil, err
+		}
+		allResults[i] = gr
+		if !gr.Passed {
+			return false, captures, allResults, nil
+		}
+	}
+	return len(rule.Groups) > 0, captures, allResults, nil
+}
+
+func evalGroupWithResults(g db.ConditionGroup, msg *imap.Message, extras *msgExtras, captures map[string]string) (GroupResult, error) {
+	result := GroupResult{Operator: g.Operator}
+	allPassed := true
+	anyPassed := false
+	for _, c := range g.Conditions {
+		cr, err := evalConditionWithResult(c, msg, extras, captures)
+		if err != nil {
+			return result, err
+		}
+		result.Results = append(result.Results, cr)
+		if cr.Passed {
+			anyPassed = true
+		} else {
+			allPassed = false
+		}
+	}
+	for _, sub := range g.Groups {
+		sr, err := evalGroupWithResults(sub, msg, extras, captures)
+		if err != nil {
+			return result, err
+		}
+		result.Groups = append(result.Groups, sr)
+		if sr.Passed {
+			anyPassed = true
+		} else {
+			allPassed = false
+		}
+	}
+	if g.Operator == "AND" {
+		result.Passed = allPassed
+	} else {
+		result.Passed = anyPassed
+	}
+	return result, nil
+}
+
+func evalConditionWithResult(c db.Condition, msg *imap.Message, extras *msgExtras, captures map[string]string) (ConditionResult, error) {
+	cr := ConditionResult{
+		Field:    c.Field,
+		Operator: c.Operator,
+		Expected: c.Value,
+	}
+
+	if c.Field == "has_attachment" {
+		if c.Operator == "exists" {
+			if msg.HasAttach {
+				cr.Actual = "true"
+			} else {
+				cr.Actual = "false"
+			}
+			cr.Passed = msg.HasAttach
+			return cr, nil
+		}
+		if c.Operator == "not_exists" {
+			if msg.HasAttach {
+				cr.Actual = "true"
+			} else {
+				cr.Actual = "false"
+			}
+			cr.Passed = !msg.HasAttach
+			return cr, nil
+		}
+	}
+
+	switch c.Operator {
+	case "older_than":
+		days, err := parseDays(c.Value)
+		if err != nil {
+			return cr, err
+		}
+		if msg.Date.IsZero() {
+			cr.Actual = "no date"
+			return cr, nil
+		}
+		age := int(time.Since(msg.Date).Hours() / 24)
+		cr.Actual = fmt.Sprintf("%d days", age)
+		cr.Passed = time.Since(msg.Date) > time.Duration(days)*24*time.Hour
+		return cr, nil
+	case "newer_than":
+		days, err := parseDays(c.Value)
+		if err != nil {
+			return cr, err
+		}
+		if msg.Date.IsZero() {
+			cr.Actual = "no date"
+			return cr, nil
+		}
+		age := int(time.Since(msg.Date).Hours() / 24)
+		cr.Actual = fmt.Sprintf("%d days", age)
+		cr.Passed = time.Since(msg.Date) < time.Duration(days)*24*time.Hour
+		return cr, nil
+	case "before":
+		target, err := time.Parse("2006-01-02", c.Value)
+		if err != nil {
+			return cr, err
+		}
+		if msg.Date.IsZero() {
+			cr.Actual = "no date"
+			return cr, nil
+		}
+		cr.Actual = msg.Date.Format("2006-01-02")
+		cr.Passed = msg.Date.Before(target)
+		return cr, nil
+	case "after":
+		target, err := time.Parse("2006-01-02", c.Value)
+		if err != nil {
+			return cr, err
+		}
+		if msg.Date.IsZero() {
+			cr.Actual = "no date"
+			return cr, nil
+		}
+		cr.Actual = msg.Date.Format("2006-01-02")
+		cr.Passed = msg.Date.After(target)
+		return cr, nil
+	}
+
+	val := getFieldValueWithExtras(c.Field, msg, extras)
+	cr.Actual = val
+
+	switch c.Operator {
+	case "exists":
+		cr.Passed = val != ""
+	case "not_exists":
+		cr.Passed = val == ""
+	case "equals":
+		cr.Passed = strings.EqualFold(val, c.Value)
+	case "not_equals":
+		cr.Passed = !strings.EqualFold(val, c.Value)
+	case "contains":
+		cr.Passed = strings.Contains(strings.ToLower(val), strings.ToLower(c.Value))
+	case "not_contains":
+		cr.Passed = !strings.Contains(strings.ToLower(val), strings.ToLower(c.Value))
+	case "starts_with":
+		cr.Passed = strings.HasPrefix(strings.ToLower(val), strings.ToLower(c.Value))
+	case "ends_with":
+		cr.Passed = strings.HasSuffix(strings.ToLower(val), strings.ToLower(c.Value))
+	case "matches_regex":
+		if c.CompiledRegex == nil {
+			return cr, nil
+		}
+		matches := c.CompiledRegex.FindStringSubmatch(val)
+		if matches == nil {
+			return cr, nil
+		}
+		for i, name := range c.CompiledRegex.SubexpNames() {
+			if i == 0 {
+				captures["capture:0"] = matches[0]
+			} else if name != "" && i < len(matches) {
+				captures["capture:"+name] = matches[i]
+			}
+		}
+		cr.Passed = true
+	}
+	return cr, nil
+}

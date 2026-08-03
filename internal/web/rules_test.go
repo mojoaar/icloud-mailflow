@@ -8,12 +8,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	goimap "github.com/emersion/go-imap/v2"
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
+	"github.com/mojoaar/icloud-mailflow/internal/imap"
 )
 
 func TestRulesListHandler(t *testing.T) {
@@ -386,5 +389,149 @@ func TestCreateRulePartialSchedule(t *testing.T) {
 	}
 	if found.ScheduleEnd != "" {
 		t.Errorf("ScheduleEnd = %q, want empty", found.ScheduleEnd)
+	}
+}
+
+func TestRuleTestSynthetic(t *testing.T) {
+	database := openWebTestDB(t)
+	rulesRepo := db.NewRulesRepo(database)
+
+	rule := &db.Rule{Name: "test-rule", Enabled: true, Priority: 10}
+	rule.Groups = []db.ConditionGroup{{
+		Operator: "AND",
+		Conditions: []db.Condition{{Field: "from", Operator: "contains", Value: "@test.com"}},
+	}}
+	rulesRepo.Create(rule)
+
+	h := rulesTestHandler(rulesRepo, nil)
+	form := url.Values{"from": {"user@test.com"}, "subject": {"hello"}}
+	req := httptest.NewRequest(http.MethodPost, "/rules/"+strconv.FormatInt(rule.ID, 10)+"/test", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", strconv.FormatInt(rule.ID, 10))
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "Matched") {
+		t.Error("response should contain 'Matched'")
+	}
+	if !strings.Contains(rec.Body.String(), "from") {
+		t.Error("response should contain condition field 'from'")
+	}
+}
+
+func TestRuleTestSyntheticNoMatch(t *testing.T) {
+	database := openWebTestDB(t)
+	rulesRepo := db.NewRulesRepo(database)
+
+	rule := &db.Rule{Name: "test-rule", Enabled: true, Priority: 10}
+	rule.Groups = []db.ConditionGroup{{
+		Operator: "AND",
+		Conditions: []db.Condition{{Field: "from", Operator: "equals", Value: "admin@test.com"}},
+	}}
+	rulesRepo.Create(rule)
+
+	h := rulesTestHandler(rulesRepo, nil)
+	form := url.Values{"from": {"user@other.com"}, "subject": {"hello"}}
+	req := httptest.NewRequest(http.MethodPost, "/rules/"+strconv.FormatInt(rule.ID, 10)+"/test", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", strconv.FormatInt(rule.ID, 10))
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "No Match") {
+		t.Error("response should contain 'No Match'")
+	}
+}
+
+func TestRuleTestRealMessage(t *testing.T) {
+	database := openWebTestDB(t)
+	rulesRepo := db.NewRulesRepo(database)
+
+	rule := &db.Rule{Name: "real-test", Enabled: true, Priority: 10}
+	rule.Groups = []db.ConditionGroup{{
+		Operator: "AND",
+		Conditions: []db.Condition{{Field: "from", Operator: "contains", Value: "@test.com"}},
+	}}
+	rulesRepo.Create(rule)
+
+	mockClient := &mockIMAPClient{
+		searchUIDs: []goimap.UID{123},
+		messages: map[uint32]*imap.Message{
+			123: {
+				UID:     123,
+				Subject: "Test Message",
+				From:    []imap.Address{{Email: "sender@test.com"}},
+				To:      []imap.Address{{Email: "recipient@test.com"}},
+			},
+		},
+	}
+
+	h := rulesTestMessageHandler(rulesRepo, mockClient)
+	form := url.Values{"folder": {"INBOX"}}
+	req := httptest.NewRequest(http.MethodPost, "/rules/"+strconv.FormatInt(rule.ID, 10)+"/test-message", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", strconv.FormatInt(rule.ID, 10))
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "Matched") {
+		t.Error("response should contain 'Matched'")
+	}
+}
+
+func TestRuleTestRealMessageNoMessages(t *testing.T) {
+	database := openWebTestDB(t)
+	rulesRepo := db.NewRulesRepo(database)
+
+	rule := &db.Rule{Name: "real-test", Enabled: true, Priority: 10}
+	rulesRepo.Create(rule)
+
+	mockClient := &mockIMAPClient{
+		searchUIDs: nil,
+	}
+
+	h := rulesTestMessageHandler(rulesRepo, mockClient)
+	form := url.Values{"folder": {"Empty"}}
+	req := httptest.NewRequest(http.MethodPost, "/rules/"+strconv.FormatInt(rule.ID, 10)+"/test-message", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", strconv.FormatInt(rule.ID, 10))
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "No messages found") {
+		t.Error("response should contain 'No messages found'")
+	}
+}
+
+func TestRuleTestNotFound(t *testing.T) {
+	database := openWebTestDB(t)
+	rulesRepo := db.NewRulesRepo(database)
+
+	h := rulesTestHandler(rulesRepo, nil)
+	req := httptest.NewRequest(http.MethodPost, "/rules/9999/test", nil)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "9999")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", rec.Code)
 	}
 }

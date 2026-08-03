@@ -8,6 +8,8 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
+	"github.com/mojoaar/icloud-mailflow/internal/imap"
+	"github.com/mojoaar/icloud-mailflow/internal/rules"
 )
 
 func rulesListHandler(repo *db.RulesRepo) http.HandlerFunc {
@@ -241,5 +243,69 @@ func parseActions(r *http.Request, rule *db.Rule) {
 			v = values[i]
 		}
 		rule.Actions = append(rule.Actions, db.Action{Type: types[i], Value: v})
+	}
+}
+
+func rulesTestHandler(repo *db.RulesRepo, imapClient imap.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+		rule, err := repo.Get(id)
+		if err != nil {
+			http.Error(w, "Rule not found", http.StatusNotFound)
+			return
+		}
+		r.ParseForm()
+		msg := &imap.Message{
+			Subject: r.FormValue("subject"),
+			From:    []imap.Address{{Email: r.FormValue("from")}},
+			To:      []imap.Address{{Email: r.FormValue("to")}},
+			Cc:      []imap.Address{{Email: r.FormValue("cc")}},
+		}
+		matched, captures, results, err := rules.EvaluateWithResults(rule, msg, nil)
+		if err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+			return
+		}
+		renderPartial(w, "rules_test_result", map[string]any{
+			"Matched":  matched,
+			"Captures": captures,
+			"Results":  results,
+			"Rule":     rule,
+		})
+	}
+}
+
+func rulesTestMessageHandler(repo *db.RulesRepo, imapClient imap.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+		rule, err := repo.Get(id)
+		if err != nil {
+			http.Error(w, "Rule not found", http.StatusNotFound)
+			return
+		}
+		r.ParseForm()
+		folder := r.FormValue("folder")
+		uids, err := imapClient.SearchMessages(folder, 1, 0)
+		if err != nil || len(uids) == 0 {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "No messages found in folder"})
+			return
+		}
+		msg, err := imapClient.FetchMessage(uint32(uids[0]))
+		if err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Failed to fetch message: " + err.Error()})
+			return
+		}
+		matched, captures, results, err := rules.EvaluateWithResults(rule, msg, imapClient)
+		if err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+			return
+		}
+		renderPartial(w, "rules_test_result", map[string]any{
+			"Matched":  matched,
+			"Captures": captures,
+			"Results":  results,
+			"Rule":     rule,
+			"Message":  msg,
+		})
 	}
 }

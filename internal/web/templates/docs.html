@@ -423,6 +423,20 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 </div>
 
 <div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /rules/{id}/test</h4>
+    <p class="desc">Dry-run rule against synthetic message fields (from, to, cc, subject). Returns per-condition pass/fail with actual vs expected values.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/1/test -b cookies.txt \
+  -d "from=user@test.com&subject=Hello&to=recipient@test.com&cc=cc@test.com"</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /rules/{id}/test-message</h4>
+    <p class="desc">Dry-run rule against a real message fetched from IMAP in the given folder. Fetches body and headers for full evaluation.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/1/test-message -b cookies.txt \
+  -d "folder=INBOX"</code></pre>
+</div>
+
+<div class="endpoint">
     <h4><span class="method-badge method-get">GET</span> GET /settings/rules/export</h4>
     <p class="desc">Download all rules as JSON (excludes catch-all).</p>
     <pre><code class="language-bash">curl http://{{.Host}}/settings/rules/export -b cookies.txt -o rules.json</code></pre>
