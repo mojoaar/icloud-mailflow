@@ -2,6 +2,7 @@ package poller
 
 import (
 	"errors"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -311,7 +312,7 @@ func TestExecuteActionsMoveToFolder(t *testing.T) {
 			{Type: "move_to_folder", Value: "Archive"},
 		},
 	}
-	p.executeActions(rule, 42, nil)
+	p.executeActions(rule, 42, nil, nil)
 
 	mock.mu.Lock()
 	if len(mock.moveCalls) != 1 || mock.moveCalls[0].UID != 42 || mock.moveCalls[0].Dest != "Archive" {
@@ -330,7 +331,7 @@ func TestExecuteActionsUnknownType(t *testing.T) {
 			{Type: "unknown_action", Value: "data"},
 		},
 	}
-	p.executeActions(rule, 42, nil)
+	p.executeActions(rule, 42, nil, nil)
 
 	mock.mu.Lock()
 	if len(mock.moveCalls) != 0 {
@@ -383,7 +384,7 @@ func TestExecuteActionsMarkAsRead(t *testing.T) {
 			{Type: "mark_as_read"},
 		},
 	}
-	p.executeActions(rule, 42, nil)
+	p.executeActions(rule, 42, nil, nil)
 
 	mock.mu.Lock()
 	if len(mock.setFlagsCalls) != 1 {
@@ -408,7 +409,7 @@ func TestExecuteActionsSetFlag(t *testing.T) {
 			{Type: "set_flag", Value: "\\Flagged"},
 		},
 	}
-	p.executeActions(rule, 7, nil)
+	p.executeActions(rule, 7, nil, nil)
 
 	mock.mu.Lock()
 	if len(mock.setFlagsCalls) != 1 || mock.setFlagsCalls[0].Flags[0] != "\\Flagged" {
@@ -428,7 +429,7 @@ func TestExecuteActionsMultipleActions(t *testing.T) {
 			{Type: "move_to_folder", Value: "Archive"},
 		},
 	}
-	p.executeActions(rule, 10, nil)
+	p.executeActions(rule, 10, nil, nil)
 
 	mock.mu.Lock()
 	if len(mock.setFlagsCalls) != 1 {
@@ -453,7 +454,7 @@ func TestExecuteActionsMoveToFolderEmptyValue(t *testing.T) {
 			{Type: "move_to_folder", Value: ""},
 		},
 	}
-	p.executeActions(rule, 42, nil)
+	p.executeActions(rule, 42, nil, nil)
 
 	mock.mu.Lock()
 	if len(mock.moveCalls) != 0 {
@@ -472,7 +473,7 @@ func TestExecuteActionsSetFlagEmptyValue(t *testing.T) {
 			{Type: "set_flag", Value: ""},
 		},
 	}
-	p.executeActions(rule, 42, nil)
+	p.executeActions(rule, 42, nil, nil)
 
 	mock.mu.Lock()
 	if len(mock.setFlagsCalls) != 0 {
@@ -623,7 +624,7 @@ func TestExecuteActionsDeclaredOrder(t *testing.T) {
 			{Type: "move_to_folder", Value: "Archive"},
 		},
 	}
-	p.executeActions(rule, 10, nil)
+	p.executeActions(rule, 10, nil, nil)
 
 	mock.mu.Lock()
 	if len(mock.moveCalls) != 1 || mock.moveCalls[0].UID != 10 {
@@ -646,7 +647,7 @@ func TestExecuteActionsFlagAfterMoveOnDestUID(t *testing.T) {
 			{Type: "mark_as_read"},
 		},
 	}
-	p.executeActions(rule, 10, nil)
+	p.executeActions(rule, 10, nil, nil)
 
 	mock.mu.Lock()
 	if len(mock.moveCalls) != 1 || mock.moveCalls[0].UID != 10 {
@@ -752,7 +753,7 @@ func TestExecuteActionsDelete(t *testing.T) {
 			{Type: "delete"},
 		},
 	}
-	p.executeActions(rule, 42, nil)
+	p.executeActions(rule, 42, nil, nil)
 
 	mock.mu.Lock()
 	if len(mock.moveCalls) != 1 {
@@ -785,8 +786,8 @@ func TestAutoReplyOncePerSenderPerDay(t *testing.T) {
 	rule := &db.Rule{Name: "ar", Actions: []db.Action{{Type: "auto_reply", Value: "Away"}}}
 	msg := &imap.Message{From: []imap.Address{{Email: "sender@test.com"}}}
 
-	p.executeActions(rule, 1, msg)
-	p.executeActions(rule, 2, msg)
+	p.executeActions(rule, 1, msg, nil)
+	p.executeActions(rule, 2, msg, nil)
 
 	if len(sent) != 1 {
 		t.Fatalf("expected exactly 1 auto-reply, got %d", len(sent))
@@ -820,9 +821,62 @@ func TestAutoReplySkipsSelf(t *testing.T) {
 	rule := &db.Rule{Name: "ar", Actions: []db.Action{{Type: "auto_reply", Value: "Away"}}}
 	msg := &imap.Message{From: []imap.Address{{Email: "me@icloud.com"}}}
 
-	p.executeActions(rule, 1, msg)
+	p.executeActions(rule, 1, msg, nil)
 
 	if len(sent) != 0 {
 		t.Fatalf("expected no auto-reply to self, got %d", len(sent))
+	}
+}
+
+func TestAutoReplyTemplateVariables(t *testing.T) {
+	database := db.NewTestDB(t)
+	var lastBody string
+	p := &Poller{
+		imapClient:    &trackedMock{},
+		logRepo:       db.NewLogRepo(database),
+		cfg:           &config.Config{},
+		imapEmail:     "me@icloud.com",
+		autoReplyRepo: db.NewAutoReplyRepo(database),
+		sendMail: func(to, from, password, subject, body string, attachments ...smtp.Attachment) error {
+			lastBody = body
+			return nil
+		},
+	}
+	rule := &db.Rule{
+		Name: "auto-reply-rule",
+		Actions: []db.Action{{
+			Type:  "auto_reply",
+			Value: "You sent: [subject]. Your order [capture:order] from [from] to [to] cc [cc] via [rule_name] on [date]",
+		}},
+	}
+	msg := &imap.Message{
+		Subject: "Order #12345",
+		From:    []imap.Address{{Email: "sender@test.com"}},
+		To:      []imap.Address{{Email: "me@icloud.com"}},
+		Cc:      []imap.Address{{Email: "cc@test.com"}},
+	}
+	captures := map[string]string{
+		"capture:order": "12345",
+		"capture:0":     "Order #12345",
+	}
+	p.executeActions(rule, 1, msg, captures)
+
+	if !strings.Contains(lastBody, "You sent: Order #12345") {
+		t.Errorf("expected subject expansion, got: %s", lastBody)
+	}
+	if !strings.Contains(lastBody, "12345") {
+		t.Errorf("expected order capture, got: %s", lastBody)
+	}
+	if !strings.Contains(lastBody, "from sender@test.com") {
+		t.Errorf("expected from expansion, got: %s", lastBody)
+	}
+	if !strings.Contains(lastBody, "to me@icloud.com") {
+		t.Errorf("expected to expansion, got: %s", lastBody)
+	}
+	if !strings.Contains(lastBody, "cc cc@test.com") {
+		t.Errorf("expected cc expansion, got: %s", lastBody)
+	}
+	if !strings.Contains(lastBody, "via auto-reply-rule") {
+		t.Errorf("expected rule_name expansion, got: %s", lastBody)
 	}
 }

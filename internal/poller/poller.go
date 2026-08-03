@@ -182,7 +182,7 @@ func (p *Poller) process() error {
 					p.collector.CollectFromMessage(msg)
 				}
 			}
-			matched, err := rules.Match(ruleList, msg, p.imapClient, p.timeLocation())
+			matched, captures, err := rules.Match(ruleList, msg, p.imapClient, p.timeLocation())
 			if err != nil {
 				slog.Error("rule matching error", "uid", msg.UID, "error", err)
 				continue
@@ -199,7 +199,7 @@ func (p *Poller) process() error {
 				if !hasMarkRead {
 					slog.Warn("matched rule has no mark_as_read — message may re-process on next tick", "uid", uid, "rule", matched.Name)
 				}
-				p.executeActions(matched, uint32(uid), msg)
+				p.executeActions(matched, uint32(uid), msg, captures)
 			} else {
 				u := uint32(uid)
 				skipUIDs[u] = true
@@ -215,7 +215,7 @@ func (p *Poller) process() error {
 	return nil
 }
 
-func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
+func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, captures map[string]string) {
 	from := ""
 	if msg != nil && len(msg.From) > 0 {
 		from = msg.From[0].Email
@@ -317,8 +317,8 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 			if err != nil {
 				logAction(effectiveUID, action, "error")
 			} else {
-				subject := "Fwd: " + msg.Subject
-				mimeData := buildForwardMIME(string(raw), subject, p.imapEmail)
+				forwardSubject := strings.ReplaceAll("Fwd: [subject]", "[subject]", msg.Subject)
+				mimeData := buildForwardMIME(string(raw), forwardSubject, p.imapEmail)
 				if err := smtp.SendRaw(action.Value, p.imapEmail, p.cfg.IMAPPassword, mimeData); err != nil {
 					logAction(effectiveUID, action, "error")
 				} else {
@@ -377,6 +377,12 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message) {
 			body = strings.ReplaceAll(body, "[subject]", subject)
 			body = strings.ReplaceAll(body, "[from]", from)
 			body = strings.ReplaceAll(body, "[date]", time.Now().Format(time.RFC1123Z))
+			body = strings.ReplaceAll(body, "[to]", msgToStr(msg))
+			body = strings.ReplaceAll(body, "[cc]", msgCcStr(msg))
+			body = strings.ReplaceAll(body, "[rule_name]", rule.Name)
+			for k, v := range captures {
+				body = strings.ReplaceAll(body, "["+k+"]", v)
+			}
 			send := p.sendMail
 			if send == nil {
 				send = smtp.Send
@@ -398,6 +404,20 @@ func (p *Poller) getIMAPEmail() string {
 		return p.imapEmail
 	}
 	return p.cfg.IMAPEmail
+}
+
+func msgToStr(msg *imap.Message) string {
+	if msg == nil {
+		return ""
+	}
+	return rules.AddrsToString(msg.To)
+}
+
+func msgCcStr(msg *imap.Message) string {
+	if msg == nil {
+		return ""
+	}
+	return rules.AddrsToString(msg.Cc)
 }
 
 func (p *Poller) timeLocation() *time.Location {

@@ -63,7 +63,7 @@ func TestMatchFirstMatchingRule(t *testing.T) {
 	}
 
 	msg := makeMsg("test", "bob@example.com")
-	matched, err := Match(rules, msg, nil, time.UTC)
+	matched, _, err := Match(rules, msg, nil, time.UTC)
 	if err != nil {
 		t.Fatalf("Match: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestMatchReturnsFirstMatchingOnly(t *testing.T) {
 	}
 
 	msg := makeMsg("hello world", "a@b.com")
-	matched, err := Match(rules, msg, nil, time.UTC)
+	matched, _, err := Match(rules, msg, nil, time.UTC)
 	if err != nil {
 		t.Fatalf("Match: %v", err)
 	}
@@ -106,7 +106,7 @@ func TestMatchSkipsDisabledRules(t *testing.T) {
 	}
 
 	msg := makeMsg("test", "a@b.com")
-	matched, err := Match(rules, msg, nil, time.UTC)
+	matched, _, err := Match(rules, msg, nil, time.UTC)
 	if err != nil {
 		t.Fatalf("Match: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestMatchNoMatch(t *testing.T) {
 	}
 
 	msg := makeMsg("test", "a@b.com")
-	matched, err := Match(rules, msg, nil, time.UTC)
+	matched, _, err := Match(rules, msg, nil, time.UTC)
 	if err != nil {
 		t.Fatalf("Match: %v", err)
 	}
@@ -133,7 +133,7 @@ func TestMatchNoMatch(t *testing.T) {
 }
 
 func TestMatchEmptyRules(t *testing.T) {
-	matched, err := Match([]db.Rule{}, makeMsg("test", "a@b.com"), nil, time.UTC)
+	matched, _, err := Match([]db.Rule{}, makeMsg("test", "a@b.com"), nil, time.UTC)
 	if err != nil {
 		t.Fatalf("Match: %v", err)
 	}
@@ -144,7 +144,7 @@ func TestMatchEmptyRules(t *testing.T) {
 
 func TestEvaluateEmptyGroups(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{})
-	ok, err := Evaluate(&rule, makeMsg("test", "a@b.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("test", "a@b.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -157,7 +157,7 @@ func TestEvaluateConditionEquals(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("from", "equals", "alice@example.com")}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -170,7 +170,7 @@ func TestEvaluateConditionEqualsCaseInsensitive(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("from", "equals", "Alice@Example.com")}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -183,7 +183,7 @@ func TestEvaluateConditionNotEquals(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("from", "not_equals", "spam@example.com")}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -191,7 +191,7 @@ func TestEvaluateConditionNotEquals(t *testing.T) {
 		t.Error("not_equals should match")
 	}
 
-	ok, err = Evaluate(&rule, makeMsg("test", "spam@example.com"), nil)
+	ok, _, err = Evaluate(&rule, makeMsg("test", "spam@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -204,7 +204,7 @@ func TestEvaluateConditionContains(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("subject", "contains", "invoice")}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("Your Invoice #12345", "a@b.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("Your Invoice #12345", "a@b.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -217,7 +217,7 @@ func TestEvaluateConditionNotContains(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("subject", "not_contains", "spam")}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("Hello World", "a@b.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("Hello World", "a@b.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -225,7 +225,7 @@ func TestEvaluateConditionNotContains(t *testing.T) {
 		t.Error("not_contains should match")
 	}
 
-	ok, err = Evaluate(&rule, makeMsg("This is spam mail", "a@b.com"), nil)
+	ok, _, err = Evaluate(&rule, makeMsg("This is spam mail", "a@b.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -238,7 +238,7 @@ func TestEvaluateConditionStartsWith(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("subject", "starts_with", "Re:")}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("Re: Your Email", "a@b.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("Re: Your Email", "a@b.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -246,7 +246,7 @@ func TestEvaluateConditionStartsWith(t *testing.T) {
 		t.Error("starts_with should match")
 	}
 
-	ok, err = Evaluate(&rule, makeMsg("Fwd: Re: Your Email", "a@b.com"), nil)
+	ok, _, err = Evaluate(&rule, makeMsg("Fwd: Re: Your Email", "a@b.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -259,7 +259,7 @@ func TestEvaluateConditionEndsWith(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("from", "ends_with", "@example.com")}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -267,7 +267,7 @@ func TestEvaluateConditionEndsWith(t *testing.T) {
 		t.Error("ends_with should match")
 	}
 
-	ok, err = Evaluate(&rule, makeMsg("test", "alice@other.org"), nil)
+	ok, _, err = Evaluate(&rule, makeMsg("test", "alice@other.org"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -280,7 +280,7 @@ func TestEvaluateConditionMatchesRegex(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("subject", "matches_regex", `\d{3,}`)}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("Order #12345 confirmed", "a@b.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("Order #12345 confirmed", "a@b.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -288,7 +288,7 @@ func TestEvaluateConditionMatchesRegex(t *testing.T) {
 		t.Error("matches_regex should match")
 	}
 
-	ok, err = Evaluate(&rule, makeMsg("No numbers here", "a@b.com"), nil)
+	ok, _, err = Evaluate(&rule, makeMsg("No numbers here", "a@b.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -301,7 +301,7 @@ func TestEvaluateConditionInvalidRegex(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{{Field: "subject", Operator: "matches_regex", Value: "[invalid"}}),
 	})
-	_, err := Evaluate(&rule, makeMsg("test", "a@b.com"), nil)
+	_, _, err := Evaluate(&rule, makeMsg("test", "a@b.com"), nil)
 	if err != nil {
 		t.Fatalf("nil CompiledRegex should not error: %v", err)
 	}
@@ -311,7 +311,7 @@ func TestEvaluateConditionExists(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("from", "exists", "")}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -324,7 +324,7 @@ func TestEvaluateConditionNotExists(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("body", "not_exists", "")}),
 	})
-	ok, err := Evaluate(&rule, &imap.Message{UID: 1}, nil)
+	ok, _, err := Evaluate(&rule, &imap.Message{UID: 1}, nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -337,7 +337,7 @@ func TestEvaluateHasAttachmentExists(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("has_attachment", "exists", "")}),
 	})
-	ok, err := Evaluate(&rule, &imap.Message{UID: 1, HasAttach: true}, nil)
+	ok, _, err := Evaluate(&rule, &imap.Message{UID: 1, HasAttach: true}, nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -350,7 +350,7 @@ func TestEvaluateHasAttachmentNotExists(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		makeGroup("AND", []db.Condition{makeCond("has_attachment", "not_exists", "")}),
 	})
-	ok, err := Evaluate(&rule, &imap.Message{UID: 1, HasAttach: false}, nil)
+	ok, _, err := Evaluate(&rule, &imap.Message{UID: 1, HasAttach: false}, nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -366,7 +366,7 @@ func TestEvaluateANDLogicAllTrue(t *testing.T) {
 			makeCond("subject", "contains", "hello"),
 		}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("hello world", "alice@example.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("hello world", "alice@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -382,7 +382,7 @@ func TestEvaluateANDLogicOneFalse(t *testing.T) {
 			makeCond("subject", "contains", "goodbye"),
 		}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("hello world", "alice@example.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("hello world", "alice@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -398,7 +398,7 @@ func TestEvaluateORLogicOneTrue(t *testing.T) {
 			makeCond("from", "equals", "bob@example.com"),
 		}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("test", "alice@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -414,7 +414,7 @@ func TestEvaluateORLogicAllFalse(t *testing.T) {
 			makeCond("from", "equals", "bob@example.com"),
 		}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("test", "carol@example.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("test", "carol@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -428,7 +428,7 @@ func TestEvaluateMultipleGroupsAND(t *testing.T) {
 		makeGroup("AND", []db.Condition{makeCond("from", "equals", "alice@example.com")}),
 		makeGroup("AND", []db.Condition{makeCond("subject", "contains", "hello")}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("hello world", "alice@example.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("hello world", "alice@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -442,7 +442,7 @@ func TestEvaluateMultipleGroupsOneFails(t *testing.T) {
 		makeGroup("AND", []db.Condition{makeCond("from", "equals", "alice@example.com")}),
 		makeGroup("AND", []db.Condition{makeCond("subject", "contains", "goodbye")}),
 	})
-	ok, err := Evaluate(&rule, makeMsg("hello world", "alice@example.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("hello world", "alice@example.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -512,7 +512,7 @@ func TestAddrsToStringMultipleAddresses(t *testing.T) {
 		{Name: "Alice", Email: "alice@example.com"},
 		{Email: "bob@example.com"},
 	}
-	v := addrsToString(addrs)
+	v := AddrsToString(addrs)
 	expected := "alice@example.com, bob@example.com"
 	if v != expected {
 		t.Errorf("got %q, want %q", v, expected)
@@ -520,7 +520,7 @@ func TestAddrsToStringMultipleAddresses(t *testing.T) {
 }
 
 func TestAddrsToStringEmpty(t *testing.T) {
-	v := addrsToString([]imap.Address{})
+	v := AddrsToString([]imap.Address{})
 	if v != "" {
 		t.Errorf("expected empty string, got %q", v)
 	}
@@ -537,7 +537,7 @@ func TestEvaluateEmptyConditionsInGroupAND(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		{Operator: "AND"},
 	})
-	ok, err := Evaluate(&rule, makeMsg("test", "a@b.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("test", "a@b.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -550,7 +550,7 @@ func TestEvaluateEmptyConditionsInGroupOR(t *testing.T) {
 	rule := makeRule("test", true, 0, []db.ConditionGroup{
 		{Operator: "OR"},
 	})
-	ok, err := Evaluate(&rule, makeMsg("test", "a@b.com"), nil)
+	ok, _, err := Evaluate(&rule, makeMsg("test", "a@b.com"), nil)
 	if err != nil {
 		t.Fatalf("Evaluate: %v", err)
 	}
@@ -588,7 +588,7 @@ func TestDateOperators(t *testing.T) {
 					}},
 				}},
 			}
-			ok, err := Evaluate(rule, msg, nil)
+			ok, _, err := Evaluate(rule, msg, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -596,5 +596,50 @@ func TestDateOperators(t *testing.T) {
 				t.Errorf("got %v, want %v", ok, tt.want)
 			}
 		})
+	}
+}
+
+func TestEvaluateRegexCaptures(t *testing.T) {
+	rule := &db.Rule{
+		Enabled: true,
+		Groups: []db.ConditionGroup{
+			makeGroup("AND", []db.Condition{makeCond("from", "matches_regex", `(?P<domain>@\w+\.\w+)`)}),
+		},
+	}
+	rule.Groups[0].Conditions[0].CompiledRegex = regexp.MustCompile(`(?P<domain>@\w+\.\w+)`)
+	msg := &imap.Message{From: []imap.Address{{Email: "user@example.com"}}}
+	ok, captures, err := Evaluate(rule, msg, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("should match")
+	}
+	if captures["capture:domain"] != "@example.com" {
+		t.Errorf("expected @example.com, got %q", captures["capture:domain"])
+	}
+	if captures["capture:0"] != "@example.com" {
+		t.Errorf("expected full match @example.com, got %q", captures["capture:0"])
+	}
+}
+
+func TestEvaluateRegexCapturesMultipleGroups(t *testing.T) {
+	rule := &db.Rule{
+		Enabled: true,
+		Groups: []db.ConditionGroup{
+			makeGroup("AND", []db.Condition{makeCond("subject", "matches_regex", `Order #(?P<order>\d+)`)}),
+		},
+	}
+	rule.Groups[0].Conditions[0].CompiledRegex = regexp.MustCompile(`Order #(?P<order>\d+)`)
+	msg := makeMsg("Order #12345 confirmed", "a@b.com")
+	ok, captures, err := Evaluate(rule, msg, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("should match")
+	}
+	if captures["capture:order"] != "12345" {
+		t.Errorf("expected 12345, got %q", captures["capture:order"])
 	}
 }

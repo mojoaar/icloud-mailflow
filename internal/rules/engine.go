@@ -35,23 +35,23 @@ func scanNeeds(g db.ConditionGroup) (needsBody bool, needsHeaders []string) {
 	return
 }
 
-func Match(rules []db.Rule, msg *imap.Message, client imap.Client, loc *time.Location) (*db.Rule, error) {
+func Match(rules []db.Rule, msg *imap.Message, client imap.Client, loc *time.Location) (*db.Rule, map[string]string, error) {
 	for i := range rules {
 		if !rules[i].Enabled {
 			continue
 		}
-		ok, err := Evaluate(&rules[i], msg, client)
+		ok, captures, err := Evaluate(&rules[i], msg, client)
 		if err != nil {
-			return nil, fmt.Errorf("rule %d (%s): %w", rules[i].ID, rules[i].Name, err)
+			return nil, nil, fmt.Errorf("rule %d (%s): %w", rules[i].ID, rules[i].Name, err)
 		}
 		if ok {
 			if !inSchedule(&rules[i], loc) {
 				continue
 			}
-			return &rules[i], nil
+			return &rules[i], captures, nil
 		}
 	}
-	return nil, nil
+	return nil, nil, nil
 }
 
 func inSchedule(rule *db.Rule, loc *time.Location) bool {
@@ -74,10 +74,11 @@ func inSchedule(rule *db.Rule, loc *time.Location) bool {
 	return true
 }
 
-func Evaluate(rule *db.Rule, msg *imap.Message, client imap.Client) (bool, error) {
+func Evaluate(rule *db.Rule, msg *imap.Message, client imap.Client) (bool, map[string]string, error) {
 	if len(rule.Groups) == 0 {
-		return true, nil
+		return true, nil, nil
 	}
+	captures := make(map[string]string)
 	extras := &msgExtras{headers: map[string]string{}}
 	for _, group := range rule.Groups {
 		needsBody, needsHeaders := scanNeeds(group)
@@ -104,20 +105,20 @@ func Evaluate(rule *db.Rule, msg *imap.Message, client imap.Client) (bool, error
 		}
 	}
 	for _, group := range rule.Groups {
-		ok, err := evalGroupWithExtras(group, msg, extras)
+		ok, err := evalGroupWithExtras(group, msg, extras, captures)
 		if err != nil {
-			return false, err
+			return false, nil, err
 		}
 		if !ok {
-			return false, nil
+			return false, nil, nil
 		}
 	}
-	return len(rule.Groups) > 0, nil
+	return len(rule.Groups) > 0, captures, nil
 }
 
-func evalGroupWithExtras(g db.ConditionGroup, msg *imap.Message, extras *msgExtras) (bool, error) {
+func evalGroupWithExtras(g db.ConditionGroup, msg *imap.Message, extras *msgExtras, captures map[string]string) (bool, error) {
 	for _, c := range g.Conditions {
-		ok, err := evalConditionWithExtras(c, msg, extras)
+		ok, err := evalConditionWithExtras(c, msg, extras, captures)
 		if err != nil {
 			return false, err
 		}
@@ -129,7 +130,7 @@ func evalGroupWithExtras(g db.ConditionGroup, msg *imap.Message, extras *msgExtr
 		}
 	}
 	for _, sub := range g.Groups {
-		ok, err := evalGroupWithExtras(sub, msg, extras)
+		ok, err := evalGroupWithExtras(sub, msg, extras, captures)
 		if err != nil {
 			return false, err
 		}
@@ -146,7 +147,7 @@ func evalGroupWithExtras(g db.ConditionGroup, msg *imap.Message, extras *msgExtr
 	return false, nil
 }
 
-func evalConditionWithExtras(c db.Condition, msg *imap.Message, extras *msgExtras) (bool, error) {
+func evalConditionWithExtras(c db.Condition, msg *imap.Message, extras *msgExtras, captures map[string]string) (bool, error) {
 	if c.Field == "has_attachment" {
 		if c.Operator == "exists" {
 			return msg.HasAttach, nil
@@ -216,7 +217,21 @@ func evalConditionWithExtras(c db.Condition, msg *imap.Message, extras *msgExtra
 	case "ends_with":
 		ok = strings.HasSuffix(strings.ToLower(val), strings.ToLower(c.Value))
 	case "matches_regex":
-		ok = c.CompiledRegex != nil && c.CompiledRegex.MatchString(val)
+		if c.CompiledRegex == nil {
+			return false, nil
+		}
+		matches := c.CompiledRegex.FindStringSubmatch(val)
+		if matches == nil {
+			return false, nil
+		}
+		for i, name := range c.CompiledRegex.SubexpNames() {
+			if i == 0 {
+				captures["capture:0"] = matches[0]
+			} else if name != "" && i < len(matches) {
+				captures["capture:"+name] = matches[i]
+			}
+		}
+		ok = true
 	}
 	slog.Debug("condition evaluated", "field", c.Field, "op", c.Operator, "expected", c.Value, "actual", val, "match", ok)
 	return ok, nil
@@ -243,11 +258,11 @@ func getFieldValueWithExtras(field string, msg *imap.Message, extras *msgExtras)
 	}
 	switch field {
 	case "from":
-		return addrsToString(msg.From)
+		return AddrsToString(msg.From)
 	case "to":
-		return addrsToString(msg.To)
+		return AddrsToString(msg.To)
 	case "cc":
-		return addrsToString(msg.Cc)
+		return AddrsToString(msg.Cc)
 	case "subject":
 		return decodeMIME(msg.Subject)
 	case "content_type":
@@ -261,7 +276,7 @@ func getFieldValueWithExtras(field string, msg *imap.Message, extras *msgExtras)
 	return ""
 }
 
-func addrsToString(addrs []imap.Address) string {
+func AddrsToString(addrs []imap.Address) string {
 	if len(addrs) == 0 {
 		return ""
 	}
