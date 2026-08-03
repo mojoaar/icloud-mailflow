@@ -160,6 +160,8 @@ pre {
         <a href="#api-contacts">Contacts &amp; Folders</a>
         <a href="#api-activity">Activity</a>
         <a href="#api-health">Health</a>
+        <a href="#api-metrics">Metrics</a>
+        <a href="#api-apply">Bulk Apply</a>
         <a href="#api-mcp">MCP Server</a>
     </nav>
 </aside>
@@ -251,7 +253,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>mark_as_read</code></td><td>Set \Seen on message</td><td>None</td></tr>
     <tr><td><code>mark_as_unread</code></td><td>Remove \Seen</td><td>None</td></tr>
     <tr><td><code>set_flag</code></td><td>Set IMAP flag</td><td>e.g. <code>\Flagged</code>, <code>$Junk</code></td></tr>
-    <tr><td><code>auto_reply</code></td><td>Send templated reply to sender</td><td>Reply body (<code>[subject]</code>, <code>[from]</code>, <code>[date]</code>)</td></tr>
+    <tr><td><code>auto_reply</code></td><td>Send templated reply to sender</td><td>Reply body (<code>[subject]</code>, <code>[from]</code>, <code>[date]</code>, <code>[to]</code>, <code>[cc]</code>, <code>[rule_name]</code>, <code>[capture:name]</code>)</td></tr>
     <tr><td><code>remove_flag</code></td><td>Remove IMAP flag</td><td>e.g. <code>\Flagged</code></td></tr>
     <tr><td><code>forward</code></td><td>Forward message via SMTP</td><td>Recipient email</td></tr>
     <tr><td><code>webhook</code></td><td>POST JSON payload to URL</td><td>Webhook URL</td></tr>
@@ -620,6 +622,54 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
   "uptime_seconds": 3600,
   "version": "0.8.0"
 }</code></pre>
+</div>
+
+<h3 class="api-group" id="api-metrics">Metrics</h3>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-get">GET</span> GET /metrics</h4>
+    <p class="desc">Prometheus metrics endpoint (public). Returns counters, gauges, and histograms for system monitoring.</p>
+    <table>
+        <tr><th>Metric</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>mailflow_messages_processed_total</code></td><td>Counter</td><td>Total messages processed</td></tr>
+        <tr><td><code>mailflow_rules_matched_total</code></td><td>Counter</td><td>Rule matches (label: rule)</td></tr>
+        <tr><td><code>mailflow_actions_total</code></td><td>Counter</td><td>Actions executed (labels: type, status)</td></tr>
+        <tr><td><code>mailflow_errors_total</code></td><td>Counter</td><td>Processing errors</td></tr>
+        <tr><td><code>mailflow_poller_ticks_total</code></td><td>Counter</td><td>Poller tick count</td></tr>
+        <tr><td><code>mailflow_poller_tick_duration_seconds</code></td><td>Histogram</td><td>Tick duration distribution</td></tr>
+        <tr><td><code>mailflow_cpu_percent</code></td><td>Gauge</td><td>Current CPU %</td></tr>
+        <tr><td><code>mailflow_memory_bytes</code></td><td>Gauge</td><td>Current memory usage</td></tr>
+        <tr><td><code>mailflow_uptime_seconds</code></td><td>Gauge</td><td>Process uptime</td></tr>
+    </table>
+    <pre><code class="language-bash">curl http://{{.Host}}/metrics</code></pre>
+</div>
+
+<h3 class="api-group" id="api-apply">Bulk Apply</h3>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /rules/apply</h4>
+    <p class="desc">Apply all enabled rules to messages in an IMAP folder. Runs asynchronously with HTMX-based progress polling at <code>GET /rules/apply/status?id=...</code>.</p>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td>folder</td><td>string</td><td>Yes</td><td>IMAP folder name</td></tr>
+        <tr><td>limit</td><td>number</td><td>No</td><td>Max messages (default 50, max 200)</td></tr>
+    </table>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/apply \
+  -b cookies.txt \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "folder=INBOX&limit=50"</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /rules/{id}/test</h4>
+    <p class="desc">Test a rule against synthetic inputs (from, to, cc, subject). Returns match result with per-condition pass/fail breakdown showing expected vs actual values.</p>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td>from</td><td>string</td><td>No</td><td>Sender email</td></tr>
+        <tr><td>to</td><td>string</td><td>No</td><td>Recipient email</td></tr>
+        <tr><td>cc</td><td>string</td><td>No</td><td>CC email</td></tr>
+        <tr><td>subject</td><td>string</td><td>No</td><td>Email subject</td></tr>
+    </table>
 </div>
 
 <div class="endpoint">

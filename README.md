@@ -11,8 +11,14 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 
 ## Features
 
-- **IMAP Rules Engine** — match messages by from/to/cc/subject/body/headers/attachment/content_type with AND/OR logic and 13 operators, execute actions (move, mark read/unread, set/remove flags, auto_reply, forward, delete)
+- **IMAP Rules Engine** — match messages by from/to/cc/subject/body/headers/attachment/content_type with AND/OR logic and 13 operators, execute actions (move, mark read/unread, set/remove flags, auto_reply, forward, delete, webhook)
 - **Auto-Reply Throttling** — each sender receives at most one `auto_reply` per day, with self-address skipping to prevent mail loops
+- **Rule Scheduling** — optional time-of-day and day-of-week filter per rule
+- **Regex Capture** — named groups from `matches_regex` conditions become `[capture:name]` template variables
+- **Auto-Reply Templating** — `[subject]`, `[from]`, `[date]`, `[to]`, `[cc]`, `[rule_name]`, and `[capture:name]` variables
+- **Webhook Action** — POST JSON notification to any URL on rule match with optional secret header
+- **Bulk Apply** — retroactively apply rules to existing mail in any folder via web UI or MCP
+- **Prometheus Metrics** — `/metrics` endpoint with counters, gauges, and histogram for monitoring
 - **Drag & Drop Rule Reorder** — reorder rules via drag-and-drop on the rules page
 - **Rule Dry-Run** — test rules against synthetic or real IMAP messages with per-condition pass/fail breakdown and actual vs expected values
 - **CardDAV Contacts Import** — import contacts from iCloud address book

@@ -45,7 +45,7 @@ docker compose up -d
 - `internal/poller/` - periodic email polling with move/forward/delete/auto_reply/remove_flag + IMAP health
 - `internal/smtp/` - SMTP MIME multipart email sender
 - `internal/crypto/` - AES encrypt/decrypt + bcrypt hashing
-- `internal/web/` - chi router, auth, handlers, embedded templates
+- `internal/web/` - chi router, auth, handlers, prometheus.go, embedded templates
 
 ## Documentation Updates (MANDATORY)
 When adding or changing features, you MUST also update these files:

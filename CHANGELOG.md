@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- CI test workflow — `go test` and `go vet` run on every push and PR to main
+- Prometheus `/metrics` endpoint with counters (messages, rules, actions, errors, ticks), gauges (CPU, memory, uptime), and histogram (tick duration)
+- Rule time/day scheduling — optional `schedule_days`, `schedule_start`, and `schedule_end` per rule, gated at match level
+- Richer auto-reply templating — `[to]`, `[cc]`, `[rule_name]` variables, plus `[capture:name]` for regex named capture groups
+- Web UI rule dry-run — test rules against synthetic or real messages with per-condition pass/fail breakdown
+- Webhook action type — POST JSON payload (rule, subject, from, to, date, uid) to a configurable URL on rule match
+- Bulk apply rules to existing folders — apply all enabled rules to messages in any IMAP folder via web UI or MCP
+
+### Fixed
+- CPU % chart showing 0.0% for idle containers due to `int()` truncation of small deltas
+
 ## [0.8.0] - 2026-08-02
 
 ### Added
