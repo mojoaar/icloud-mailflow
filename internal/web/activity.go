@@ -40,8 +40,8 @@ func activityHandler(repo *db.LogRepo, rulesRepo *db.RulesRepo, settingsRepo *db
 			loc, err := time.LoadLocation(tz)
 			if err == nil {
 				for i := range entries {
-				t, _ := time.Parse("2006-01-02 15:04:05", entries[i].CreatedAt)
-				entries[i].CreatedAt = t.In(loc).Format("2006-01-02T15:04:05")
+					t, _ := time.Parse("2006-01-02 15:04:05", entries[i].CreatedAt)
+					entries[i].CreatedAt = t.In(loc).Format("2006-01-02T15:04:05")
 				}
 			}
 		}

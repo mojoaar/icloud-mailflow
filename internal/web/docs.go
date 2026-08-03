@@ -13,7 +13,7 @@ func docsStandaloneHandler(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 			monoFont = true
 		}
 		tmpl.ExecuteTemplate(w, "docs", map[string]any{
-			"Host":    r.Host,
+			"Host":     r.Host,
 			"MonoFont": monoFont,
 			"Version":  appVersion,
 		})

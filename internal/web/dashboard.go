@@ -57,19 +57,19 @@ func dashboardHandler(imapClient imap.Client, p *poller.Poller, rulesRepo *db.Ru
 		}
 
 		data := map[string]any{
-			"Rules":        rules,
-			"Folders":      folders,
-			"Contacts":     contactsCount,
-			"Status":       status,
-			"Configured":   passwordSet != "" && imapEmail != "",
-			"SourceFolder": sourceFolder,
-			"PollInterval": pollInterval,
-			"IMAPEmail":    imapEmail,
-			"PollingActive": pollingActive,
-			"NextPoll":     nextPoll,
-		"Processed":       totalProcessed,
-		"PollingHealthy":  true,
-	}
+			"Rules":          rules,
+			"Folders":        folders,
+			"Contacts":       contactsCount,
+			"Status":         status,
+			"Configured":     passwordSet != "" && imapEmail != "",
+			"SourceFolder":   sourceFolder,
+			"PollInterval":   pollInterval,
+			"IMAPEmail":      imapEmail,
+			"PollingActive":  pollingActive,
+			"NextPoll":       nextPoll,
+			"Processed":      totalProcessed,
+			"PollingHealthy": true,
+		}
 		renderPage(w, r, "Dashboard", "dashboard", data)
 	}
 }

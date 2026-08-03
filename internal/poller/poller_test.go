@@ -937,8 +937,8 @@ func TestExecuteActionsWebhook(t *testing.T) {
 func TestApplyToFolder(t *testing.T) {
 	rulesRepo, contactsRepo := openPollerTestDB(t)
 	rule := &db.Rule{
-		Name:    "test",
-		Enabled: true,
+		Name:     "test",
+		Enabled:  true,
 		Priority: 1,
 	}
 	rule.Groups = []db.ConditionGroup{{

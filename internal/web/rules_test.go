@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
 	goimap "github.com/emersion/go-imap/v2"
+	"github.com/go-chi/chi/v5"
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
@@ -398,7 +398,7 @@ func TestRuleTestSynthetic(t *testing.T) {
 
 	rule := &db.Rule{Name: "test-rule", Enabled: true, Priority: 10}
 	rule.Groups = []db.ConditionGroup{{
-		Operator: "AND",
+		Operator:   "AND",
 		Conditions: []db.Condition{{Field: "from", Operator: "contains", Value: "@test.com"}},
 	}}
 	rulesRepo.Create(rule)
@@ -429,7 +429,7 @@ func TestRuleTestSyntheticNoMatch(t *testing.T) {
 
 	rule := &db.Rule{Name: "test-rule", Enabled: true, Priority: 10}
 	rule.Groups = []db.ConditionGroup{{
-		Operator: "AND",
+		Operator:   "AND",
 		Conditions: []db.Condition{{Field: "from", Operator: "equals", Value: "admin@test.com"}},
 	}}
 	rulesRepo.Create(rule)
@@ -457,7 +457,7 @@ func TestRuleTestRealMessage(t *testing.T) {
 
 	rule := &db.Rule{Name: "real-test", Enabled: true, Priority: 10}
 	rule.Groups = []db.ConditionGroup{{
-		Operator: "AND",
+		Operator:   "AND",
 		Conditions: []db.Condition{{Field: "from", Operator: "contains", Value: "@test.com"}},
 	}}
 	rulesRepo.Create(rule)

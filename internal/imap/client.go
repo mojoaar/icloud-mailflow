@@ -25,15 +25,15 @@ type Folder struct {
 }
 
 type Message struct {
-	UID       uint32    `json:"uid"`
-	Subject   string    `json:"subject"`
-	From      []Address `json:"from"`
-	To        []Address `json:"to"`
-	Cc        []Address `json:"cc"`
+	UID          uint32    `json:"uid"`
+	Subject      string    `json:"subject"`
+	From         []Address `json:"from"`
+	To           []Address `json:"to"`
+	Cc           []Address `json:"cc"`
 	HasAttach    bool      `json:"has_attachment"`
 	ContentTypes []string  `json:"content_types"`
 	Flags        []string  `json:"flags"`
-	Date      time.Time `json:"date"`
+	Date         time.Time `json:"date"`
 }
 
 type Client interface {

@@ -20,3 +20,4 @@ docs/superpowers/
 
 # macOS
 **/.DS_Store
+coverage.out
