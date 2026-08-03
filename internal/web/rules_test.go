@@ -519,6 +519,33 @@ func TestRuleTestRealMessageNoMessages(t *testing.T) {
 	}
 }
 
+func TestRulesApplyHandlerRequiresFolder(t *testing.T) {
+	database := openWebTestDB(t)
+	repo := db.NewRulesRepo(database)
+
+	h := rulesApplyHandler(repo, nil)
+	form := url.Values{}
+	req := httptest.NewRequest("POST", "/rules/apply", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want 400", rec.Code)
+	}
+}
+
+func TestRulesApplyStatusHandlerNotFound(t *testing.T) {
+	h := rulesApplyStatusHandler()
+	req := httptest.NewRequest("GET", "/rules/apply/status?id=nonexistent", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want 404", rec.Code)
+	}
+}
+
 func TestRuleTestNotFound(t *testing.T) {
 	database := openWebTestDB(t)
 	rulesRepo := db.NewRulesRepo(database)

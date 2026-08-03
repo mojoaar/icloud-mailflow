@@ -1,14 +1,18 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
+	"github.com/mojoaar/icloud-mailflow/internal/poller"
 	"github.com/mojoaar/icloud-mailflow/internal/rules"
 )
 
@@ -272,6 +276,69 @@ func rulesTestHandler(repo *db.RulesRepo, imapClient imap.Client) http.HandlerFu
 			"Results":  results,
 			"Rule":     rule,
 		})
+	}
+}
+
+var applyJobs sync.Map
+
+func rulesApplyHandler(repo *db.RulesRepo, p *poller.Poller) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		folder := r.FormValue("folder")
+		if folder == "" {
+			http.Error(w, "folder is required", http.StatusBadRequest)
+			return
+		}
+		limitStr := r.FormValue("limit")
+		limit, _ := strconv.Atoi(limitStr)
+		if limit <= 0 {
+			limit = 50
+		}
+		jobID := fmt.Sprintf("%d", time.Now().UnixNano())
+		status := &poller.ApplyStatus{Running: true, Folder: folder}
+		applyJobs.Store(jobID, status)
+		go func() {
+			result, err := p.ApplyToFolder(folder, limit)
+			if err != nil {
+				status.Error = err.Error()
+			} else {
+				status.Result = *result
+			}
+			status.Running = false
+			applyJobs.Store(jobID, status)
+		}()
+		w.Header().Set("Content-Type", "text/html")
+		fmt.Fprintf(w, `<div hx-get="/rules/apply/status?id=%s" hx-trigger="every 2s" hx-swap="outerHTML">
+			<p>Applying rules to <strong>%s</strong>... <span class="spinner"></span></p>
+		</div>`, jobID, folder)
+	}
+}
+
+func rulesApplyStatusHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		jobID := r.URL.Query().Get("id")
+		val, ok := applyJobs.Load(jobID)
+		if !ok {
+			http.Error(w, "job not found", http.StatusNotFound)
+			return
+		}
+		status := val.(*poller.ApplyStatus)
+		if status.Running {
+			w.Header().Set("Content-Type", "text/html")
+			fmt.Fprintf(w, `<div hx-get="/rules/apply/status?id=%s" hx-trigger="every 2s" hx-swap="outerHTML">
+				<p>Processing... (%d matched so far)</p>
+				<span class="spinner"></span>
+			</div>`, jobID, status.Result.Matched)
+			return
+		}
+		if status.Error != "" {
+			w.Header().Set("Content-Type", "text/html")
+			fmt.Fprintf(w, `<div class="toast error">Error: %s</div>`, status.Error)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		fmt.Fprintf(w, `<div class="toast success">
+			Done: %d processed, %d matched, %d actions, %d errors
+		</div>`, status.Result.Processed, status.Result.Matched, status.Result.Actions, status.Result.Errors)
 	}
 }
 

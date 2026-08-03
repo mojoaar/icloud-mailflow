@@ -13,6 +13,12 @@
     </div>
     <div id="rule-search-count" class="muted" style="font-size:0.8rem;margin-top:4px" aria-live="polite"></div>
 </div>
+<form hx-post="/rules/apply" hx-target="#apply-result" hx-swap="innerHTML" style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+    <input name="folder" placeholder="Folder name" list="folder-list" required>
+    <input name="limit" type="number" value="50" min="1" max="200" style="width:80px" title="Max messages">
+    <button type="submit" class="btn">Apply Rules to Folder</button>
+</form>
+<div id="apply-result"></div>
 <div class="card mt-2">
     <div id="reorder-spinner" class="htmx-indicator" style="text-align:center;padding:8px;color:var(--muted)"><span class="spinner"></span> Reordering...</div>
     <table style="table-layout:auto">

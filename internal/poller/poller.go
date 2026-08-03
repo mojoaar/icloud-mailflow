@@ -217,6 +217,63 @@ func (p *Poller) process() error {
 	return nil
 }
 
+type ApplyResult struct {
+	Processed int       `json:"processed"`
+	Matched   int       `json:"matched"`
+	Errors    int       `json:"errors"`
+	Actions   int       `json:"actions"`
+	StartedAt time.Time `json:"started_at"`
+}
+
+type ApplyStatus struct {
+	Running bool        `json:"running"`
+	Result  ApplyResult `json:"result"`
+	Error   string      `json:"error,omitempty"`
+	Folder  string      `json:"folder"`
+}
+
+func (p *Poller) ApplyToFolder(folder string, limit int) (*ApplyResult, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	ruleList, err := p.rulesRepo.List()
+	if err != nil {
+		return nil, fmt.Errorf("list rules: %w", err)
+	}
+	result := &ApplyResult{StartedAt: time.Now()}
+	var minUID uint32
+	for result.Processed < limit {
+		uids, err := p.imapClient.SearchMessages(folder, 1, minUID)
+		if err != nil {
+			return result, fmt.Errorf("search: %w", err)
+		}
+		if len(uids) == 0 {
+			break
+		}
+		uid := uint32(uids[0])
+		msg, err := p.imapClient.FetchMessage(uid)
+		if err != nil {
+			result.Errors++
+			minUID = uid + 1
+			continue
+		}
+		matched, captures, err := rules.Match(ruleList, msg, p.imapClient, p.timeLocation())
+		if err != nil {
+			result.Errors++
+			minUID = uid + 1
+			continue
+		}
+		result.Processed++
+		if matched != nil {
+			result.Matched++
+			p.executeActions(matched, uid, msg, captures)
+			result.Actions += len(matched.Actions)
+		}
+		minUID = uid + 1
+	}
+	return result, nil
+}
+
 func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, captures map[string]string) {
 	from := ""
 	if msg != nil && len(msg.From) > 0 {

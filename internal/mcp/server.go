@@ -470,6 +470,34 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		return resultJSON(p.Status())
 	})
 
+	s.AddTool(mcp.NewTool("apply_rules_to_folder",
+		mcp.WithDescription("Apply all enabled rules to messages in a folder"),
+		mcp.WithString("folder", mcp.Required(), mcp.Description("IMAP folder name")),
+		mcp.WithNumber("limit", mcp.Description("Max messages to process (default 50, max 200)")),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args := req.GetArguments()
+		folder, _ := args["folder"].(string)
+		if folder == "" {
+			return mcp.NewToolResultError("folder is required"), nil
+		}
+		limit := 50
+		if v, ok := args["limit"].(float64); ok && v > 0 {
+			l := int(v)
+			if l > 200 {
+				return mcp.NewToolResultError("limit must not exceed 200"), nil
+			}
+			limit = l
+		}
+		if p == nil {
+			return mcp.NewToolResultError("poller not available: IMAP not configured"), nil
+		}
+		result, err := p.ApplyToFolder(folder, limit)
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		return resultJSON(result)
+	})
+
 	s.AddTool(mcp.NewTool("import_rules",
 		mcp.WithDescription("Import rules from JSON array"),
 		mcp.WithString("rules", mcp.Required(), mcp.Description("JSON array of rule objects in the same format as backup_rules output")),

@@ -934,6 +934,108 @@ func TestExecuteActionsWebhook(t *testing.T) {
 	}
 }
 
+func TestApplyToFolder(t *testing.T) {
+	rulesRepo, contactsRepo := openPollerTestDB(t)
+	rule := &db.Rule{
+		Name:    "test",
+		Enabled: true,
+		Priority: 1,
+	}
+	rule.Groups = []db.ConditionGroup{{
+		Operator: "AND",
+		Conditions: []db.Condition{
+			{Field: "from", Operator: "contains", Value: "example"},
+		},
+	}}
+	rule.Actions = []db.Action{{Type: "mark_as_read", Value: ""}}
+	if err := rulesRepo.Create(rule); err != nil {
+		t.Fatalf("Create rule: %v", err)
+	}
+
+	mock := &trackedMock{
+		searchUIDs: []goimap.UID{1},
+		messages: map[uint32]*imap.Message{
+			1: {UID: 1, Subject: "test", From: []imap.Address{{Email: "a@example.com"}}},
+		},
+	}
+	collector := contacts.NewCollector(contactsRepo, mock)
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, nil, nil, 50, 60, "INBOX", "", nil)
+
+	result, err := p.ApplyToFolder("INBOX", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Processed != 1 {
+		t.Errorf("expected 1 processed, got %d", result.Processed)
+	}
+	if result.Matched != 1 {
+		t.Errorf("expected 1 matched, got %d", result.Matched)
+	}
+	if result.Actions != 1 {
+		t.Errorf("expected 1 action, got %d", result.Actions)
+	}
+}
+
+func TestApplyToFolderLimit(t *testing.T) {
+	rulesRepo, contactsRepo := openPollerTestDB(t)
+
+	uids := make([]goimap.UID, 5)
+	for i := range 5 {
+		uids[i] = goimap.UID(i + 1)
+	}
+
+	mock := &trackedMock{
+		searchUIDs: uids,
+		messages: map[uint32]*imap.Message{
+			1: {UID: 1, Subject: "test 1"},
+			2: {UID: 2, Subject: "test 2"},
+			3: {UID: 3, Subject: "test 3"},
+			4: {UID: 4, Subject: "test 4"},
+			5: {UID: 5, Subject: "test 5"},
+		},
+	}
+	collector := contacts.NewCollector(contactsRepo, mock)
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, nil, nil, 50, 60, "INBOX", "", nil)
+
+	result, err := p.ApplyToFolder("INBOX", 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Processed != 3 {
+		t.Errorf("expected 3 processed, got %d", result.Processed)
+	}
+}
+
+func TestApplyToFolderEmpty(t *testing.T) {
+	rulesRepo, contactsRepo := openPollerTestDB(t)
+	mock := &trackedMock{}
+	collector := contacts.NewCollector(contactsRepo, mock)
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, nil, nil, 50, 60, "INBOX", "", nil)
+
+	result, err := p.ApplyToFolder("INBOX", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Processed != 0 {
+		t.Errorf("expected 0 processed, got %d", result.Processed)
+	}
+}
+
+func TestApplyToFolderDefaultLimit(t *testing.T) {
+	rulesRepo, contactsRepo := openPollerTestDB(t)
+	mock := &trackedMock{}
+	collector := contacts.NewCollector(contactsRepo, mock)
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, nil, nil, 50, 60, "INBOX", "", nil)
+
+	result, err := p.ApplyToFolder("INBOX", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Processed != 0 {
+		t.Errorf("expected 0 processed, got %d", result.Processed)
+	}
+}
+
 func TestExecuteActionsWebhookEmptyURL(t *testing.T) {
 	database := db.NewTestDB(t)
 	var called bool

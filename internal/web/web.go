@@ -106,6 +106,8 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/rules/reorder", rulesReorderHandler(rulesRepo))
 	r.Post("/rules/reorder/move", rulesReorderMoveHandler(rulesRepo))
 
+	r.Post("/rules/apply", rulesApplyHandler(rulesRepo, p))
+	r.Get("/rules/apply/status", rulesApplyStatusHandler())
 	r.Post("/rules/{id}/test", rulesTestHandler(rulesRepo, imapClient))
 	r.Post("/rules/{id}/test-message", rulesTestMessageHandler(rulesRepo, imapClient))
 
