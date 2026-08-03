@@ -136,31 +136,31 @@
     </datalist>
     <button type="button" class="btn mt-1" onclick="addAction()">+ Add Action</button>
 
-    {{if .Rule.ID}}
-    <div class="card" id="rule-test" style="margin-top:24px">
-        <h3>Test Rule</h3>
-        <form hx-post="/rules/{{.Rule.ID}}/test" hx-target="#test-result" hx-swap="innerHTML">
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <input name="from" placeholder="From email" style="flex:1;min-width:200px">
-                <input name="to" placeholder="To email" style="flex:1;min-width:200px">
-                <input name="cc" placeholder="CC email" style="flex:1;min-width:200px">
-                <input name="subject" placeholder="Subject" style="flex:1;min-width:200px">
-            </div>
-            <button type="submit" class="btn mt-1">Test (Synthetic)</button>
-        </form>
-        <form hx-post="/rules/{{.Rule.ID}}/test-message" hx-target="#test-result" hx-swap="innerHTML" style="margin-top:8px">
-            <input name="folder" placeholder="Folder name" list="folder-list" style="width:200px">
-            <button type="submit" class="btn">Test (Real Message)</button>
-        </form>
-        <div id="test-result"></div>
-    </div>
-    {{end}}
-
     <div style="margin-top:24px;display:flex;gap:8px">
         <button type="submit" class="btn btn-primary">Save Rule</button>
         <a href="/rules" class="btn">Cancel</a>
     </div>
 </form>
+
+{{if .Rule.ID}}
+<div class="card" id="rule-test" style="margin-top:24px">
+    <h3>Test Rule</h3>
+    <form hx-post="/rules/{{.Rule.ID}}/test" hx-target="#test-result" hx-swap="innerHTML">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input name="from" placeholder="From email" style="flex:1;min-width:200px">
+            <input name="to" placeholder="To email" style="flex:1;min-width:200px">
+            <input name="cc" placeholder="CC email" style="flex:1;min-width:200px">
+            <input name="subject" placeholder="Subject" style="flex:1;min-width:200px">
+        </div>
+        <button type="submit" class="btn mt-1">Test (Synthetic)</button>
+    </form>
+    <form hx-post="/rules/{{.Rule.ID}}/test-message" hx-target="#test-result" hx-swap="innerHTML" style="margin-top:8px">
+        <input name="folder" placeholder="Folder name" list="folder-list" style="width:200px">
+        <button type="submit" class="btn">Test (Real Message)</button>
+    </form>
+    <div id="test-result"></div>
+</div>
+{{end}}
 
 <script>
 function addCondition() {

@@ -9,10 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Handler test coverage for settings toggles, poller tick, dashboard status, docs, and stats pages — web package coverage up to 56%
+- Bulk apply form on `/rules` is now a collapsible toggle with folder dropdown instead of text input
 
 ### Changed
 - CI now includes `-race` detector, `go mod verify`, `gofmt` check, and Go module caching
 - Docker CI runs `go test` and `go vet` before building images to prevent shipping broken code
+
+### Fixed
+- Test Rule section nested inside rule edit form causing broken HTML and "Save" not working in some browsers
+- Schedule hint text indented incorrectly on rule edit page
 
 ## [0.9.0] - 2026-08-03
 

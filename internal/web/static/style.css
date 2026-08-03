@@ -153,6 +153,7 @@ input[type="file"] {
 pre { max-width:100%; overflow-x:auto; }
 
 .card h3 ~ p, .card h3 ~ ol, .card h3 ~ ul, .card h3 ~ pre { margin-left:24px; }
+.card .hint { margin-left:0; }
 
 .method-badge { display:inline-block; padding:1px 6px; border-radius:3px; font-size:0.7rem; font-weight:700; margin-right:4px; vertical-align:middle; }
 .method-get { background:#033a16; color:var(--green); }

@@ -20,4 +20,5 @@ docs/superpowers/
 
 # macOS
 **/.DS_Store
+config.json
 coverage.out
