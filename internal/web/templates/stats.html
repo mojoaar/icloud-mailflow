@@ -150,7 +150,6 @@
 </div>
 
 <script>
-window.addEventListener('load', function() {
 (function(){
 var dataDaily   = {labels:[{{range .Daily}}"{{.Date}}",{{end}}],vals:[{{range .Daily}}{{.Count}},{{end}}]};
 var dataActions = {labels:[{{range .Actions}}"{{.Type}}",{{end}}],vals:[{{range .Actions}}{{.Count}},{{end}}]};
@@ -251,6 +250,5 @@ initChart('weekly', 'barv', dataWeekly.labels, dataWeekly.vals);
 initChart('metrics-mem', 'line', dataMem.labels, dataMem.vals, 'Memory (MB)');
 if (dataCPU.labels.length) { charts['metrics-cpu'] = makeChart('metrics-cpu-canvas', 'line', dataCPU.labels, dataCPU.vals, 'CPU %'); }
 })();
-});
 </script>
 {{end}}
