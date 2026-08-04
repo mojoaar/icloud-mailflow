@@ -52,7 +52,7 @@ func collect(repo *db.StatsRepo, prevUser, prevSys *int64) {
 		if *prevUser > 0 {
 			deltaUser := userNano - *prevUser
 			deltaSys := sysNano - *prevSys
-			cpuPct := int((float64(deltaUser+deltaSys) / 3600e9) * 1_000_000)
+			cpuPct := int((float64(deltaUser+deltaSys) / 3600e9 / float64(runtime.NumCPU())) * 1_000_000)
 			repo.SetStat("cpu", key, cpuPct)
 		}
 		*prevUser = userNano

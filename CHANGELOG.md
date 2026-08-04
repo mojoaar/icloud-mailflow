@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- CPU % chart resetting on every container restart due to a migration that re-ran `DELETE FROM stats WHERE category='cpu'` on each startup
+- CPU % exceeding 100% on multi-core systems — now normalized by dividing by `runtime.NumCPU()`
+
 ## [0.9.2] - 2026-08-03
 
 ### Fixed

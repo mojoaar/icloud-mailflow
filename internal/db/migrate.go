@@ -82,7 +82,6 @@ var migrations = []string{
 	`CREATE INDEX IF NOT EXISTS idx_condition_groups_rule_id ON condition_groups(rule_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_conditions_group_id ON conditions(group_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_actions_rule_id ON actions(rule_id)`,
-	`DELETE FROM stats WHERE category = 'cpu'`,
 }
 
 func Migrate(d *sql.DB) error {
@@ -98,6 +97,12 @@ func Migrate(d *sql.DB) error {
 		if err := d.QueryRow("SELECT COUNT(*) FROM pragma_table_info('rules') WHERE name=?", col).Scan(&count); err == nil && count == 0 {
 			d.Exec("ALTER TABLE rules ADD COLUMN " + col + " TEXT NOT NULL DEFAULT ''")
 		}
+	}
+	d.Exec(`INSERT OR IGNORE INTO stats (category, key, value) VALUES ('__cpu_flush_v2', 'done', 0)`)
+	var done int
+	if err := d.QueryRow("SELECT value FROM stats WHERE category='__cpu_flush_v2' AND key='done'").Scan(&done); err == nil && done == 0 {
+		d.Exec("DELETE FROM stats WHERE category='cpu'")
+		d.Exec("UPDATE stats SET value=1 WHERE category='__cpu_flush_v2' AND key='done'")
 	}
 	return backfillStats(d)
 }
