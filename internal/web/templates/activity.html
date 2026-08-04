@@ -2,7 +2,7 @@
 <div class="flex-between" style="margin-bottom:16px">
 <h1 style="margin:0">Activity Log</h1>
 <div class="flex-row">
-<button class="btn" hx-get="/activity" hx-target="#activity-content" hx-swap="outerHTML">
+<button class="btn" hx-get="/activity" hx-include="[name='q'],[name='rule'],[name='status'],[name='per_page']" hx-target="#activity-content" hx-swap="outerHTML">
     <i data-lucide="refresh-cw" data-size="14"></i> Refresh
 </button>
 {{if .Entries}}

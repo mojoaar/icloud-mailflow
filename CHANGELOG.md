@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `/stats` chart data disappearing after HTMX refresh due to `load` event listener never re-firing on body swap
+- `/activity` Refresh button not preserving current filter/search state — now includes query parameters
 
 ## [0.9.1] - 2026-08-03
 
