@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings page button consistency: Refresh folders inherits standard button sizing, webhook Save/Generate use flex layout, icons added to Generate/Copy/Regenerate/Import/Wipe buttons
 
 ### Fixed
+- Runtime Metrics CPU and memory charts showing empty after v0.9.3 migration — fixed chart initialization path and added "No data yet" fallback
 - CPU % chart resetting on every container restart due to a migration that re-ran `DELETE FROM stats WHERE category='cpu'` on each startup
 - CPU % exceeding 100% on multi-core systems — now normalized by dividing by `runtime.NumCPU()`
 

@@ -45,6 +45,7 @@
         </div>
         {{end}}
     </nav>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
     <main id="main-content">{{.Content}}</main>
     <footer>
         Crafted with ❤️ by <a href="https://johansen.foo" target="_blank">Morten Johansen</a> ·
@@ -56,7 +57,6 @@
     </footer>
     <script src="https://unpkg.com/htmx.org@2.0.10/dist/htmx.min.js"></script>
     <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
     <script src="/static/highlight.min.js"></script>
     <script>lucide.createIcons();document.body.addEventListener('htmx:afterSettle',()=>{lucide.createIcons();hljs.highlightAll()});hljs.highlightAll();
 document.body.addEventListener('htmx:responseError',function(e){var t=document.createElement('div');t.className='toast toast-error';t.textContent=e.detail.xhr.status?'Error '+(e.detail.xhr.status):'Request failed';t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});

@@ -136,13 +136,13 @@
 <div style="flex:1;min-width:260px">
     <h3 style="font-size:0.85rem;color:var(--muted);margin:0 0 8px 0">Memory (MB)</h3>
     <div id="metrics-mem-chart">
-        <canvas id="metrics-mem-canvas" style="max-height:280px"></canvas>
+        {{if .MetricsMem}}<canvas id="metrics-mem-canvas" style="max-height:280px"></canvas>{{else}}<p class="muted" style="text-align:center;padding:60px 0">No data yet</p>{{end}}
     </div>
 </div>
 <div style="flex:1;min-width:260px">
     <h3 style="font-size:0.85rem;color:var(--muted);margin:0 0 8px 0">CPU %</h3>
     <div id="metrics-cpu-chart">
-        <canvas id="metrics-cpu-canvas" style="max-height:280px"></canvas>
+        {{if .MetricsCPU}}<canvas id="metrics-cpu-canvas" style="max-height:280px"></canvas>{{else}}<p class="muted" style="text-align:center;padding:60px 0">No data yet</p>{{end}}
     </div>
 </div>
 </div>
@@ -247,8 +247,14 @@ initChart('daily', 'line', dataDaily.labels, dataDaily.vals);
 initChart('actions', 'doughnut', dataActions.labels, dataActions.vals);
 initChart('folders', 'bar', dataFolders.labels, dataFolders.vals);
 initChart('weekly', 'barv', dataWeekly.labels, dataWeekly.vals);
-initChart('metrics-mem', 'line', dataMem.labels, dataMem.vals, 'Memory (MB)');
-if (dataCPU.labels.length) { charts['metrics-cpu'] = makeChart('metrics-cpu-canvas', 'line', dataCPU.labels, dataCPU.vals, 'CPU %'); }
+if (dataMem.labels.length) {
+    charts['metrics-mem'] = makeChart('metrics-mem-canvas', 'line', dataMem.labels, dataMem.vals, 'Memory (MB)');
+    if (charts['metrics-mem']) charts['metrics-mem'].resize();
+}
+if (dataCPU.labels.length) {
+    charts['metrics-cpu'] = makeChart('metrics-cpu-canvas', 'line', dataCPU.labels, dataCPU.vals, 'CPU %');
+    if (charts['metrics-cpu']) charts['metrics-cpu'].resize();
+}
 })();
 </script>
 {{end}}
