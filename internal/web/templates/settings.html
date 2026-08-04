@@ -86,6 +86,7 @@
             <input type="text" name="webhook_secret" value="{{.WebhookSecret}}" placeholder="Optional X-Webhook-Secret header value" style="width:100%">
         </div>
         <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save</button>
+        <button type="button" class="btn" onclick="var a=new Uint8Array(32);crypto.getRandomValues(a);this.form.webhook_secret.value=Array.from(a,b=>b.toString(16).padStart(2,'0')).join('')">Generate</button>
     </form>
 </div>
 
