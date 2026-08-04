@@ -41,7 +41,7 @@
         <div class="form-group">
             <label class="flex-between">
                 <span>Source Folder (where rules run on new mail)</span>
-                <button type="button" class="btn" style="font-size:0.75rem;padding:2px 8px"
+                <button type="button" class="btn"
                     hx-get="/api/folders" hx-target="#source-folder-select" hx-swap="innerHTML">
                     Refresh folders
                 </button>
@@ -85,8 +85,10 @@
             <label>Webhook Secret</label>
             <input type="text" name="webhook_secret" value="{{.WebhookSecret}}" placeholder="Optional X-Webhook-Secret header value" style="width:100%">
         </div>
-        <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save</button>
-        <button type="button" class="btn" onclick="var a=new Uint8Array(32);crypto.getRandomValues(a);this.form.webhook_secret.value=Array.from(a,b=>b.toString(16).padStart(2,'0')).join('')">Generate</button>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+            <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save</button>
+            <button type="button" class="btn" onclick="var a=new Uint8Array(32);crypto.getRandomValues(a);this.form.webhook_secret.value=Array.from(a,b=>b.toString(16).padStart(2,'0')).join('')"><i data-lucide="key" data-size="14"></i> Generate</button>
+        </div>
     </form>
 </div>
 
@@ -110,7 +112,7 @@
     <div class="flex-row">
         <button class="btn btn-primary" hx-post="/settings/carddav-import"
             hx-target="#carddav-toast" hx-swap="innerHTML">
-            Import iCloud Contacts
+            <i data-lucide="users" data-size="14"></i> Import iCloud Contacts
         </button>
         <button type="button" class="btn {{if not .ContactsCollectionEnabled}}btn-primary{{else}}btn-danger{{end}}"
             hx-post="/settings/contacts/toggle" hx-target="#contacts-toggle-toast" hx-swap="innerHTML">
@@ -118,7 +120,7 @@
         </button>
         <button class="btn btn-danger" hx-post="/settings/contacts/wipe" hx-confirm="Delete all collected contacts? This cannot be undone."
             hx-target="#carddav-toast" hx-swap="innerHTML">
-            Wipe Contacts
+            <i data-lucide="trash-2" data-size="14"></i> Wipe Contacts
         </button>
     </div>
     <div id="contacts-toggle-toast" class="mt-1"></div>
@@ -176,9 +178,9 @@
         <label>API Key</label>
         <div style="display:flex;gap:8px;align-items:center">
             <code style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-size:0.8rem;word-break:break-all;flex:1">{{.MCPAPIKey}}</code>
-            <button type="button" class="btn" onclick="navigator.clipboard.writeText('{{.MCPAPIKey}}')" style="white-space:nowrap">Copy</button>
+            <button type="button" class="btn" onclick="navigator.clipboard.writeText('{{.MCPAPIKey}}')" style="white-space:nowrap"><i data-lucide="clipboard" data-size="14"></i> Copy</button>
             <form method="POST" action="/settings/mcp/regenerate" style="margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                <button type="submit" class="btn" style="white-space:nowrap">Regenerate</button>
+                <button type="submit" class="btn" style="white-space:nowrap"><i data-lucide="refresh-cw" data-size="14"></i> Regenerate</button>
             </form>
         </div>
     </div>
