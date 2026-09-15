@@ -57,6 +57,33 @@ var templateFuncs = template.FuncMap{
 	},
 }
 
+func formatUptime(d time.Duration) string {
+	d = d.Truncate(time.Second)
+	if d < 0 {
+		d = 0
+	}
+	days := d / (24 * time.Hour)
+	d -= days * 24 * time.Hour
+	hours := d / time.Hour
+	d -= hours * time.Hour
+	mins := d / time.Minute
+	d -= mins * time.Minute
+	secs := d / time.Second
+
+	var parts []string
+	if days > 0 {
+		parts = append(parts, fmt.Sprintf("%dd", days))
+	}
+	if days > 0 || hours > 0 {
+		parts = append(parts, fmt.Sprintf("%dh", hours))
+	}
+	if days > 0 || hours > 0 || mins > 0 {
+		parts = append(parts, fmt.Sprintf("%dm", mins))
+	}
+	parts = append(parts, fmt.Sprintf("%ds", secs))
+	return strings.Join(parts, " ")
+}
+
 func init() {
 	tmpl = template.Must(template.New("").Funcs(templateFuncs).ParseFS(templatesFS, "templates/*.html"))
 }

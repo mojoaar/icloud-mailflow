@@ -152,7 +152,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"MonoFont":                  monoFont != "false",
 			"LogKeep":                   logKeep,
 			"ServerTime":                time.Now().Format("2006-01-02T15:04:05"),
-			"Uptime":                    time.Since(startTime).Truncate(time.Second).String(),
+			"Uptime":                    formatUptime(time.Since(startTime)),
 			"Memory":                    getMemoryMB(),
 			"Goroutines":                runtime.NumGoroutine(),
 			"WebhookSecret":             webhookSecret,

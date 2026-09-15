@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-09-15
+
+### Changed
+- Stats page Weekly Volume now displays the latest 8 weeks instead of 24
+- Settings Uptime now includes days (e.g. `9d 6h 1m 36s`) instead of rolling all hours into a single value
+
 ## [0.9.3] - 2026-08-03
 
 ### Changed
@@ -527,6 +533,7 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
+[0.9.4]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.0...v0.9.1
