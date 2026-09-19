@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-19
+
 ### Added
 - Prometheus metrics are now instrumented — messages processed, rule matches, actions, errors, poller ticks, tick duration, and CPU/memory/uptime gauges
 
@@ -568,6 +570,7 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
+[0.10.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.6...v0.10.0
 [0.9.6]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.3...v0.9.4
