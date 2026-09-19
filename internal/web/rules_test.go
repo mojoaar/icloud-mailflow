@@ -17,6 +17,7 @@ import (
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
+	"github.com/mojoaar/icloud-mailflow/internal/poller"
 )
 
 func TestRulesListHandler(t *testing.T) {
@@ -543,6 +544,43 @@ func TestRulesApplyStatusHandlerNotFound(t *testing.T) {
 
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("status = %d, want 404", rec.Code)
+	}
+}
+
+func TestRulesApplyStatusHandlerErrorUsesToastError(t *testing.T) {
+	applyJobs.Store("err-job", &poller.ApplyStatus{Running: false, Error: "boom"})
+
+	h := rulesApplyStatusHandler()
+	req := httptest.NewRequest("GET", "/rules/apply/status?id=err-job", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "toast toast-error") {
+		t.Errorf("expected toast-error class, got %q", body)
+	}
+	if strings.Contains(body, "toast error") && !strings.Contains(body, "toast toast-error") {
+		t.Errorf("legacy 'toast error' class should not be used, got %q", body)
+	}
+}
+
+func TestRulesApplyStatusHandlerDoneUsesToastSuccess(t *testing.T) {
+	applyJobs.Store("done-job", &poller.ApplyStatus{
+		Running: false,
+		Result:  poller.ApplyResult{Processed: 10, Matched: 3, Actions: 4, Errors: 1},
+	})
+
+	h := rulesApplyStatusHandler()
+	req := httptest.NewRequest("GET", "/rules/apply/status?id=done-job", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "toast toast-success") {
+		t.Errorf("expected toast-success class, got %q", body)
+	}
+	if !strings.Contains(body, "10 processed") {
+		t.Errorf("expected processed count in body, got %q", body)
 	}
 }
 

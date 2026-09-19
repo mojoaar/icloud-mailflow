@@ -1,7 +1,7 @@
 {{define "rules_test_result"}}
 <div style="margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:6px">
     <strong>Result:</strong>
-    {{if .Matched}}<span style="color:var(--success);font-weight:bold">Matched</span>{{else}}<span style="color:var(--danger);font-weight:bold">No Match</span>{{end}}
+    {{if .Matched}}<span style="color:var(--green);font-weight:bold">Matched</span>{{else}}<span style="color:var(--red);font-weight:bold">No Match</span>{{end}}
     {{range .Results}}
         {{template "group_result_block" .}}
     {{end}}
@@ -10,7 +10,7 @@
 
 {{define "group_result_block"}}
 <div style="margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:4px">
-    <div style="font-weight:bold;margin-bottom:4px">{{.Operator}} {{if .Passed}}<span style="color:var(--success)">PASS</span>{{else}}<span style="color:var(--danger)">FAIL</span>{{end}}</div>
+    <div style="font-weight:bold;margin-bottom:4px">{{.Operator}} {{if .Passed}}<span style="color:var(--green)">PASS</span>{{else}}<span style="color:var(--red)">FAIL</span>{{end}}</div>
     {{if .Results}}
     <table style="width:100%;font-size:0.85rem">
         <thead><tr><th>Field</th><th>Operator</th><th>Expected</th><th>Actual</th><th></th></tr></thead>
@@ -21,7 +21,7 @@
             <td>{{.Operator}}</td>
             <td><code>{{.Expected}}</code></td>
             <td><code>{{.Actual}}</code></td>
-            <td>{{if .Passed}}<span style="color:var(--success)">pass</span>{{else}}<span style="color:var(--danger)">fail</span>{{end}}</td>
+            <td>{{if .Passed}}<span style="color:var(--green)">pass</span>{{else}}<span style="color:var(--red)">fail</span>{{end}}</td>
         </tr>
         {{end}}
         </tbody>

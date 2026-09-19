@@ -1,8 +1,10 @@
 package web
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -72,5 +74,23 @@ func TestGenerateToken(t *testing.T) {
 	}
 	if t1 == t2 {
 		t.Error("tokens should be unique")
+	}
+}
+
+func TestRulesTestResultColors(t *testing.T) {
+	var buf bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&buf, "rules_test_result", map[string]any{"Matched": true, "Results": nil}); err != nil {
+		t.Fatalf("execute matched: %v", err)
+	}
+	if !strings.Contains(buf.String(), "var(--green)") {
+		t.Error("matched result should use var(--green)")
+	}
+
+	buf.Reset()
+	if err := tmpl.ExecuteTemplate(&buf, "rules_test_result", map[string]any{"Matched": false, "Results": nil}); err != nil {
+		t.Fatalf("execute no-match: %v", err)
+	}
+	if !strings.Contains(buf.String(), "var(--red)") {
+		t.Error("no-match result should use var(--red)")
 	}
 }

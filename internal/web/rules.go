@@ -333,11 +333,11 @@ func rulesApplyStatusHandler() http.HandlerFunc {
 		}
 		if status.Error != "" {
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprintf(w, `<div class="toast error">Error: %s</div>`, status.Error)
+			fmt.Fprintf(w, `<div class="toast toast-error">Error: %s</div>`, status.Error)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprintf(w, `<div class="toast success">
+		fmt.Fprintf(w, `<div class="toast toast-success">
 			Done: %d processed, %d matched, %d actions, %d errors
 		</div>`, status.Result.Processed, status.Result.Matched, status.Result.Actions, status.Result.Errors)
 	}
