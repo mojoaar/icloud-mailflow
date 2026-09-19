@@ -7,9 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- Data race between the metrics collector and router initialization (`startTime`) caught by `-race` in CI — collector now starts after the router is built
-
 ## [0.10.0] - 2026-09-19
 
 ### Added
@@ -20,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Header wordmark rendered as a flat blue block in light mode — the `background` shorthand was resetting `background-clip: text`
+- Data race between the metrics collector and router initialization (`startTime`) caught by `-race` in CI — collector now starts after the router is built
 
 ## [0.9.6] - 2026-09-19
 
