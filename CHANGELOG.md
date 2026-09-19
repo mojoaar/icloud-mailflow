@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - New favicon: blue gradient tile with a white "M" monogram
 - Dashboard status now shows uptime
+- Header brand now shows the logo mark beside a gradient "iCloud Mailflow" wordmark with a soft glow
 
 ### Fixed
 - `/stats` Refresh now reloads the page instead of doing an htmx partial swap — fixes charts reverting to list mode after refresh

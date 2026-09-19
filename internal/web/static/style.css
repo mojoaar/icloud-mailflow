@@ -45,13 +45,35 @@ nav {
 }
 
 nav .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+}
+.brand-mark {
+    width: 26px;
+    height: 26px;
+    display: block;
+    flex: 0 0 auto;
+    filter: drop-shadow(0 0 10px rgba(88, 166, 255, 0.55));
+}
+.brand-text {
     background: linear-gradient(135deg, #1f6feb, var(--accent), #a5d8ff);
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-decoration: none;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    text-shadow: 0 0 14px rgba(88, 166, 255, 0.4);
+}
+[data-theme="light"] .brand-text {
+    background: linear-gradient(135deg, #1f6feb, var(--accent));
+    text-shadow: none;
+}
+[data-theme="light"] .brand-mark {
+    filter: none;
 }
 
 .nav-links { display: flex; gap: 16px; }
