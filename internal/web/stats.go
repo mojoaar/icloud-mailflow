@@ -49,6 +49,10 @@ func statsHandler(repo *db.StatsRepo) http.HandlerFunc {
 			"MetricsGoroutines": metricsGoroutines,
 			"MetricsCPU":        metricsCPU,
 		}
+		if r.Header.Get("HX-Request") == "true" {
+			renderPartial(w, "stats", data)
+			return
+		}
 		renderPage(w, r, "Stats", "stats", data)
 	}
 }

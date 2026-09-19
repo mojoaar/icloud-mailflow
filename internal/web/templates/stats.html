@@ -1,7 +1,8 @@
 {{define "stats"}}
+<div id="stats-content">
 <div class="flex-between" style="margin-bottom:16px">
 <h1 style="margin:0">Stats</h1>
-<button class="btn" hx-get="/stats" hx-target="body" hx-swap="outerHTML">
+<button class="btn" hx-get="/stats" hx-target="#stats-content" hx-swap="outerHTML">
     <i data-lucide="refresh-cw" data-size="14"></i> Refresh
 </button>
 </div>
@@ -257,4 +258,5 @@ if (dataCPU.labels.length) {
 }
 })();
 </script>
+</div>
 {{end}}
