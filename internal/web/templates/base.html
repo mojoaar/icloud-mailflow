@@ -39,8 +39,8 @@
             <a href="/rules"><i data-lucide="git-branch" class="nav-icon" aria-hidden="true"></i> Rules</a>
             <a href="/settings"><i data-lucide="settings" class="nav-icon" aria-hidden="true"></i> Settings</a>
             <form method="POST" action="/logout" style="display:inline;margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}"><button type="submit" class="nav-btn"><i data-lucide="log-out" class="nav-icon" aria-hidden="true"></i> Logout</button></form>
-            <a href="#" style="font-size:0.85rem;padding:0" onclick="var t=document.documentElement.getAttribute('data-theme')==='light'?'':'light';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);this.querySelector('i').setAttribute('data-lucide',t?'sun':'moon');lucide.createIcons();return false" aria-label="Toggle theme">
-                <i data-lucide="sun" class="nav-icon" aria-hidden="true"></i>
+            <a href="#" style="font-size:0.85rem;padding:0" onclick="toggleTheme(this);return false" aria-label="Toggle theme">
+                <span class="theme-icon" aria-hidden="true"><i data-lucide="sun" class="nav-icon"></i></span>
             </a>
         </div>
         {{end}}
@@ -58,7 +58,9 @@
     <script src="https://unpkg.com/htmx.org@2.0.10/dist/htmx.min.js"></script>
     <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
     <script src="/static/highlight.min.js"></script>
-    <script>lucide.createIcons();document.body.addEventListener('htmx:afterSettle',()=>{lucide.createIcons();hljs.highlightAll()});hljs.highlightAll();
+    <script>function toggleTheme(el){var light=document.documentElement.getAttribute('data-theme')==='light';var next=light?'':'light';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('theme',next);var icon=el.querySelector('.theme-icon');if(icon)icon.innerHTML='<i data-lucide="'+(next==='light'?'sun':'moon')+'" class="nav-icon"></i>';lucide.createIcons()}
+(function(){var light=document.documentElement.getAttribute('data-theme')==='light';var s=document.querySelector('.theme-icon');if(s)s.innerHTML='<i data-lucide="'+(light?'sun':'moon')+'" class="nav-icon"></i>'})();
+lucide.createIcons();document.body.addEventListener('htmx:afterSettle',()=>{lucide.createIcons();hljs.highlightAll()});hljs.highlightAll();
 document.body.addEventListener('htmx:responseError',function(e){var t=document.createElement('div');t.className='toast toast-error';t.textContent=e.detail.xhr.status?'Error '+(e.detail.xhr.status):'Request failed';t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
 document.body.addEventListener('htmx:sendError',function(){var t=document.createElement('div');t.className='toast toast-error';t.textContent='Network error';t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
 document.body.addEventListener('showToast',function(e){var t=document.createElement('div');t.className='toast toast-'+e.detail.type;t.textContent=e.detail.message;t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Buttons with Lucide icons rendered taller than text-only buttons (icons defaulted to 24px) — icon size now matches button font, most visible on `/settings`
 - Rule dry-run PASS/FAIL colors referenced undefined `--success`/`--danger` CSS variables — now use `--green`/`--red`
 - Bulk-apply result toasts used `toast error`/`toast success` classes — now `toast-error`/`toast-success`
+- Theme-toggle icon now reflects the active theme (was hardcoded to `sun` and never updated after Lucide replaced the `<i>` element)
 
 ## [0.9.4] - 2026-09-15
 
