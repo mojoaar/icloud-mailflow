@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - New favicon: blue gradient tile with a white "M" monogram
+- Dashboard status now shows uptime
 
 ### Fixed
 - `/stats` Refresh now reloads the page instead of doing an htmx partial swap — fixes charts reverting to list mode after refresh

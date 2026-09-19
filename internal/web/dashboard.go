@@ -69,6 +69,7 @@ func dashboardHandler(imapClient imap.Client, p *poller.Poller, rulesRepo *db.Ru
 			"NextPoll":       nextPoll,
 			"Processed":      totalProcessed,
 			"PollingHealthy": true,
+			"Uptime":         formatUptime(time.Since(startTime)),
 		}
 		renderPage(w, r, "Dashboard", "dashboard", data)
 	}
@@ -87,6 +88,7 @@ func dashboardStatusHandler(p *poller.Poller, settingsRepo *db.SettingsRepo, ima
 		data["PollInterval"] = interval
 		data["PollingActive"] = enabled != "false"
 		data["PollingHealthy"] = true
+		data["Uptime"] = formatUptime(time.Since(startTime))
 
 		if p != nil {
 			s := p.Status()
