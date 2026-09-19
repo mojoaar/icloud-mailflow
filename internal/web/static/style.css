@@ -58,7 +58,7 @@ nav .brand {
     height: 26px;
     display: block;
     flex: 0 0 auto;
-    filter: drop-shadow(0 0 10px rgba(88, 166, 255, 0.55));
+    filter: drop-shadow(0 0 5px rgba(88, 166, 255, 0.35));
 }
 .brand-text {
     background: linear-gradient(135deg, #1f6feb, var(--accent), #a5d8ff);
@@ -66,10 +66,10 @@ nav .brand {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    text-shadow: 0 0 14px rgba(88, 166, 255, 0.4);
+    text-shadow: 0 0 6px rgba(88, 166, 255, 0.25);
 }
 [data-theme="light"] .brand-text {
-    background: linear-gradient(135deg, #1f6feb, var(--accent));
+    background: linear-gradient(135deg, #58a6ff, #1f6feb);
     text-shadow: none;
 }
 [data-theme="light"] .brand-mark {
