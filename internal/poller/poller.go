@@ -16,6 +16,7 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/contacts"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
+	"github.com/mojoaar/icloud-mailflow/internal/metrics"
 	"github.com/mojoaar/icloud-mailflow/internal/rules"
 	"github.com/mojoaar/icloud-mailflow/internal/smtp"
 )
@@ -132,7 +133,11 @@ func (p *Poller) process() error {
 	defer p.processing.Store(false)
 
 	start := time.Now()
-	defer func() { p.lastTickDuration = time.Since(start) }()
+	metrics.PollerTicks.Inc()
+	defer func() {
+		p.lastTickDuration = time.Since(start)
+		metrics.PollerTickDuration.Observe(time.Since(start).Seconds())
+	}()
 
 	p.lastTick.Store(time.Now().UnixNano())
 	slog.Debug("poller tick start", "source", p.source)
@@ -174,6 +179,7 @@ func (p *Poller) process() error {
 				continue
 			}
 			slog.Debug("fetched message", "uid", uid, "subj", msg.Subject)
+			metrics.MessagesProcessed.Inc()
 			if p.collector != nil {
 				collect := true
 				if p.settingsRepo != nil {
@@ -191,6 +197,7 @@ func (p *Poller) process() error {
 			}
 			if matched != nil {
 				slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
+				metrics.RulesMatched.WithLabelValues(matched.Name).Inc()
 				hasMarkRead := false
 				for _, a := range matched.Actions {
 					if a.Type == "mark_as_read" {
@@ -287,6 +294,10 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 	messageStatsDone := false
 
 	logAction := func(actionUID uint32, action db.Action, status string) {
+		metrics.ActionsTotal.WithLabelValues(action.Type, status).Inc()
+		if status == "error" {
+			metrics.ErrorsTotal.Inc()
+		}
 		if p.logRepo != nil {
 			p.logRepo.Insert(&db.LogEntry{
 				UID:         int64(actionUID),
@@ -725,6 +736,7 @@ func (p *Poller) Status() PollerStatus {
 
 func (p *Poller) setLastError(err error) {
 	slog.Error("action error", "error", err)
+	metrics.ErrorsTotal.Inc()
 	p.lastError.Store(err.Error())
 	p.mu.Lock()
 	p.consecutiveFailures++

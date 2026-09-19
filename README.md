@@ -37,10 +37,10 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **Test Connection** — verify IMAP credentials before saving
 - **Configurable Polling** — adjustable batch size, interval, and on/off toggle
 - **Log Retention** — configure how many activity entries to keep
-- **MCP Server** — remote access for AI agents (Claude Code, OpenCode, Codex) with 25 tools and API key auth
+- **MCP Server** — remote access for AI agents (Claude Code, OpenCode, Codex) with 26 tools and API key auth
 - **Contacts Management** — enable/disable automatic collection, import from CardDAV, wipe all contacts
 - **Server Metrics** — uptime, memory, goroutines, and server time in Settings
-- **Health Endpoint** — GET /health returns JSON with status, uptime, DB/IMAP/poller state, and stats (public, no auth required)
+- **Health Endpoint** — GET /health returns JSON (public, no auth required); unauthenticated callers get only `{"status": "ok"|"degraded"}`, authenticated sessions get the full payload (version, uptime, DB/IMAP/poller state, stats)
 
 ### Security
 - IMAP password encrypted at rest with AES-256-GCM
@@ -172,6 +172,7 @@ Then open http://localhost:8080/dashboard and log in with password `demo123`.
 | Database    | SQLite (modernc.org/sqlite)                                |
 | IMAP        | go-imap v2                                                |
 | CardDAV     | go-webdav/carddav                                         |
+| Metrics     | Prometheus (prometheus/client_golang)                     |
 | Frontend    | HTMX + html/template, no JavaScript framework             |
 
 ## Architecture
@@ -186,7 +187,8 @@ internal/
   rules/          — rule evaluation engine
   contacts/       — contact collector from email headers
   carddav/        — iCloud CardDAV contacts importer
-  mcp/            — MCP server for AI agent access (25 tools)
+  mcp/            — MCP server for AI agent access (26 tools)
+  metrics/        — Prometheus metrics (counters, gauges, histogram)
   poller/         — periodic email polling
   smtp/           — SMTP MIME multipart email sender
   web/            — chi router, auth, handlers, templates
@@ -213,6 +215,7 @@ Using the iCloud web mail client (mail.icloud.com) while Mailflow is polling may
 | [chi v5](https://github.com/go-chi/chi) | HTTP router | MIT |
 | [x/crypto](https://pkg.go.dev/golang.org/x/crypto) | bcrypt password hashing | BSD-3-Clause |
 | [modernc.org/sqlite](https://gitlab.com/cznic/sqlite) | SQLite driver (no CGO) | BSD-3-Clause |
+| [prometheus/client_golang](https://github.com/prometheus/client_golang) | Prometheus metrics endpoint | Apache-2.0 |
 
 ### Frontend Assets
 
@@ -221,6 +224,7 @@ Using the iCloud web mail client (mail.icloud.com) while Mailflow is polling may
 | [Lucide Icons](https://lucide.dev) | SVG icons throughout the UI | ISC |
 | [JetBrains Mono](https://www.jetbrains.com/lp/mono/) | Monospace font (optional, toggled in Settings) | OFL-1.1 |
 | [highlight.js](https://highlightjs.org) | Syntax highlighting on the Docs page | BSD-3-Clause |
+| [Chart.js](https://www.chartjs.org) | Charts on the Stats page | MIT |
 | [HTMX](https://htmx.org) | Frontend interactivity without JavaScript frameworks | 0BSD |
 
 ## License

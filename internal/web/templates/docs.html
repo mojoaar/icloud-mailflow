@@ -246,6 +246,15 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <li><strong>ALL</strong> (AND): Rule fires only if <em>every</em> condition matches</li>
 </ul>
 
+<h3>Scheduling</h3>
+<p>Each rule can be limited to specific days and times using <code>schedule_days</code> (comma-separated <code>mon,tue,wed,thu,fri,sat,sun</code>), <code>schedule_start</code> and <code>schedule_end</code> (<code>HH:MM</code>, in your configured timezone). Leave all blank to always run. A scheduled rule that doesn't match the current time is skipped — the message stays unseen and is re-checked on the next tick.</p>
+
+<h3>Regex Capture</h3>
+<p>A <code>matches_regex</code> condition with named capture groups (e.g. <code>(?P&lt;order&gt;\d+)</code>) exposes each group as <code>[capture:order]</code> in <code>auto_reply</code> templates; the full match is available as <code>[capture:0]</code>.</p>
+
+<h3>Test &amp; Apply</h3>
+<p>Use <strong>Test Rule</strong> on the rule edit form to check a rule against synthetic fields or a real IMAP message with a per-condition pass/fail breakdown. Use <strong>Apply to Folder</strong> on the Rules page to retroactively run all enabled rules over an existing folder.</p>
+
 <h2 id="actions">Actions</h2>
 <table>
     <tr><th>Action</th><th>What it does</th><th>Value</th></tr>
@@ -287,7 +296,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <h2 id="mcp">MCP Server</h2>
 <p>Mailflow exposes a Model Context Protocol (MCP) server so AI agents (Claude Code, OpenCode, Codex) can manage rules, check stats, and trigger polls remotely. Enable it in Settings → MCP Access — you get an API key and ready-to-use config snippets for all platforms.</p>
-<p>The server runs over HTTP on <code>/mcp</code>. All 25 tools require a Bearer token in the Authorization header.</p>
+<p>The server runs over HTTP on <code>/mcp</code>. All 26 tools require a Bearer token in the Authorization header.</p>
 <table>
     <tr><th>Tool</th><th>Description</th></tr>
     <tr><td><code>list_rules</code></td><td>List all filtering rules with conditions, groups, and actions</td></tr>
@@ -301,6 +310,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>run_poll</code></td><td>Manually trigger a poll cycle</td></tr>
     <tr><td><code>backup_now</code></td><td>Trigger a rules backup email immediately</td></tr>
     <tr><td><code>backup_rules</code></td><td>Export all rules as JSON</td></tr>
+    <tr><td><code>apply_rules_to_folder</code></td><td>Apply all enabled rules to messages in an IMAP folder</td></tr>
     <tr><td><code>list_folders</code></td><td>List available IMAP folders</td></tr>
     <tr><td><code>search_contacts</code></td><td>Search collected contacts</td></tr>
     <tr><td><code>list_contacts</code></td><td>List all collected email contacts</td></tr>
@@ -323,6 +333,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td>IMAP Connection</td><td>Email, app-specific password, test connection</td></tr>
     <tr><td>Admin Password</td><td>Change password (leave blank to keep current)</td></tr>
     <tr><td>Polling</td><td>Source folder, poll interval, messages per poll, log retention, enable/disable, refresh folders</td></tr>
+    <tr><td>Webhooks</td><td>Shared secret for authenticating outgoing webhook requests (with a Generate button)</td></tr>
     <tr><td>Rules</td><td>Export/import rules as JSON</td></tr>
     <tr><td>Backup</td><td>Scheduled rules backup via email — enabled toggle, frequency, recipient, Backup Now button</td></tr>
     <tr><td>Contacts</td><td>Import from iCloud, enable/disable auto-collection, wipe all contacts</td></tr>
@@ -333,7 +344,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <div class="api-section">
 <h2 id="api">API Reference</h2>
-<p>Base URL: <code>http://{{.Host}}</code>. Most endpoints require a session cookie from <code>POST /login</code>. Public endpoints (<code>/health</code>, <code>/docs</code>, <code>/login</code>, <code>/setup</code>) do not.</p>
+<p>Base URL: <code>http://{{.Host}}</code>. Most endpoints require a session cookie from <code>POST /login</code>. Public endpoints (<code>/health</code>, <code>/metrics</code>, <code>/docs</code>, <code>/login</code>, <code>/setup</code>, <code>/static</code>) do not.</p>
 
 <h3 class="api-group" id="api-auth">Authentication</h3>
 
@@ -481,6 +492,13 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 </div>
 
 <div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /settings/webhook</h4>
+    <p class="desc">Set the shared webhook secret (sent as the <code>X-Webhook-Secret</code> header on outgoing webhook actions).</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/webhook -b cookies.txt \
+  -d "webhook_secret=your-shared-secret"</code></pre>
+</div>
+
+<div class="endpoint">
     <h4><span class="method-badge method-post">POST</span> POST /settings/timezone</h4>
     <p class="desc">Set display timezone.</p>
     <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/timezone -b cookies.txt \
@@ -620,7 +638,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
   },
   "status": "ok",
   "uptime_seconds": 3600,
-  "version": "0.9.1"
+  "version": "0.9.6"
 }</code></pre>
 </div>
 

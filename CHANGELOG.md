@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Prometheus metrics are now instrumented — messages processed, rule matches, actions, errors, poller ticks, tick duration, and CPU/memory/uptime gauges
+
+### Changed
+- Documentation and README refreshed: MCP now lists 26 tools, corrected `/health` endpoint description, documented rule scheduling, regex capture, webhook settings, and the dry-run/bulk-apply features, and added Prometheus + Chart.js to credits/stack
+
+### Fixed
+- Header wordmark rendered as a flat blue block in light mode — the `background` shorthand was resetting `background-clip: text`
+
 ## [0.9.6] - 2026-09-19
 
 ### Changed

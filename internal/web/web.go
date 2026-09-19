@@ -19,6 +19,7 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
 	"github.com/mojoaar/icloud-mailflow/internal/mcp"
+	"github.com/mojoaar/icloud-mailflow/internal/metrics"
 	"github.com/mojoaar/icloud-mailflow/internal/poller"
 )
 
@@ -94,7 +95,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/activity/delete", activityDeleteHandler(logRepo))
 	r.Get("/docs", docsStandaloneHandler(settingsRepo))
 	r.Get("/health", healthHandler(d, p, imapClient, statsRepo, contactsRepo, rulesRepo, sessRepo))
-	r.Get("/metrics", PromHandler().ServeHTTP)
+	r.Get("/metrics", metrics.PromHandler().ServeHTTP)
 	r.Get("/stats", statsHandler(statsRepo))
 
 	r.Get("/rules", rulesListHandler(rulesRepo, foldersRepo))

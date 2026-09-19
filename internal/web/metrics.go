@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
+	"github.com/mojoaar/icloud-mailflow/internal/metrics"
 )
 
 func StartMetricsCollector(repo *db.StatsRepo, parentCtx context.Context) {
@@ -42,6 +43,8 @@ func collect(repo *db.StatsRepo, prevUser, prevSys *int64) {
 	now := time.Now().Unix()
 	key := strconv.FormatInt(now, 10)
 
+	metrics.MemoryBytes.Set(float64(m.Alloc))
+	metrics.UptimeSeconds.Set(time.Since(startTime).Seconds())
 	repo.SetStat("memory", key, int(m.Alloc/1024/1024))
 	repo.SetStat("goroutines", key, runtime.NumGoroutine())
 
@@ -54,6 +57,7 @@ func collect(repo *db.StatsRepo, prevUser, prevSys *int64) {
 			deltaSys := sysNano - *prevSys
 			cpuPct := int((float64(deltaUser+deltaSys) / 3600e9 / float64(runtime.NumCPU())) * 1_000_000)
 			repo.SetStat("cpu", key, cpuPct)
+			metrics.CPUPercent.Set(float64(cpuPct) / 10000.0)
 		}
 		*prevUser = userNano
 		*prevSys = sysNano
