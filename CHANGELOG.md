@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Footer now reads "Crafted with ❤️ &amp; 🤖 by Morten Johansen"
+- Docker image now ships a `/health`-based HEALTHCHECK
 
 ### Fixed
 - `/stats` Refresh button desyncing chart/list toggle state — switched from full-body HTMX swap to a partial `#stats-content` swap that only re-runs the stats init script
