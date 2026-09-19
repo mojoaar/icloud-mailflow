@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `/stats` Refresh now reloads the page instead of doing an htmx partial swap — fixes charts reverting to list mode after refresh
+- `/activity` Refresh now shows a spinner and a "Activity refreshed" toast on completion
 
 ## [0.9.5] - 2026-09-19
 

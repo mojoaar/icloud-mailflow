@@ -2,9 +2,12 @@
 <div class="flex-between" style="margin-bottom:16px">
 <h1 style="margin:0">Activity Log</h1>
 <div class="flex-row">
-<button class="btn" hx-get="/activity" hx-include="[name='q'],[name='rule'],[name='status'],[name='per_page']" hx-target="#activity-content" hx-swap="outerHTML">
+<button class="btn" hx-get="/activity" hx-include="[name='q'],[name='rule'],[name='status'],[name='per_page']" hx-target="#activity-content" hx-swap="outerHTML"
+    hx-indicator="#activity-refresh-spinner"
+    hx-on::after-request="if(event.detail.successful)htmx.trigger(document.body,'showToast',{type:'success',message:'Activity refreshed'})">
     <i data-lucide="refresh-cw" data-size="14"></i> Refresh
 </button>
+<span id="activity-refresh-spinner" class="htmx-indicator" style="align-self:center;color:var(--muted)"><span class="spinner"></span></span>
 {{if .Entries}}
 <button class="btn btn-danger" hx-post="/activity/delete" hx-target="#activity-content" hx-swap="outerHTML"
     hx-confirm="Clear all activity logs? Stats are stored separately and won't be affected.">
