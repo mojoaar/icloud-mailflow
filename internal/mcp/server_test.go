@@ -5,9 +5,25 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 )
+
+func TestMCPRateLimiterCleanup(t *testing.T) {
+	rl := &mcpRateLimiter{entries: map[string]*mcpRateEntry{}}
+	rl.entries["1.2.3.4"] = &mcpRateEntry{count: 5, resetAt: time.Now().Add(-time.Minute)}
+	rl.entries["5.6.7.8"] = &mcpRateEntry{count: 2, resetAt: time.Now().Add(time.Minute)}
+
+	rl.cleanup()
+
+	if _, ok := rl.entries["1.2.3.4"]; ok {
+		t.Error("expired entry should be removed")
+	}
+	if _, ok := rl.entries["5.6.7.8"]; !ok {
+		t.Error("active entry should remain")
+	}
+}
 
 func TestClientIPStripsPort(t *testing.T) {
 	cases := map[string]string{

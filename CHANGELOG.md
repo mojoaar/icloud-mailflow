@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bulk-apply result toasts used `toast error`/`toast success` classes — now `toast-error`/`toast-success`
 - Theme-toggle icon now reflects the active theme (was hardcoded to `sun` and never updated after Lucide replaced the `<i>` element)
 - `matches_regex` conditions are now validated on save (web and MCP) — invalid regex returns an error instead of silently never matching
+- MCP rate limiter now periodically evicts expired entries (previously grew unbounded)
 
 ## [0.9.4] - 2026-09-15
 

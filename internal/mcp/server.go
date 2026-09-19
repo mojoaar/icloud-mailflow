@@ -29,7 +29,7 @@ func resultJSON(v any) (*mcp.CallToolResult, error) {
 	return mcp.NewToolResultJSON(v)
 }
 
-var mcpLimiter = &mcpRateLimiter{entries: map[string]*mcpRateEntry{}}
+var mcpLimiter = newMCPRateLimiter()
 
 type mcpRateLimiter struct {
 	mu      sync.Mutex
@@ -39,6 +39,28 @@ type mcpRateLimiter struct {
 type mcpRateEntry struct {
 	count   int
 	resetAt time.Time
+}
+
+func newMCPRateLimiter() *mcpRateLimiter {
+	rl := &mcpRateLimiter{entries: map[string]*mcpRateEntry{}}
+	go func() {
+		for {
+			time.Sleep(time.Minute)
+			rl.cleanup()
+		}
+	}()
+	return rl
+}
+
+func (rl *mcpRateLimiter) cleanup() {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	now := time.Now()
+	for ip, e := range rl.entries {
+		if now.After(e.resetAt) {
+			delete(rl.entries, ip)
+		}
+	}
 }
 
 func (rl *mcpRateLimiter) allow(ip string) bool {
