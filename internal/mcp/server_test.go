@@ -152,6 +152,16 @@ func TestParseRuleInputNoConditions(t *testing.T) {
 	}
 }
 
+func TestParseRuleInputInvalidRegex(t *testing.T) {
+	_, err := parseRuleInput("Bad", 1,
+		`{"conditions":[{"field":"from","operator":"matches_regex","value":"("}]}`,
+		`[]`,
+	)
+	if err == nil {
+		t.Fatal("expected error for invalid regex, got nil")
+	}
+}
+
 func TestNewAllowsNilDeps(t *testing.T) {
 	var d *sql.DB
 	srvr := New(d, nil, nil, "1.0", nil, nil)

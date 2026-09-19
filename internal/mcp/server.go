@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -843,6 +844,11 @@ func parseRuleInput(name string, priority int, condsJSON, actsJSON string) (*db.
 	if len(input.Conditions) > 0 {
 		g := db.ConditionGroup{Operator: op}
 		for _, c := range input.Conditions {
+			if c.Operator == "matches_regex" {
+				if _, err := regexp.Compile(c.Value); err != nil {
+					return nil, fmt.Errorf("invalid regex %q: %w", c.Value, err)
+				}
+			}
 			g.Conditions = append(g.Conditions, db.Condition{
 				Field: c.Field, Operator: c.Operator, Value: c.Value,
 			})

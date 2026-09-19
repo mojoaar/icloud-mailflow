@@ -92,6 +92,35 @@ func TestRulesCreateHandler(t *testing.T) {
 	}
 }
 
+func TestRulesCreateHandlerInvalidRegex(t *testing.T) {
+	database := openWebTestDB(t)
+	repo := db.NewRulesRepo(database)
+	settingsRepo := db.NewSettingsRepo(database)
+
+	h := rulesCreateHandler(repo, settingsRepo)
+	form := url.Values{
+		"name":       {"Bad Regex"},
+		"cond_field": {"from"},
+		"cond_op":    {"matches_regex"},
+		"cond_value": {"("},
+	}
+	req := httptest.NewRequest("POST", "/rules", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (error re-render)", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "invalid regex") {
+		t.Errorf("expected 'invalid regex' error, got %q", rec.Body.String())
+	}
+	rules, _ := repo.List()
+	if len(rules) != 0 {
+		t.Errorf("invalid rule should not be persisted, got %d rules", len(rules))
+	}
+}
+
 func TestRulesEditHandler(t *testing.T) {
 	database := openWebTestDB(t)
 	repo := db.NewRulesRepo(database)

@@ -3,6 +3,7 @@ package web
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -62,7 +63,11 @@ func rulesCreateHandler(repo *db.RulesRepo, settingsRepo *db.SettingsRepo) http.
 		rule.ScheduleDays = strings.Join(r.Form["schedule_days"], ",")
 		rule.ScheduleStart = r.FormValue("schedule_start")
 		rule.ScheduleEnd = r.FormValue("schedule_end")
-		parseConditions(r, rule)
+		if err := parseConditions(r, rule); err != nil {
+			tz, _ := settingsRepo.Get("timezone")
+			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "New": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": "OR", "ScheduleDays": []string{}, "ScheduleStart": rule.ScheduleStart, "ScheduleEnd": rule.ScheduleEnd, "Timezone": tz})
+			return
+		}
 		parseActions(r, rule)
 		if err := repo.Create(rule); err != nil {
 			tz, _ := settingsRepo.Get("timezone")
@@ -109,7 +114,15 @@ func rulesUpdateHandler(repo *db.RulesRepo, settingsRepo *db.SettingsRepo) http.
 		rule.ScheduleDays = strings.Join(r.Form["schedule_days"], ",")
 		rule.ScheduleStart = r.FormValue("schedule_start")
 		rule.ScheduleEnd = r.FormValue("schedule_end")
-		parseConditions(r, rule)
+		if err := parseConditions(r, rule); err != nil {
+			op := "AND"
+			if len(rule.Groups) > 0 {
+				op = rule.Groups[0].Operator
+			}
+			tz, _ := settingsRepo.Get("timezone")
+			renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Error": err.Error(), "Edit": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": op, "ScheduleDays": strings.Split(rule.ScheduleDays, ","), "ScheduleStart": rule.ScheduleStart, "ScheduleEnd": rule.ScheduleEnd, "Timezone": tz})
+			return
+		}
 		parseActions(r, rule)
 		if err := repo.Update(rule); err != nil {
 			op := "AND"
@@ -206,14 +219,14 @@ func conditionFields() []map[string]string {
 	}
 }
 
-func parseConditions(r *http.Request, rule *db.Rule) {
+func parseConditions(r *http.Request, rule *db.Rule) error {
 	rule.Groups = nil
 	r.ParseForm()
 	fields := r.Form["cond_field"]
 	ops := r.Form["cond_op"]
 	vals := r.Form["cond_value"]
 	if len(fields) == 0 {
-		return
+		return nil
 	}
 	operator := r.FormValue("cond_operator")
 	if operator == "" {
@@ -227,6 +240,11 @@ func parseConditions(r *http.Request, rule *db.Rule) {
 			if field == "header" && i < len(headerNames) && headerNames[i] != "" {
 				field = "header:" + headerNames[i]
 			}
+			if ops[i] == "matches_regex" {
+				if _, err := regexp.Compile(vals[i]); err != nil {
+					return fmt.Errorf("invalid regex %q: %w", vals[i], err)
+				}
+			}
 			group.Conditions = append(group.Conditions, db.Condition{
 				Field:    field,
 				Operator: ops[i],
@@ -235,6 +253,7 @@ func parseConditions(r *http.Request, rule *db.Rule) {
 		}
 	}
 	rule.Groups = []db.ConditionGroup{group}
+	return nil
 }
 
 func parseActions(r *http.Request, rule *db.Rule) {
