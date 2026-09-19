@@ -22,3 +22,6 @@ docs/superpowers/
 **/.DS_Store
 config.json
 coverage.out
+
+# Playwright output
+.playwright-mcp/

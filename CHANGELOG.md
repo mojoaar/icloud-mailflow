@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Footer now reads "Crafted with ❤️ &amp; 🤖 by Morten Johansen"
+- New favicon: blue gradient tile with a white "M" monogram
 - Docker image now ships a `/health`-based HEALTHCHECK
 
 ### Fixed
