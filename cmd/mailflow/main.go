@@ -121,9 +121,6 @@ func initialize(dataDir string) (*App, error) {
 	statsRepo := db.NewStatsRepo(database)
 	foldersRepo := db.NewFoldersRepo(database)
 
-	metricsCtx, metricsCancel := context.WithCancel(context.Background())
-	web.StartMetricsCollector(statsRepo, metricsCtx)
-
 	var p *poller.Poller
 	if imapClient != nil {
 		batchSize := 50
@@ -150,6 +147,9 @@ func initialize(dataDir string) (*App, error) {
 	}
 
 	router := web.New(cfg, database, imapClient, contactsCollector, logRepo, statsRepo, version, startTime, p)
+
+	metricsCtx, metricsCancel := context.WithCancel(context.Background())
+	web.StartMetricsCollector(statsRepo, metricsCtx)
 
 	return &App{
 		Config:   cfg,
