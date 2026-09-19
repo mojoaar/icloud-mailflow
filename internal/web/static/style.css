@@ -74,7 +74,7 @@ nav .brand {
 .nav-btn i[data-lucide] { display: inline-flex; vertical-align: -3px; }
 
 .nav-icon { width: 16px; height: 16px; vertical-align: -3px; }
-.btn i[data-lucide] { display: inline-flex; vertical-align: -2px; }
+.btn i[data-lucide], .btn svg { width: 1em; height: 1em; flex-shrink: 0; display: inline-flex; }
 td i[data-lucide] { display: inline-flex; vertical-align: -3px; }
 
 main { padding: 24px; max-width: 1200px; margin: 0 auto; }
@@ -146,8 +146,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.3);
 }
 input[type="file"] {
-    padding: 5px 8px;
+    padding: 6px 8px;
     font-size: 0.85rem;
+    line-height: 1.2;
 }
 
 pre { max-width:100%; overflow-x:auto; }

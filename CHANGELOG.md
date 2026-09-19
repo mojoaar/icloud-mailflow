@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `/stats` Refresh button desyncing chart/list toggle state — switched from full-body HTMX swap to a partial `#stats-content` swap that only re-runs the stats init script
+- Buttons with Lucide icons rendered taller than text-only buttons (icons defaulted to 24px) — icon size now matches button font, most visible on `/settings`
 
 ## [0.9.4] - 2026-09-15
 
