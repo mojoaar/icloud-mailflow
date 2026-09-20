@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-09-20
+
 ### Added
 - Theme system — Mailflow, Catppuccin, Nord, and Cyberpunk, each with a dark and light variant; theme chosen in Settings → Regional, quick dark/light toggle in the nav, syntax highlighting follows the mode
 - `/stats` range selector (7/30/90 days) scoping the daily and weekly volume charts
@@ -587,6 +589,7 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
+[0.11.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.6...v0.10.0
 [0.9.6]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.4...v0.9.5
