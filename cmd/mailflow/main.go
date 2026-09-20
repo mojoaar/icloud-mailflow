@@ -166,27 +166,28 @@ func initialize(dataDir string) (*App, error) {
 }
 
 func migrateLegacyIMAPPassword(cfg *config.Config, settingsRepo *db.SettingsRepo) error {
-	legacy := cfg.LegacyIMAPPassword()
-	if legacy == "" {
+	if !cfg.LegacyIMAPPasswordPresent() {
 		return nil
 	}
-	if stored, _ := settingsRepo.Get("imap_password"); stored == "" {
-		key, err := hex.DecodeString(cfg.EncryptionKey)
-		if err != nil {
-			return fmt.Errorf("decode encryption key: %w", err)
-		}
-		enc, err := crypto.Encrypt([]byte(legacy), key)
-		if err != nil {
-			return fmt.Errorf("encrypt legacy password: %w", err)
-		}
-		if err := settingsRepo.Set("imap_password", string(enc)); err != nil {
-			return err
+	if legacy := cfg.LegacyIMAPPassword(); legacy != "" {
+		if stored, _ := settingsRepo.Get("imap_password"); stored == "" {
+			key, err := hex.DecodeString(cfg.EncryptionKey)
+			if err != nil {
+				return fmt.Errorf("decode encryption key: %w", err)
+			}
+			enc, err := crypto.Encrypt([]byte(legacy), key)
+			if err != nil {
+				return fmt.Errorf("encrypt legacy password: %w", err)
+			}
+			if err := settingsRepo.Set("imap_password", string(enc)); err != nil {
+				return err
+			}
 		}
 	}
 	if err := cfg.Save(); err != nil {
 		return fmt.Errorf("rewrite config: %w", err)
 	}
-	slog.Info("migrated IMAP password from config.json to encrypted store")
+	slog.Info("removed legacy imap_password field from config.json")
 	return nil
 }
 

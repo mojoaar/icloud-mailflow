@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
-- The IMAP password is no longer written to `config.json` — it is stored only in the encrypted database. A legacy plaintext value is migrated into the encrypted store on startup and scrubbed from the file
+- The IMAP password is no longer written to `config.json` — it is stored only in the encrypted database. A legacy plaintext value is migrated into the encrypted store on startup and the `imap_password` field is removed from the file
 
 ### Changed
 - Theme families are now listed alphabetically in Settings, the docs, and the README (Mailflow, the default, stays first)

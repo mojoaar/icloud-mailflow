@@ -21,12 +21,17 @@ type Config struct {
 	DataDir       string `json:"-"`
 	ListenAddr    string `json:"-"`
 
-	legacyIMAPPassword string
+	legacyIMAPPassword        string
+	legacyIMAPPasswordPresent bool
 }
 
 // LegacyIMAPPassword returns a plaintext IMAP password found in a pre-migration
 // config.json. It is never persisted; the caller moves it into the encrypted store.
 func (c *Config) LegacyIMAPPassword() string { return c.legacyIMAPPassword }
+
+// LegacyIMAPPasswordPresent reports whether config.json contained an
+// imap_password key (even empty), so the caller can scrub it.
+func (c *Config) LegacyIMAPPasswordPresent() bool { return c.legacyIMAPPasswordPresent }
 
 func Default() *Config {
 	return &Config{
@@ -61,11 +66,12 @@ func Load(dataDir string) (*Config, error) {
 	if err := json.Unmarshal(data, cfg); err != nil {
 		return nil, err
 	}
-	var legacy struct {
-		IMAPPassword string `json:"imap_password"`
-	}
-	if err := json.Unmarshal(data, &legacy); err == nil {
-		cfg.legacyIMAPPassword = legacy.IMAPPassword
+	var rawMap map[string]json.RawMessage
+	if err := json.Unmarshal(data, &rawMap); err == nil {
+		if v, ok := rawMap["imap_password"]; ok {
+			cfg.legacyIMAPPasswordPresent = true
+			_ = json.Unmarshal(v, &cfg.legacyIMAPPassword)
+		}
 	}
 	if cfg.EncryptionKey == "" {
 		key, err := generateKey()

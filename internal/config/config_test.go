@@ -189,6 +189,31 @@ func TestLoadLegacyIMAPPassword(t *testing.T) {
 	}
 }
 
+func TestLoadLegacyIMAPPasswordEmptyPresent(t *testing.T) {
+	dir := t.TempDir()
+	raw := `{"imap_port":993,"poll_interval":300,"encryption_key":"` + strings.Repeat("ab", 32) + `","imap_password":""}`
+	if err := os.WriteFile(filepath.Join(dir, "config.json"), []byte(raw), 0600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !cfg.LegacyIMAPPasswordPresent() {
+		t.Error("expected imap_password presence to be detected")
+	}
+	if err := cfg.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "config.json"))
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if strings.Contains(string(data), "imap_password") {
+		t.Error("legacy imap_password key should be removed after Save")
+	}
+}
+
 func TestLoadSelfHealsInvalidPollInterval(t *testing.T) {
 	dir := t.TempDir()
 	raw := `{"imap_server":"imap.mail.me.com","imap_port":993,"poll_interval":0,"encryption_key":"` + strings.Repeat("ab", 32) + `"}`
