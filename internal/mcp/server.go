@@ -18,6 +18,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 
+	"github.com/mojoaar/icloud-mailflow/internal/config"
 	"github.com/mojoaar/icloud-mailflow/internal/contacts"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
@@ -718,12 +719,6 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 			"backup_recipient": true, "mcp_enabled": true, "contacts_collection_enabled": true,
 			"font_mono": true,
 		}
-		validTZ := map[string]bool{
-			"UTC": true, "Europe/Copenhagen": true, "Europe/London": true,
-			"Europe/Berlin": true, "America/New_York": true, "America/Chicago": true,
-			"America/Denver": true, "America/Los_Angeles": true,
-			"Asia/Tokyo": true, "Australia/Sydney": true,
-		}
 		validBool := map[string]bool{"true": true, "false": true}
 		validFreq := map[string]bool{"daily": true, "weekly": true, "monthly": true}
 
@@ -740,8 +735,8 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 			}
 			switch k {
 			case "timezone":
-				if !validTZ[str] {
-					errors = append(errors, fmt.Sprintf("%s: unsupported timezone %q", k, str))
+				if !config.ValidTimezone(str) {
+					errors = append(errors, fmt.Sprintf("%s: unknown timezone %q", k, str))
 					continue
 				}
 			case "backup_enabled", "mcp_enabled", "contacts_collection_enabled", "font_mono":

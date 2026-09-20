@@ -32,7 +32,7 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **Docs Page** — full usage guide and API reference with curl examples and syntax highlighting
 - **Themes** — Mailflow, Catppuccin, Nord, and Cyberpunk, each in a dark and light variant; pick the theme in Settings and quick-toggle dark/light from the nav (respects OS preference on first visit)
 - **JetBrains Mono Font** — optional monospace font, toggle in Settings → Regional
-- **Timezone Support** — display activity log in your local timezone
+- **Timezone Support** — display activity log in any IANA timezone (searchable picker with validation)
 - **Folder Auto-Create** — source folder is created on iCloud if it doesn't exist
 - **Test Connection** — verify IMAP credentials before saving
 - **Configurable Polling** — adjustable batch size, interval, and on/off toggle

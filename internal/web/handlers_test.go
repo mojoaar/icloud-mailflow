@@ -35,6 +35,46 @@ func TestSettingsSaveTimezone(t *testing.T) {
 	}
 }
 
+func TestSettingsSaveTimezoneAcceptsAnyIANAZone(t *testing.T) {
+	database := openWebTestDB(t)
+	settingsRepo := db.NewSettingsRepo(database)
+
+	h := settingsSaveTimezone(settingsRepo)
+	form := url.Values{"timezone": {"Pacific/Auckland"}}
+	req := httptest.NewRequest("POST", "/settings/timezone", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Errorf("status = %d, want 303", rec.Code)
+	}
+	if v, _ := settingsRepo.Get("timezone"); v != "Pacific/Auckland" {
+		t.Errorf("timezone = %q, want Pacific/Auckland", v)
+	}
+}
+
+func TestSettingsSaveTimezoneInvalid(t *testing.T) {
+	database := openWebTestDB(t)
+	settingsRepo := db.NewSettingsRepo(database)
+	settingsRepo.Set("timezone", "Europe/Copenhagen")
+
+	h := settingsSaveTimezone(settingsRepo)
+	form := url.Values{"timezone": {"Mars/Base"}}
+	req := httptest.NewRequest("POST", "/settings/timezone", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Errorf("status = %d, want 303", rec.Code)
+	}
+	if loc := rec.Header().Get("Location"); !strings.Contains(loc, "error=timezone") {
+		t.Errorf("expected redirect to error, got %q", loc)
+	}
+	if v, _ := settingsRepo.Get("timezone"); v != "Europe/Copenhagen" {
+		t.Errorf("invalid timezone should not overwrite, got %q", v)
+	}
+}
+
 func TestSettingsSaveFontMonospace(t *testing.T) {
 	database := openWebTestDB(t)
 	settingsRepo := db.NewSettingsRepo(database)

@@ -243,10 +243,10 @@
     <h2>Regional</h2>
     <form method="POST" action="/settings/timezone"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
-            <label>Timezone</label>
-            <select name="timezone" style="width:100%" onchange="this.form.submit()">
-                {{range .Timezones}}<option value="{{.}}" {{if eq $.Timezone .}}selected{{end}}>{{.}}</option>
-                {{end}}
+            <label for="tz-input">Timezone</label>
+            <input type="text" id="tz-input" name="timezone" list="tz-list" value="{{.Timezone}}" placeholder="e.g. Europe/Copenhagen" autocomplete="off" style="width:100%" onchange="this.form.submit()">
+            <datalist id="tz-list">{{range .Timezones}}<option value="{{.}}">{{end}}</datalist>
+            {{if .TZError}}<p style="color:var(--red);font-size:0.8rem;margin-top:4px">Unknown timezone — not saved</p>{{end}}
         </div>
     </form>
     <form method="POST" action="/settings/font" style="margin-top:12px"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">

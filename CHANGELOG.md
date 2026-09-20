@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Replaced hardcoded UI colours with theme tokens (buttons, badges, toasts, method badges, focus ring, charts) so all themes apply consistently
 - Refreshed README screenshots and added `scripts/screenshots.sh` (Playwright) to regenerate them from the demo dataset
+- Timezone picker now accepts any IANA zone (searchable field with suggestions) instead of a fixed 10-zone list; validated on save and via MCP `update_settings`
 
 ## [0.10.0] - 2026-09-19
 

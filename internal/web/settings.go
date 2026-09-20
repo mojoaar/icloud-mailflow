@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mojoaar/icloud-mailflow/internal/carddav"
@@ -145,7 +146,8 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"ListenAddr":                r.Host,
 			"Version":                   version,
 			"Timezone":                  timezone,
-			"Timezones":                 []string{"UTC", "Europe/Copenhagen", "Europe/London", "Europe/Berlin", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "Asia/Tokyo", "Australia/Sydney"},
+			"Timezones":                 config.TimezoneSuggestions(),
+			"TZError":                   r.URL.Query().Get("error") == "timezone",
 			"PollingActive":             pollingEnabled != "false",
 			"ContactsCollectionEnabled": contactsCollEnabled != "false",
 			"Contacts":                  contactsCount,
@@ -487,7 +489,14 @@ func rulesImportHandler(repo *db.RulesRepo) http.HandlerFunc {
 func settingsSaveTimezone(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
-		settingsRepo.Set("timezone", r.FormValue("timezone"))
+		tz := strings.TrimSpace(r.FormValue("timezone"))
+		if !config.ValidTimezone(tz) {
+			http.Redirect(w, r, "/settings?error=timezone", http.StatusSeeOther)
+			return
+		}
+		if err := settingsRepo.Set("timezone", tz); err != nil {
+			slog.Error("settings store timezone failed", "error", err)
+		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
 }
