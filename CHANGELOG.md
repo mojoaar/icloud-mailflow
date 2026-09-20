@@ -7,8 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- The IMAP password is no longer written to `config.json` — it is stored only in the encrypted database. A legacy plaintext value is migrated into the encrypted store on startup and scrubbed from the file
+
 ### Changed
 - Theme families are now listed alphabetically in Settings, the docs, and the README (Mailflow, the default, stays first)
+
+### Fixed
+- Polling settings (interval, messages per poll, log retention) are validated before saving — an invalid interval can no longer be persisted and block startup; an invalid legacy interval self-heals to the default
+- `Run Poll Now`, `Backup Now`, and `Apply to Folder` no longer panic when IMAP is not configured
+- The poller could execute a matched rule's actions repeatedly within a single tick, and could crash after processing a full batch (`atomic.Value.Store(nil)`) — both fixed
+- IMAP session access is serialized across the poller, bulk apply, rule test, folder refresh, and contact seeding, removing data races on the shared connection
 
 ## [0.12.0] - 2026-09-20
 

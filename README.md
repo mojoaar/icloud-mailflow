@@ -43,7 +43,7 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **Health Endpoint** — GET /health returns JSON (public, no auth required); unauthenticated callers get only `{"status": "ok"|"degraded"}`, authenticated sessions get the full payload (version, uptime, DB/IMAP/poller state, stats)
 
 ### Security
-- IMAP password encrypted at rest with AES-256-GCM
+- IMAP password encrypted at rest with AES-256-GCM (stored in the database, never written to `config.json`)
 - CSRF protection on all forms
 - Rate-limited login (5 attempts/minute/IP) and MCP access (100 requests/minute/IP)
 - MCP API key authentication with constant-time comparison
