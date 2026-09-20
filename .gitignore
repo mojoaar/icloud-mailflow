@@ -7,9 +7,10 @@
 /demo/mailflow.db
 /demo/config.json
 
-# Superpowers artifacts
+# Superpowers / agent artifacts
 .superpowers/
 docs/superpowers/
+.opencode/
 
 # IDE
 .idea/
