@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Theme families are now listed alphabetically in Settings, the docs, and the README (Mailflow, the default, stays first)
+
 ## [0.12.0] - 2026-09-20
 
 ### Added
