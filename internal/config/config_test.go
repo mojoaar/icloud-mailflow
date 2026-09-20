@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -124,8 +125,15 @@ func TestSaveAndLoadRoundTrip(t *testing.T) {
 	if loaded.IMAPEmail != cfg.IMAPEmail {
 		t.Errorf("IMAPEmail = %q, want %q", loaded.IMAPEmail, cfg.IMAPEmail)
 	}
-	if loaded.IMAPPassword != cfg.IMAPPassword {
-		t.Errorf("IMAPPassword = %q, want %q", loaded.IMAPPassword, cfg.IMAPPassword)
+	if loaded.IMAPPassword != "" {
+		t.Errorf("IMAPPassword must not be persisted, got %q", loaded.IMAPPassword)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "config.json"))
+	if err != nil {
+		t.Fatalf("read config.json: %v", err)
+	}
+	if strings.Contains(string(data), "secret") {
+		t.Error("config.json must not contain the IMAP password")
 	}
 	if loaded.SourceFolder != cfg.SourceFolder {
 		t.Errorf("SourceFolder = %q, want %q", loaded.SourceFolder, cfg.SourceFolder)
@@ -148,5 +156,50 @@ func TestLoadPreservesRuntimeFields(t *testing.T) {
 	}
 	if cfg.ListenAddr != "0.0.0.0:8080" {
 		t.Errorf("ListenAddr = %q, want 0.0.0.0:8080", cfg.ListenAddr)
+	}
+}
+
+func TestLoadLegacyIMAPPassword(t *testing.T) {
+	dir := t.TempDir()
+	raw := `{"imap_server":"imap.mail.me.com","imap_port":993,"imap_email":"u@example.com","source_folder":"Processing","poll_interval":300,"encryption_key":"` + strings.Repeat("ab", 32) + `","imap_password":"legacy-secret"}`
+	if err := os.WriteFile(filepath.Join(dir, "config.json"), []byte(raw), 0600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.LegacyIMAPPassword() != "legacy-secret" {
+		t.Errorf("LegacyIMAPPassword() = %q, want legacy-secret", cfg.LegacyIMAPPassword())
+	}
+	if cfg.IMAPPassword != "" {
+		t.Errorf("IMAPPassword should be empty after load, got %q", cfg.IMAPPassword)
+	}
+
+	if err := cfg.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "config.json"))
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if strings.Contains(string(data), "imap_password") || strings.Contains(string(data), "legacy-secret") {
+		t.Error("config.json still contains the legacy password after Save")
+	}
+}
+
+func TestLoadSelfHealsInvalidPollInterval(t *testing.T) {
+	dir := t.TempDir()
+	raw := `{"imap_server":"imap.mail.me.com","imap_port":993,"poll_interval":0,"encryption_key":"` + strings.Repeat("ab", 32) + `"}`
+	if err := os.WriteFile(filepath.Join(dir, "config.json"), []byte(raw), 0600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.PollInterval != Default().PollInterval {
+		t.Errorf("PollInterval = %d, want %d", cfg.PollInterval, Default().PollInterval)
 	}
 }

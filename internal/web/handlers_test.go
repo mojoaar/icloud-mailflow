@@ -497,3 +497,81 @@ func TestStatsHandlerRangeAndPoller(t *testing.T) {
 		t.Error("missing all-time label")
 	}
 }
+
+func TestPollerTickNilPoller(t *testing.T) {
+	h := pollerTickHandler(nil)
+	req := httptest.NewRequest("POST", "/poller/tick", nil)
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "IMAP not configured") {
+		t.Errorf("expected IMAP not configured toast, got %s", rec.Body.String())
+	}
+}
+
+func TestBackupNowNilPoller(t *testing.T) {
+	h := settingsBackupNow(nil)
+	req := httptest.NewRequest("POST", "/settings/backup/now", nil)
+	rec := serveHandler(h, req)
+
+	if !strings.Contains(rec.Body.String(), "IMAP not configured") {
+		t.Errorf("expected IMAP not configured toast, got %s", rec.Body.String())
+	}
+}
+
+func TestApplyNilPoller(t *testing.T) {
+	database := openWebTestDB(t)
+	h := rulesApplyHandler(db.NewRulesRepo(database), nil)
+
+	form := url.Values{"folder": {"INBOX"}}
+	req := httptest.NewRequest("POST", "/rules/apply", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want 400", rec.Code)
+	}
+}
+
+func TestSettingsSavePollRejectsInvalid(t *testing.T) {
+	database := openWebTestDB(t)
+	settingsRepo := db.NewSettingsRepo(database)
+	cfg := &config.Config{PollInterval: 120}
+
+	h := settingsSavePoll(cfg, settingsRepo)
+	form := url.Values{"poll_interval": {"10"}}
+	req := httptest.NewRequest("POST", "/settings/poll", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := serveHandler(h, req)
+
+	if loc := rec.Header().Get("Location"); !strings.Contains(loc, "error=poll") {
+		t.Errorf("Location = %q, want error=poll", loc)
+	}
+	if cfg.PollInterval != 120 {
+		t.Errorf("cfg.PollInterval = %d, want unchanged 120", cfg.PollInterval)
+	}
+	if v, _ := settingsRepo.Get("poll_interval"); v != "" {
+		t.Errorf("poll_interval should not be persisted, got %q", v)
+	}
+}
+
+func TestSettingsSavePollKeepsExistingInterval(t *testing.T) {
+	database := openWebTestDB(t)
+	settingsRepo := db.NewSettingsRepo(database)
+	cfg := &config.Config{PollInterval: 120}
+
+	h := settingsSavePoll(cfg, settingsRepo)
+	form := url.Values{"source_folder": {"Archive"}}
+	req := httptest.NewRequest("POST", "/settings/poll", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, want 303", rec.Code)
+	}
+	if v, _ := settingsRepo.Get("poll_interval"); v != "120" {
+		t.Errorf("poll_interval = %q, want 120", v)
+	}
+}

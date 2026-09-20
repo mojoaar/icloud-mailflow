@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -81,6 +82,9 @@ func initialize(dataDir string) (*App, error) {
 	var imapConn *imap.IMAPClient
 	var imapClient imap.Client
 	settingsRepo := db.NewSettingsRepo(database)
+	if err := migrateLegacyIMAPPassword(cfg, settingsRepo); err != nil {
+		slog.Warn("imap password migration failed", "error", err)
+	}
 	logKeep := 1000
 	if v, _ := settingsRepo.Get("log_keep"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
@@ -159,6 +163,31 @@ func initialize(dataDir string) (*App, error) {
 		Router:   router,
 		cancel:   metricsCancel,
 	}, nil
+}
+
+func migrateLegacyIMAPPassword(cfg *config.Config, settingsRepo *db.SettingsRepo) error {
+	legacy := cfg.LegacyIMAPPassword()
+	if legacy == "" {
+		return nil
+	}
+	if stored, _ := settingsRepo.Get("imap_password"); stored == "" {
+		key, err := hex.DecodeString(cfg.EncryptionKey)
+		if err != nil {
+			return fmt.Errorf("decode encryption key: %w", err)
+		}
+		enc, err := crypto.Encrypt([]byte(legacy), key)
+		if err != nil {
+			return fmt.Errorf("encrypt legacy password: %w", err)
+		}
+		if err := settingsRepo.Set("imap_password", string(enc)); err != nil {
+			return err
+		}
+	}
+	if err := cfg.Save(); err != nil {
+		return fmt.Errorf("rewrite config: %w", err)
+	}
+	slog.Info("migrated IMAP password from config.json to encrypted store")
+	return nil
 }
 
 func main() {

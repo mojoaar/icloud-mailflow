@@ -37,6 +37,7 @@
 
 <div class="card">
     <h2>Polling</h2>
+    {{if .PollError}}<p style="color:var(--red);font-size:0.8rem;margin:-4px 0 8px">Invalid polling settings — not saved</p>{{end}}
     <form method="POST" action="/settings/poll"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label class="flex-between">

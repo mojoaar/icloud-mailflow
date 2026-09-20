@@ -148,6 +148,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"Timezone":                  timezone,
 			"Timezones":                 config.TimezoneSuggestions(),
 			"TZError":                   r.URL.Query().Get("error") == "timezone",
+			"PollError":                 r.URL.Query().Get("error") == "poll",
 			"PollingActive":             pollingEnabled != "false",
 			"ContactsCollectionEnabled": contactsCollEnabled != "false",
 			"Contacts":                  contactsCount,
@@ -185,9 +186,10 @@ func settingsTestIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Email and password are required"})
 			return
 		}
-		cfg.IMAPEmail = email
-		cfg.IMAPPassword = password
-		temp := imap.New(cfg)
+		testCfg := *cfg
+		testCfg.IMAPEmail = email
+		testCfg.IMAPPassword = password
+		temp := imap.New(&testCfg)
 		if err := temp.Connect(); err != nil {
 			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Connection failed"})
 			return
@@ -324,16 +326,56 @@ func ensureFolder(client imap.Client, name string, foldersRepo *db.FoldersRepo) 
 func settingsSavePoll(cfg *config.Config, settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
-		cfg.SourceFolder = r.FormValue("source_folder")
-		cfg.PollInterval, _ = strconv.Atoi(r.FormValue("poll_interval"))
-		cfg.Save()
-		settingsRepo.Set("source_folder", cfg.SourceFolder)
-		settingsRepo.Set("poll_interval", strconv.Itoa(cfg.PollInterval))
-		if b := r.FormValue("poll_batch"); b != "" {
-			settingsRepo.Set("poll_batch", b)
+
+		interval := cfg.PollInterval
+		if s := strings.TrimSpace(r.FormValue("poll_interval")); s != "" {
+			n, err := strconv.Atoi(s)
+			if err != nil || config.ValidatePollInterval(n) != nil {
+				http.Redirect(w, r, "/settings?error=poll", http.StatusSeeOther)
+				return
+			}
+			interval = n
 		}
-		if k := r.FormValue("log_keep"); k != "" {
-			settingsRepo.Set("log_keep", k)
+		if config.ValidatePollInterval(interval) != nil {
+			interval = config.Default().PollInterval
+		}
+
+		batch := 0
+		if s := strings.TrimSpace(r.FormValue("poll_batch")); s != "" {
+			n, err := strconv.Atoi(s)
+			if err != nil || config.ValidatePollBatch(n) != nil {
+				http.Redirect(w, r, "/settings?error=poll", http.StatusSeeOther)
+				return
+			}
+			batch = n
+		}
+
+		keep := 0
+		if s := strings.TrimSpace(r.FormValue("log_keep")); s != "" {
+			n, err := strconv.Atoi(s)
+			if err != nil || config.ValidateLogKeep(n) != nil {
+				http.Redirect(w, r, "/settings?error=poll", http.StatusSeeOther)
+				return
+			}
+			keep = n
+		}
+
+		cfg.SourceFolder = r.FormValue("source_folder")
+		cfg.PollInterval = interval
+		if err := cfg.Save(); err != nil {
+			slog.Error("settings save config failed", "error", err)
+		}
+		if err := settingsRepo.Set("source_folder", cfg.SourceFolder); err != nil {
+			slog.Error("settings store source_folder failed", "error", err)
+		}
+		if err := settingsRepo.Set("poll_interval", strconv.Itoa(interval)); err != nil {
+			slog.Error("settings store poll_interval failed", "error", err)
+		}
+		if batch > 0 {
+			settingsRepo.Set("poll_batch", strconv.Itoa(batch))
+		}
+		if keep > 0 {
+			settingsRepo.Set("log_keep", strconv.Itoa(keep))
 		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
@@ -523,6 +565,10 @@ func getMemoryMB() string {
 
 func settingsBackupNow(p *poller.Poller) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if p == nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "IMAP not configured"})
+			return
+		}
 		if err := p.BackupNow(); err != nil {
 			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Connection failed"})
 			return

@@ -751,19 +751,19 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 				}
 			case "poll_interval":
 				n, e := strconv.Atoi(str)
-				if e != nil || n < 60 {
+				if e != nil || config.ValidatePollInterval(n) != nil {
 					errors = append(errors, k+": must be integer >= 60")
 					continue
 				}
 			case "poll_batch":
 				n, e := strconv.Atoi(str)
-				if e != nil || n < 1 || n > 200 {
+				if e != nil || config.ValidatePollBatch(n) != nil {
 					errors = append(errors, k+": must be integer 1-200")
 					continue
 				}
 			case "log_keep":
 				n, e := strconv.Atoi(str)
-				if e != nil || n < 100 {
+				if e != nil || config.ValidateLogKeep(n) != nil {
 					errors = append(errors, k+": must be integer >= 100")
 					continue
 				}

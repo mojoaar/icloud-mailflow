@@ -308,6 +308,10 @@ func rulesApplyHandler(repo *db.RulesRepo, p *poller.Poller) http.HandlerFunc {
 			http.Error(w, "folder is required", http.StatusBadRequest)
 			return
 		}
+		if p == nil {
+			http.Error(w, "IMAP not configured", http.StatusBadRequest)
+			return
+		}
 		limitStr := r.FormValue("limit")
 		limit, _ := strconv.Atoi(limitStr)
 		if limit <= 0 {

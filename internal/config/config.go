@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 )
@@ -13,13 +14,19 @@ type Config struct {
 	IMAPServer    string `json:"imap_server"`
 	IMAPPort      int    `json:"imap_port"`
 	IMAPEmail     string `json:"imap_email"`
-	IMAPPassword  string `json:"imap_password"`
+	IMAPPassword  string `json:"-"`
 	SourceFolder  string `json:"source_folder"`
 	PollInterval  int    `json:"poll_interval"`
 	EncryptionKey string `json:"encryption_key"`
 	DataDir       string `json:"-"`
 	ListenAddr    string `json:"-"`
+
+	legacyIMAPPassword string
 }
+
+// LegacyIMAPPassword returns a plaintext IMAP password found in a pre-migration
+// config.json. It is never persisted; the caller moves it into the encrypted store.
+func (c *Config) LegacyIMAPPassword() string { return c.legacyIMAPPassword }
 
 func Default() *Config {
 	return &Config{
@@ -54,12 +61,25 @@ func Load(dataDir string) (*Config, error) {
 	if err := json.Unmarshal(data, cfg); err != nil {
 		return nil, err
 	}
+	var legacy struct {
+		IMAPPassword string `json:"imap_password"`
+	}
+	if err := json.Unmarshal(data, &legacy); err == nil {
+		cfg.legacyIMAPPassword = legacy.IMAPPassword
+	}
 	if cfg.EncryptionKey == "" {
 		key, err := generateKey()
 		if err != nil {
 			return nil, err
 		}
 		cfg.EncryptionKey = key
+		if err := cfg.Save(); err != nil {
+			return nil, err
+		}
+	}
+	if err := ValidatePollInterval(cfg.PollInterval); err != nil {
+		slog.Warn("invalid poll interval in config, using default", "value", cfg.PollInterval, "default", Default().PollInterval)
+		cfg.PollInterval = Default().PollInterval
 		if err := cfg.Save(); err != nil {
 			return nil, err
 		}
@@ -82,11 +102,32 @@ func (c *Config) Validate() error {
 	if c.IMAPPort < 1 || c.IMAPPort > 65535 {
 		return fmt.Errorf("invalid IMAP port: %d", c.IMAPPort)
 	}
-	if c.PollInterval < 60 {
-		return fmt.Errorf("poll interval too low: %d (min 60)", c.PollInterval)
+	if err := ValidatePollInterval(c.PollInterval); err != nil {
+		return err
 	}
 	if c.ListenAddr == "" {
 		return fmt.Errorf("listen address is required")
+	}
+	return nil
+}
+
+func ValidatePollInterval(n int) error {
+	if n < 60 {
+		return fmt.Errorf("poll interval too low: %d (min 60)", n)
+	}
+	return nil
+}
+
+func ValidatePollBatch(n int) error {
+	if n < 1 || n > 200 {
+		return fmt.Errorf("messages per poll must be 1-200, got %d", n)
+	}
+	return nil
+}
+
+func ValidateLogKeep(n int) error {
+	if n < 100 {
+		return fmt.Errorf("log retention must be at least 100, got %d", n)
 	}
 	return nil
 }
