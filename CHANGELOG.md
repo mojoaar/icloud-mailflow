@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Five new theme families — Tokyo Night, One Dark, Gruvbox, Dracula, and Ayu — each with a dark and light variant (nine families in total)
+- Theme-aware Stats doughnut palette via a new `--chart-series` token defined per theme
+- `/docs` "Themes & Appearance" section (with sidebar link) documenting the families, picker, nav toggle, OS-preference fallback, and per-browser storage
+
+### Changed
+- Brand wordmark now derives from the active theme accent instead of a hardcoded blue gradient
+- Tuned colours in Catppuccin Light, Nord Dark, Nord Light, and Cyberpunk Light to meet WCAG AA contrast (4.5:1 text, 3:1 status/inverse); all themes are now covered by an automated contrast test
+- README and the `/docs` Settings reference updated for the nine theme families
+
+### Fixed
+- `/docs` inline `code` text now uses a contrast-safe background instead of `--accent` on `--border`
+- Removed a duplicated `POST /rules/{id}/test` entry and made the `/health` example version accurate in `/docs`
+
 ## [0.11.0] - 2026-09-20
 
 ### Added

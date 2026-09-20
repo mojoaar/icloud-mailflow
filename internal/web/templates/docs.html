@@ -69,7 +69,7 @@ body {
 .docs-content td { padding:8px 12px; border-bottom:1px solid var(--border); font-size:0.85rem; color:var(--muted); }
 .docs-content td code { font-size:0.82rem; }
 
-code { background:var(--border); padding:1px 5px; border-radius:3px; font-size:0.88rem; color:var(--accent); }
+code { background:var(--surface); padding:1px 5px; border-radius:3px; font-size:0.88rem; color:var(--accent); }
 pre code { background:none; padding:0; color:var(--text); }
 pre {
     background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);
@@ -134,6 +134,7 @@ pre {
         <a href="#contacts">Contacts</a>
         <a href="#activity">Activity Log</a>
         <a href="#stats">Stats Dashboard</a>
+        <a href="#themes">Themes &amp; Appearance</a>
         <a href="#mcp">MCP Server</a>
         <a href="#settings">Settings Reference</a>
     </nav>
@@ -282,6 +283,16 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <h2 id="stats">Stats Dashboard</h2>
 <p>Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, daily/weekly volume, messages by folder, and runtime metrics charts (Memory and CPU %). A range selector (7/30/90 days) scopes the daily and weekly volume, and a Poller card shows the last run time, duration, health, and consecutive failures. Charts are interactive (Chart.js) with a per-section List/Chart toggle, and they recolor live when the theme changes. Daily/weekly buckets and chart time axes follow the configured timezone. Status totals (success/error/skipped) are shown under the all-time processed count. Stats are stored independently from the activity log — clearing logs preserves all statistics.</p>
+<p>The range is also addressable directly: <code>/stats?days=7</code>, <code>/stats?days=30</code>, or <code>/stats?days=90</code>.</p>
+
+<h2 id="themes">Themes &amp; Appearance</h2>
+<p>Mailflow ships nine colour themes, each with a dark and light variant: <strong>Mailflow</strong> (default), <strong>Catppuccin</strong>, <strong>Nord</strong>, <strong>Cyberpunk</strong>, <strong>Tokyo Night</strong>, <strong>One Dark</strong>, <strong>Gruvbox</strong>, <strong>Dracula</strong>, and <strong>Ayu</strong>.</p>
+<ul>
+    <li>Choose a family in <strong>Settings → Regional → Theme</strong>; switch between dark and light with the moon/sun icon in the header</li>
+    <li>On your first visit the theme follows your operating system's light/dark preference</li>
+    <li>Syntax highlighting on this page and the charts on Stats follow the active theme, and charts recolor instantly when you switch</li>
+    <li>The choice is stored per browser (<code>localStorage</code>) and is not saved on the server — set it on each device</li>
+</ul>
 
 <h2 id="mcp">MCP Server</h2>
 <p>Mailflow exposes a Model Context Protocol (MCP) server so AI agents (Claude Code, OpenCode, Codex) can manage rules, check stats, and trigger polls remotely. Enable it in Settings → MCP Access — you get an API key and ready-to-use config snippets for all platforms.</p>
@@ -327,7 +338,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td>Backup</td><td>Scheduled rules backup via email — enabled toggle, frequency, recipient, Backup Now button</td></tr>
     <tr><td>Contacts</td><td>Import from iCloud, enable/disable auto-collection, wipe all contacts</td></tr>
     <tr><td>MCP Access</td><td>Enable remote access for AI agents (Claude Code, OpenCode, Codex) with API key auth</td></tr>
-    <tr><td>Regional</td><td>Timezone (any IANA zone, with suggestions), font (System Default / JetBrains Mono), theme (Mailflow / Catppuccin / Nord / Cyberpunk — dark &amp; light, toggled from the nav)</td></tr>
+    <tr><td>Regional</td><td>Timezone (any IANA zone, with suggestions), font (System Default / JetBrains Mono), theme (nine families — Mailflow, Catppuccin, Nord, Cyberpunk, Tokyo Night, One Dark, Gruvbox, Dracula, Ayu; each dark &amp; light — see <a href="#themes">Themes &amp; Appearance</a>)</td></tr>
     <tr><td>Server</td><td>Listen address, contacts, folders, time, uptime, memory, goroutines, version, repository</td></tr>
 </table>
 
@@ -427,6 +438,13 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 <div class="endpoint">
     <h4><span class="method-badge method-post">POST</span> POST /rules/{id}/test</h4>
     <p class="desc">Dry-run rule against synthetic message fields (from, to, cc, subject). Returns per-condition pass/fail with actual vs expected values.</p>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td>from</td><td>string</td><td>No</td><td>Sender email</td></tr>
+        <tr><td>to</td><td>string</td><td>No</td><td>Recipient email</td></tr>
+        <tr><td>cc</td><td>string</td><td>No</td><td>CC email</td></tr>
+        <tr><td>subject</td><td>string</td><td>No</td><td>Email subject</td></tr>
+    </table>
     <pre><code class="language-bash">curl -X POST http://{{.Host}}/rules/1/test -b cookies.txt \
   -d "from=user@test.com&subject=Hello&to=recipient@test.com&cc=cc@test.com"</code></pre>
 </div>
@@ -627,7 +645,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
   },
   "status": "ok",
   "uptime_seconds": 3600,
-  "version": "0.10.0"
+  "version": "{{.Version}}"
 }</code></pre>
 </div>
 
@@ -665,18 +683,6 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
   -b cookies.txt \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "folder=INBOX&limit=50"</code></pre>
-</div>
-
-<div class="endpoint">
-    <h4><span class="method-badge method-post">POST</span> POST /rules/{id}/test</h4>
-    <p class="desc">Test a rule against synthetic inputs (from, to, cc, subject). Returns match result with per-condition pass/fail breakdown showing expected vs actual values.</p>
-    <table>
-        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
-        <tr><td>from</td><td>string</td><td>No</td><td>Sender email</td></tr>
-        <tr><td>to</td><td>string</td><td>No</td><td>Recipient email</td></tr>
-        <tr><td>cc</td><td>string</td><td>No</td><td>CC email</td></tr>
-        <tr><td>subject</td><td>string</td><td>No</td><td>Email subject</td></tr>
-    </table>
 </div>
 
 <div class="endpoint">

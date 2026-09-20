@@ -30,7 +30,7 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **Stats Dashboard** — rule hit counts, top senders, actions breakdown, daily/weekly volume (7/30/90-day range), messages by folder, poller health, and runtime metrics charts (Memory, CPU %). Stats persist independently from activity logs
 - **Keyboard Shortcuts** — `?` for help dialog, `g` + `d/a/r/s/t` for navigation between pages
 - **Docs Page** — full usage guide and API reference with curl examples and syntax highlighting
-- **Themes** — Mailflow, Catppuccin, Nord, and Cyberpunk, each in a dark and light variant; pick the theme in Settings and quick-toggle dark/light from the nav (respects OS preference on first visit)
+- **Themes** — nine colour themes (Mailflow, Catppuccin, Nord, Cyberpunk, Tokyo Night, One Dark, Gruvbox, Dracula, Ayu), each in a dark and light variant; pick the theme in Settings → Regional and quick-toggle dark/light from the nav (respects OS preference on first visit; stored per browser)
 - **JetBrains Mono Font** — optional monospace font, toggle in Settings → Regional
 - **Timezone Support** — display activity log in any IANA timezone (searchable picker with validation)
 - **Folder Auto-Create** — source folder is created on iCloud if it doesn't exist
