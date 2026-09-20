@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Brand wordmark now derives from the active theme accent instead of a hardcoded blue gradient
 - Tuned colours in Catppuccin Light, Nord Dark, Nord Light, and Cyberpunk Light to meet WCAG AA contrast (4.5:1 text, 3:1 status/inverse); all themes are now covered by an automated contrast test
 - README and the `/docs` Settings reference updated for the nine theme families
+- Regenerated the README screenshots to reflect the current UI (Stats range selector and Poller card, theme-derived brand wordmark)
 
 ### Fixed
 - `/docs` inline `code` text now uses a contrast-safe background instead of `--accent` on `--border`
