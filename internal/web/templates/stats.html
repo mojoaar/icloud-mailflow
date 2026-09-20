@@ -159,10 +159,10 @@ var dataWeekly  = {labels:[{{range .Weekly}}"{{.Date}}",{{end}}],vals:[{{range .
 var dataMem     = {labels:[{{range .MetricsMem}}"{{.Date}}",{{end}}],vals:[{{range .MetricsMem}}{{.Count}},{{end}}]};
 var dataCPU     = {labels:[{{range .MetricsCPU}}"{{.Date}}",{{end}}],vals:[{{range .MetricsCPU}}{{.Count}},{{end}}]};
 
-var dark = document.documentElement.getAttribute('data-theme') !== 'light';
-var textColor  = dark ? '#8b949e' : '#656d76';
-var gridColor  = dark ? '#21262d' : '#d0d7de';
-var accent     = '#58a6ff';
+var cssvars    = getComputedStyle(document.documentElement);
+var textColor  = cssvars.getPropertyValue('--chart-text').trim() || '#8b949e';
+var gridColor  = cssvars.getPropertyValue('--chart-grid').trim() || '#21262d';
+var accent     = cssvars.getPropertyValue('--chart-accent').trim() || '#58a6ff';
 var accentArr  = ['#58a6ff','#3fb950','#d29922','#f85149','#a371f7','#79c0ff','#56d364','#f0883e','#f778ba','#7ee787'];
 var charts = {};
 

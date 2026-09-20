@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Theme system — Mailflow, Catppuccin, Nord, and Cyberpunk, each with a dark and light variant; theme chosen in Settings → Regional, quick dark/light toggle in the nav, syntax highlighting follows the mode
+
+### Changed
+- Replaced hardcoded UI colours with theme tokens (buttons, badges, toasts, method badges, focus ring, charts) so all themes apply consistently
+
 ## [0.10.0] - 2026-09-19
 
 ### Added

@@ -10,23 +10,12 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png">
     <meta name="theme-color" content="#0d1117">
     <script>
-(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme:light)').matches)document.documentElement.setAttribute('data-theme','light')})();
+(function(){var v=localStorage.getItem('theme');if(v==='light')v='mailflow-light';if(v==='')v=null;if(!v||v.indexOf('-')<0)v=window.matchMedia('(prefers-color-scheme:light)').matches?'mailflow-light':'mailflow-dark';document.documentElement.setAttribute('data-theme',v);var l=document.createElement('link');l.rel='stylesheet';l.id='hljs-theme';l.href=v.slice(-6)==='-light'?'/static/hljs-light.css':'/static/hljs-dark.css';document.head.appendChild(l);document.addEventListener('DOMContentLoaded',function(){var c=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();var m=document.querySelector('meta[name=theme-color]');if(m&&c)m.setAttribute('content',c)})})();
     </script>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/mobile.css">
-    <link rel="stylesheet" href="/static/hljs-dark.css">
     {{if .MonoFont}}<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">{{end}}
     <style>
-:root {
-    --bg: #0d1117; --surface: #161b22; --border: #30363d;
-    --text: #c9d1d9; --muted: #8b949e; --accent: #58a6ff;
-    --green: #3fb950; --red: #f85149; --radius: 6px;
-}
-[data-theme="light"] {
-    --bg: #ffffff; --surface: #f6f8fa; --border: #d0d7de;
-    --text: #24292f; --muted: #656d76; --accent: #0969da;
-    --green: #1a7f37; --red: #cf222e;
-}
 * { box-sizing:border-box; margin:0; padding:0; }
 body {
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
@@ -93,10 +82,10 @@ pre {
     font-size:0.65rem; font-weight:700; margin-right:6px;
     vertical-align:middle; text-transform:uppercase; letter-spacing:0.03em;
 }
-.method-get  { background:#033a16; color:var(--green); }
-.method-post { background:#042a49; color:var(--accent); }
-.method-put  { background:#3d2a00; color:#d29922; }
-.method-delete { background:#490202; color:var(--red); }
+.method-get  { background:color-mix(in srgb,var(--green) 18%,transparent); color:var(--green); }
+.method-post { background:color-mix(in srgb,var(--accent) 18%,transparent); color:var(--accent); }
+.method-put  { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
+.method-delete { background:color-mix(in srgb,var(--red) 18%,transparent); color:var(--red); }
 
 .endpoint {
     background:var(--surface); border:1px solid var(--border);
@@ -338,7 +327,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td>Backup</td><td>Scheduled rules backup via email — enabled toggle, frequency, recipient, Backup Now button</td></tr>
     <tr><td>Contacts</td><td>Import from iCloud, enable/disable auto-collection, wipe all contacts</td></tr>
     <tr><td>MCP Access</td><td>Enable remote access for AI agents (Claude Code, OpenCode, Codex) with API key auth</td></tr>
-    <tr><td>Regional</td><td>Timezone, font (System Default / JetBrains Mono)</td></tr>
+    <tr><td>Regional</td><td>Timezone, font (System Default / JetBrains Mono), theme (Mailflow / Catppuccin / Nord / Cyberpunk — dark &amp; light, toggled from the nav)</td></tr>
     <tr><td>Server</td><td>Listen address, contacts, folders, time, uptime, memory, goroutines, version, repository</td></tr>
 </table>
 

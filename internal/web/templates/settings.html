@@ -170,7 +170,7 @@
             </button>
         </form>
         <span style="color:var(--muted);font-size:0.85rem">
-            Status: {{if .MCPEnabled}}<span style="color:#22c55e">Enabled</span>{{else}}<span style="color:var(--muted)">Disabled</span>{{end}}
+            Status: {{if .MCPEnabled}}<span style="color:var(--green)">Enabled</span>{{else}}<span style="color:var(--muted)">Disabled</span>{{end}}
         </span>
     </div>
     {{if .MCPEnabled}}
@@ -258,7 +258,36 @@
             </select>
         </div>
     </form>
+    <div class="form-group" style="margin-top:12px">
+        <label for="theme-family">Theme</label>
+        <select id="theme-family" style="width:100%" onchange="setThemeFamily(this.value)">
+            <option value="mailflow">Mailflow</option>
+            <option value="catppuccin">Catppuccin</option>
+            <option value="nord">Nord</option>
+            <option value="cyberpunk">Cyberpunk</option>
+        </select>
+        <p class="muted" style="font-size:0.8rem;margin-top:4px">Use the moon/sun icon in the header to switch dark and light</p>
+    </div>
 </div>
+
+<script>
+(function(){
+    var v = document.documentElement.getAttribute('data-theme') || 'mailflow-dark';
+    var sel = document.getElementById('theme-family');
+    if (sel) sel.value = v.replace(/-(light|dark)$/, '');
+})();
+function setThemeFamily(fam){
+    var v = document.documentElement.getAttribute('data-theme') || 'mailflow-dark';
+    var mode = /-(light)$/.test(v) ? 'light' : 'dark';
+    var next = fam + '-' + mode;
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    if (window.themeLink) themeLink(next);
+    var icon = document.querySelector('.theme-icon');
+    if (icon) icon.innerHTML = '<i data-lucide="' + (mode === 'light' ? 'sun' : 'moon') + '" class="nav-icon"></i>';
+    if (window.lucide) lucide.createIcons();
+}
+</script>
 
 <div class="card">
     <h2>Server</h2>
