@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 
 type trackedMock struct {
 	mu               sync.Mutex
+	sessMu           sync.Mutex
 	searchUIDs       []goimap.UID
 	messages         map[uint32]*imap.Message
 	searchErr        error
@@ -1079,4 +1081,139 @@ func TestStatKeysTimezone(t *testing.T) {
 	if day != "2025-12-31" {
 		t.Errorf("LA day = %s, want 2025-12-31", day)
 	}
+}
+
+// unseenMock models iCloud returning the same message until it is marked seen or
+// moved, unlike trackedMock which consumes each UID once.
+type unseenMock struct {
+	*trackedMock
+	amu    sync.Mutex
+	unseen []goimap.UID
+}
+
+func (m *unseenMock) SearchMessages(folder string, limit int, minUID uint32) ([]goimap.UID, error) {
+	m.amu.Lock()
+	defer m.amu.Unlock()
+	for _, uid := range m.unseen {
+		if uint32(uid) >= minUID {
+			return []goimap.UID{uid}, nil
+		}
+	}
+	return nil, nil
+}
+
+func (m *unseenMock) SetFlags(uid uint32, flags []string) error {
+	for _, f := range flags {
+		if strings.EqualFold(f, "\\Seen") {
+			m.forget(uid)
+		}
+	}
+	return m.trackedMock.SetFlags(uid, flags)
+}
+
+func (m *unseenMock) MoveMessage(uid uint32, dest string) (uint32, error) {
+	m.forget(uid)
+	return m.trackedMock.MoveMessage(uid, dest)
+}
+
+func (m *unseenMock) forget(uid uint32) {
+	m.amu.Lock()
+	defer m.amu.Unlock()
+	out := m.unseen[:0]
+	for _, u := range m.unseen {
+		if uint32(u) != uid {
+			out = append(out, u)
+		}
+	}
+	m.unseen = out
+}
+
+func TestMatchedWithoutSeenRunsOncePerTick(t *testing.T) {
+	rulesRepo, contactsRepo := openPollerTestDB(t)
+	rule := &db.Rule{
+		Name:    "webhook-rule",
+		Enabled: true,
+		Groups: []db.ConditionGroup{
+			{Operator: "AND", Conditions: []db.Condition{
+				{Field: "subject", Operator: "contains", Value: "match"},
+			}},
+		},
+		Actions: []db.Action{{Type: "webhook", Value: "http://example.com/hook"}},
+	}
+	if err := rulesRepo.Create(rule); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	mock := &unseenMock{
+		trackedMock: &trackedMock{messages: map[uint32]*imap.Message{
+			7: {UID: 7, Subject: "please match"},
+		}},
+		unseen: []goimap.UID{7},
+	}
+	collector := contacts.NewCollector(contactsRepo, mock)
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, nil, nil, 50, 60, "INBOX", "", nil)
+
+	var calls int32
+	p.sendWebhook = func(url string, payload []byte, secret string) error {
+		atomic.AddInt32(&calls, 1)
+		return nil
+	}
+
+	if err := p.process(); err != nil {
+		t.Fatalf("process: %v", err)
+	}
+	if got := atomic.LoadInt32(&calls); got != 1 {
+		t.Errorf("webhook executed %d times in one tick, want 1", got)
+	}
+}
+
+func (m *trackedMock) Lock()   { m.sessMu.Lock() }
+func (m *trackedMock) Unlock() { m.sessMu.Unlock() }
+
+func TestConcurrentProcessStatusApply(t *testing.T) {
+	rulesRepo, contactsRepo := openPollerTestDB(t)
+	rule := &db.Rule{
+		Name:    "conc-rule",
+		Enabled: true,
+		Groups: []db.ConditionGroup{
+			{Operator: "AND", Conditions: []db.Condition{
+				{Field: "subject", Operator: "contains", Value: "x"},
+			}},
+		},
+		Actions: []db.Action{{Type: "move_to_folder", Value: "Archive"}},
+	}
+	if err := rulesRepo.Create(rule); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	uids := make([]goimap.UID, 0, 40)
+	messages := map[uint32]*imap.Message{}
+	for i := 1; i <= 40; i++ {
+		uids = append(uids, goimap.UID(i))
+		messages[uint32(i)] = &imap.Message{UID: uint32(i), Subject: "x"}
+	}
+	mock := &trackedMock{searchUIDs: uids, messages: messages}
+	p := NewPoller(mock, rulesRepo, contacts.NewCollector(contactsRepo, mock), nil, nil, nil, nil, nil, 10, 60, "INBOX", "", nil)
+
+	var wg sync.WaitGroup
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 20; i++ {
+			_ = p.process()
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 200; i++ {
+			_ = p.Status()
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 20; i++ {
+			_, _ = p.ApplyToFolder("INBOX", 5)
+		}
+	}()
+	wg.Wait()
 }

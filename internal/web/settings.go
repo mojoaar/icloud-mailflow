@@ -73,11 +73,13 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		folders, _ := foldersRepo.List()
 		if len(folders) == 0 {
 			if imapClient != nil {
+				unlock := imap.LockSession(imapClient)
 				if imapFolders, err := imapClient.ListFolders(); err == nil {
 					syncFoldersToDB(imapFolders, foldersRepo)
 					folders, _ = foldersRepo.List()
 					ensureFolder(imapClient, cfg.SourceFolder, foldersRepo)
 				}
+				unlock()
 			} else {
 				email, _ := settingsRepo.Get("imap_email")
 				password, err := getPassword(settingsRepo, cfg)

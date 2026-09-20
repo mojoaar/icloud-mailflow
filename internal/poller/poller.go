@@ -37,15 +37,16 @@ type Poller struct {
 	source              string
 	stopCh              chan struct{}
 	wg                  sync.WaitGroup
-	running             bool
+	running             atomic.Bool
 	processing          atomic.Bool
 	trashFolder         string
 	mu                  sync.Mutex
+	imapMu              sync.RWMutex
 	lastError           atomic.Value
 	consecutiveFailures int
 	backoff             time.Duration
 	imapConnect         func() (imap.Client, error)
-	lastTickDuration    time.Duration
+	lastTickNanos       atomic.Int64
 	autoReplyRepo       *db.AutoReplyRepo
 	sendMail            func(to, from, password, subject, body string, attachments ...smtp.Attachment) error
 	sendWebhook         func(url string, payload []byte, secret string) error
@@ -73,23 +74,33 @@ func NewPoller(imapClient imap.Client, rulesRepo *db.RulesRepo, collector *conta
 }
 
 func (p *Poller) Start() {
-	if p.running {
+	if p.running.Swap(true) {
 		return
 	}
-	p.running = true
 	p.wg.Add(1)
 	go p.loop()
 	slog.Info("poller started", "interval", p.interval.String(), "source", p.source)
 }
 
 func (p *Poller) Stop() {
-	if !p.running {
+	if !p.running.Swap(false) {
 		return
 	}
-	p.running = false
 	close(p.stopCh)
 	p.wg.Wait()
 	slog.Info("poller stopped")
+}
+
+func (p *Poller) client() imap.Client {
+	p.imapMu.RLock()
+	defer p.imapMu.RUnlock()
+	return p.imapClient
+}
+
+func (p *Poller) setClient(c imap.Client) {
+	p.imapMu.Lock()
+	p.imapClient = c
+	p.imapMu.Unlock()
 }
 
 func (p *Poller) Tick() error {
@@ -135,9 +146,17 @@ func (p *Poller) process() error {
 	start := time.Now()
 	metrics.PollerTicks.Inc()
 	defer func() {
-		p.lastTickDuration = time.Since(start)
-		metrics.PollerTickDuration.Observe(time.Since(start).Seconds())
+		d := time.Since(start)
+		p.lastTickNanos.Store(int64(d))
+		metrics.PollerTickDuration.Observe(d.Seconds())
 	}()
+
+	client := p.client()
+	if client == nil {
+		return fmt.Errorf("imap client not available")
+	}
+	unlock := imap.LockSession(client)
+	defer unlock()
 
 	p.lastTick.Store(time.Now().UnixNano())
 	slog.Debug("poller tick start", "source", p.source)
@@ -149,15 +168,14 @@ func (p *Poller) process() error {
 	slog.Debug("rules loaded", "count", len(ruleList))
 
 	skipUIDs := map[uint32]bool{}
-	highestSkipped := uint32(0)
+	minUIDFloor := uint32(0)
 	for processed := 0; processed < p.batchSize; processed++ {
-		minUID := highestSkipped
-		uids, err := p.imapClient.SearchMessages(p.source, 1, minUID)
+		uids, err := client.SearchMessages(p.source, 1, minUIDFloor)
 		if err != nil {
 			p.setLastError(err)
 			return fmt.Errorf("search: %w", err)
 		}
-		slog.Debug("search result", "found", len(uids), "minUID", minUID)
+		slog.Debug("search result", "found", len(uids), "minUID", minUIDFloor)
 		if len(uids) == 0 {
 			slog.Debug("folder empty, tick complete")
 			return nil
@@ -173,7 +191,14 @@ func (p *Poller) process() error {
 			continue
 		}
 		for _, uid := range remaining {
-			msg, err := p.imapClient.FetchMessage(uint32(uid))
+			u := uint32(uid)
+			// Advance the search floor for every handled UID so a matched message
+			// that stays unseen (no move/mark_as_read) is not re-processed in the
+			// same tick.
+			if u+1 > minUIDFloor {
+				minUIDFloor = u + 1
+			}
+			msg, err := client.FetchMessage(u)
 			if err != nil {
 				slog.Warn("poller failed to fetch message", "uid", uid, "error", err)
 				continue
@@ -190,7 +215,7 @@ func (p *Poller) process() error {
 					p.collector.CollectFromMessage(msg)
 				}
 			}
-			matched, captures, err := rules.Match(ruleList, msg, p.imapClient, p.timeLocation())
+			matched, captures, err := rules.Match(ruleList, msg, client, p.timeLocation())
 			if err != nil {
 				slog.Error("rule matching error", "uid", msg.UID, "error", err)
 				continue
@@ -208,13 +233,9 @@ func (p *Poller) process() error {
 				if !hasMarkRead {
 					slog.Warn("matched rule has no mark_as_read — message may re-process on next tick", "uid", uid, "rule", matched.Name)
 				}
-				p.executeActions(matched, uint32(uid), msg, captures)
+				p.executeActions(matched, u, msg, captures)
 			} else {
-				u := uint32(uid)
 				skipUIDs[u] = true
-				if u >= highestSkipped {
-					highestSkipped = u + 1
-				}
 				slog.Debug("no rule matched, skipping", "uid", uid)
 			}
 		}
@@ -243,6 +264,12 @@ func (p *Poller) ApplyToFolder(folder string, limit int) (*ApplyResult, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
+	client := p.client()
+	if client == nil {
+		return nil, fmt.Errorf("imap client not available")
+	}
+	unlock := imap.LockSession(client)
+	defer unlock()
 	ruleList, err := p.rulesRepo.List()
 	if err != nil {
 		return nil, fmt.Errorf("list rules: %w", err)
@@ -250,7 +277,7 @@ func (p *Poller) ApplyToFolder(folder string, limit int) (*ApplyResult, error) {
 	result := &ApplyResult{StartedAt: time.Now()}
 	var minUID uint32
 	for result.Processed < limit {
-		uids, err := p.imapClient.SearchMessages(folder, 1, minUID)
+		uids, err := client.SearchMessages(folder, 1, minUID)
 		if err != nil {
 			return result, fmt.Errorf("search: %w", err)
 		}
@@ -258,13 +285,13 @@ func (p *Poller) ApplyToFolder(folder string, limit int) (*ApplyResult, error) {
 			break
 		}
 		uid := uint32(uids[0])
-		msg, err := p.imapClient.FetchMessage(uid)
+		msg, err := client.FetchMessage(uid)
 		if err != nil {
 			result.Errors++
 			minUID = uid + 1
 			continue
 		}
-		matched, captures, err := rules.Match(ruleList, msg, p.imapClient, p.timeLocation())
+		matched, captures, err := rules.Match(ruleList, msg, client, p.timeLocation())
 		if err != nil {
 			result.Errors++
 			minUID = uid + 1
@@ -282,6 +309,7 @@ func (p *Poller) ApplyToFolder(folder string, limit int) (*ApplyResult, error) {
 }
 
 func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, captures map[string]string) {
+	client := p.client()
 	from := ""
 	if msg != nil && len(msg.From) > 0 {
 		from = msg.From[0].Email
@@ -339,7 +367,7 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 				slog.Warn("move_to_folder action has empty value, skipping", "uid", effectiveUID, "rule", rule.Name)
 				continue
 			}
-			newUID, err := p.imapClient.MoveMessage(effectiveUID, action.Value)
+			newUID, err := client.MoveMessage(effectiveUID, action.Value)
 			if err != nil {
 				slog.Error("move failed", "uid", effectiveUID, "dest", action.Value, "error", err)
 				logAction(effectiveUID, action, "error")
@@ -347,17 +375,17 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 				logAction(effectiveUID, action, "success")
 				effectiveUID = newUID
 				destFolder = action.Value
-				p.imapClient.SelectMailbox(destFolder)
+				client.SelectMailbox(destFolder)
 			}
 		case "mark_as_read":
-			if err := p.imapClient.SetFlags(effectiveUID, []string{"\\Seen"}); err != nil {
+			if err := client.SetFlags(effectiveUID, []string{"\\Seen"}); err != nil {
 				slog.Error("mark as read failed", "uid", effectiveUID, "error", err)
 				logAction(effectiveUID, action, "error")
 			} else {
 				logAction(effectiveUID, action, "success")
 			}
 		case "mark_as_unread":
-			if err := p.imapClient.RemoveFlags(effectiveUID, []string{"\\Seen"}); err != nil {
+			if err := client.RemoveFlags(effectiveUID, []string{"\\Seen"}); err != nil {
 				slog.Error("mark as unread failed", "uid", effectiveUID, "error", err)
 				logAction(effectiveUID, action, "error")
 			} else {
@@ -372,7 +400,7 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 				logAction(effectiveUID, action, "error")
 				continue
 			}
-			if err := p.imapClient.SetFlags(effectiveUID, []string{action.Value}); err != nil {
+			if err := client.SetFlags(effectiveUID, []string{action.Value}); err != nil {
 				slog.Error("set flag failed", "uid", effectiveUID, "flag", action.Value, "error", err)
 				logAction(effectiveUID, action, "error")
 			} else {
@@ -382,7 +410,7 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 			if action.Value == "" {
 				continue
 			}
-			raw, err := p.imapClient.FetchRawMessage(effectiveUID)
+			raw, err := client.FetchRawMessage(effectiveUID)
 			if err != nil {
 				logAction(effectiveUID, action, "error")
 			} else {
@@ -399,13 +427,13 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 			if err != nil {
 				logAction(effectiveUID, action, "error")
 			} else {
-				newUID, err := p.imapClient.MoveMessage(effectiveUID, trash)
+				newUID, err := client.MoveMessage(effectiveUID, trash)
 				if err != nil {
 					logAction(effectiveUID, action, "error")
 				} else {
 					logAction(effectiveUID, action, "success")
 					effectiveUID = newUID
-					p.imapClient.SelectMailbox(trash)
+					client.SelectMailbox(trash)
 				}
 			}
 		case "remove_flag":
@@ -421,7 +449,7 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 					continue
 				}
 			}
-			if err := p.imapClient.RemoveFlags(effectiveUID, []string{flag}); err != nil {
+			if err := client.RemoveFlags(effectiveUID, []string{flag}); err != nil {
 				logAction(effectiveUID, action, "error")
 			} else {
 				logAction(effectiveUID, action, "success")
@@ -476,7 +504,10 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 				"uid":     effectiveUID,
 			}
 			body, _ := json.Marshal(payload)
-			secret, _ := p.settingsRepo.Get("webhook_secret")
+			secret := ""
+			if p.settingsRepo != nil {
+				secret, _ = p.settingsRepo.Get("webhook_secret")
+			}
 			send := p.sendWebhook
 			if send == nil {
 				send = defaultSendWebhook
@@ -672,7 +703,7 @@ func (p *Poller) getTrashFolder() (string, error) {
 	if p.trashFolder != "" {
 		return p.trashFolder, nil
 	}
-	folders, err := p.imapClient.ListFolders()
+	folders, err := p.client().ListFolders()
 	if err != nil {
 		return "", err
 	}
@@ -729,11 +760,11 @@ func (p *Poller) Status() PollerStatus {
 	cf := p.consecutiveFailures
 	p.mu.Unlock()
 	return PollerStatus{
-		Active:              p.running,
+		Active:              p.running.Load(),
 		Healthy:             cf == 0,
 		LastTick:            time.Unix(0, p.lastTick.Load()),
 		LastError:           lastErr,
-		LastDuration:        p.lastTickDuration,
+		LastDuration:        time.Duration(p.lastTickNanos.Load()),
 		ProcessingMessages:  p.processing.Load(),
 		ConsecutiveFailures: cf,
 	}
@@ -747,13 +778,13 @@ func (p *Poller) setLastError(err error) {
 	p.consecutiveFailures++
 	cf := p.consecutiveFailures
 	p.mu.Unlock()
-	if cf > 2 && p.running && p.imapConnect != nil {
+	if cf > 2 && p.running.Load() && p.imapConnect != nil {
 		go p.reconnect()
 	}
 }
 
 func (p *Poller) clearLastError() {
-	p.lastError.Store(nil)
+	p.lastError.Store("")
 	p.mu.Lock()
 	p.consecutiveFailures = 0
 	p.backoff = 0
@@ -764,7 +795,7 @@ func (p *Poller) syncFolders() {
 	if p.foldersRepo == nil {
 		return
 	}
-	folders, err := p.imapClient.ListFolders()
+	folders, err := p.client().ListFolders()
 	if err != nil {
 		slog.Warn("poller folder sync failed", "error", err)
 		return
@@ -806,7 +837,7 @@ func (p *Poller) reconnect() {
 		p.mu.Unlock()
 		return
 	}
-	p.imapClient = client
+	p.setClient(client)
 	p.clearLastError()
 	slog.Info("IMAP reconnected")
 }

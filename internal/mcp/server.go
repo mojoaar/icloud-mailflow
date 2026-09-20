@@ -415,6 +415,8 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if imapClient == nil {
 			return mcp.NewToolResultError("IMAP not configured"), nil
 		}
+		unlock := imap.LockSession(imapClient)
+		defer unlock()
 		folders, err := imapClient.ListFolders()
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
@@ -593,6 +595,8 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
+		unlock := imap.LockSession(imapClient)
+		defer unlock()
 		for _, f := range folders {
 			if err := collector.SeedFromFolder(f.Name); err != nil {
 				slog.Warn("seed contacts failed for folder", "folder", f.Name, "error", err)

@@ -21,9 +21,11 @@ func contactsSearchHandler(repo *db.ContactsRepo) http.HandlerFunc {
 func foldersListHandler(imapClient imap.Client, repo *db.FoldersRepo, settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if imapClient != nil {
+			unlock := imap.LockSession(imapClient)
 			if imapFolders, err := imapClient.ListFolders(); err == nil {
 				syncFoldersToDB(imapFolders, repo)
 			}
+			unlock()
 		}
 		folders, _ := repo.List()
 		source, _ := settingsRepo.Get("source_folder")

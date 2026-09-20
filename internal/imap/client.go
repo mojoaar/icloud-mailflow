@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	goimap "github.com/emersion/go-imap/v2"
@@ -54,6 +55,30 @@ type Client interface {
 type IMAPClient struct {
 	cfg    *config.Config
 	client *imapclient.Client
+	mu     sync.Mutex
+}
+
+// Lock/Unlock serialize whole logical operations on the shared IMAP session.
+// The connection carries selected-mailbox state, so callers must hold the lock
+// for a complete operation (search+fetch, an action sequence), not per call.
+func (c *IMAPClient) Lock()   { c.mu.Lock() }
+func (c *IMAPClient) Unlock() { c.mu.Unlock() }
+
+// LockSession locks the session if the client supports it and returns an unlock
+// function. Clients that do not implement Lock/Unlock (e.g. test mocks) get a
+// no-op unlock.
+func LockSession(c Client) func() {
+	if c == nil {
+		return func() {}
+	}
+	if l, ok := c.(interface {
+		Lock()
+		Unlock()
+	}); ok {
+		l.Lock()
+		return l.Unlock
+	}
+	return func() {}
 }
 
 func New(cfg *config.Config) *IMAPClient {
@@ -67,6 +92,7 @@ func (c *IMAPClient) Connect() error {
 		return fmt.Errorf("tls dial: %w", err)
 	}
 	if c.cfg.IMAPPassword == "" {
+		conn.Close()
 		return fmt.Errorf("imap password is empty")
 	}
 	c.client = imapclient.New(conn, &imapclient.Options{})

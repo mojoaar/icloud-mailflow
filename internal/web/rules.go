@@ -376,6 +376,12 @@ func rulesTestMessageHandler(repo *db.RulesRepo, imapClient imap.Client) http.Ha
 		}
 		r.ParseForm()
 		folder := r.FormValue("folder")
+		if imapClient == nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "IMAP not configured"})
+			return
+		}
+		unlock := imap.LockSession(imapClient)
+		defer unlock()
 		uids, err := imapClient.SearchMessages(folder, 1, 0)
 		if err != nil || len(uids) == 0 {
 			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "No messages found in folder"})
