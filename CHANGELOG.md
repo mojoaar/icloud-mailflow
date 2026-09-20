@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Replaced hardcoded UI colours with theme tokens (buttons, badges, toasts, method badges, focus ring, charts) so all themes apply consistently
+- Refreshed README screenshots and added `scripts/screenshots.sh` (Playwright) to regenerate them from the demo dataset
 
 ## [0.10.0] - 2026-09-19
 

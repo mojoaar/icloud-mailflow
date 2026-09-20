@@ -158,6 +158,12 @@ rm -f demo/mailflow.db* && bash scripts/demo.sh && go run ./cmd/mailflow/ -data=
 
 Then open http://localhost:8080/dashboard and log in with password `demo123`.
 
+To regenerate the README screenshots from the demo dataset (requires Node + Playwright — `npm install && npx playwright install chromium`):
+
+```bash
+bash scripts/screenshots.sh
+```
+
 ## Build Requirements
 
 - Go 1.25.5+

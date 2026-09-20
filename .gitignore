@@ -25,3 +25,4 @@ coverage.out
 
 # Playwright output
 .playwright-mcp/
+node_modules/

@@ -1,0 +1,8 @@
+{
+  "name": "icloud-mailflow-tools",
+  "private": true,
+  "description": "Dev tooling (screenshot automation). Not part of the Go build.",
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}
