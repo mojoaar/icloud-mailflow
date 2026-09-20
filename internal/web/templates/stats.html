@@ -187,6 +187,7 @@ var textColor  = cssvars.getPropertyValue('--chart-text').trim() || '#8b949e';
 var gridColor  = cssvars.getPropertyValue('--chart-grid').trim() || '#21262d';
 var accent     = cssvars.getPropertyValue('--chart-accent').trim() || '#58a6ff';
 var accentArr  = ['#58a6ff','#3fb950','#d29922','#f85149','#a371f7','#79c0ff','#56d364','#f0883e','#f778ba','#7ee787'];
+var seriesFallback = accentArr;
 var charts = {};
 
 function chartColors() { return {text:textColor,grid:gridColor,accent:accent}; }
@@ -274,6 +275,8 @@ function renderAll() {
     textColor = cssvars.getPropertyValue('--chart-text').trim() || '#8b949e';
     gridColor = cssvars.getPropertyValue('--chart-grid').trim() || '#21262d';
     accent    = cssvars.getPropertyValue('--chart-accent').trim() || '#58a6ff';
+    var series = cssvars.getPropertyValue('--chart-series').split(',').map(function(s){return s.trim()}).filter(Boolean);
+    accentArr = series.length ? series : seriesFallback.slice();
 
     initChart('daily', 'line', dataDaily.labels, dataDaily.vals);
     initChart('actions', 'doughnut', dataActions.labels, dataActions.vals);
