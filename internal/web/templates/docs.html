@@ -281,7 +281,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 </ul>
 
 <h2 id="stats">Stats Dashboard</h2>
-<p>Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, daily/weekly volume, messages by folder, and runtime metrics charts (Memory and CPU %). Charts are interactive (Chart.js) with per-section List/Chart toggle. Stats are stored independently from the activity log — clearing logs preserves all statistics.</p>
+<p>Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, daily/weekly volume, messages by folder, and runtime metrics charts (Memory and CPU %). A range selector (7/30/90 days) scopes the daily and weekly volume, and a Poller card shows the last run time, duration, health, and consecutive failures. Charts are interactive (Chart.js) with a per-section List/Chart toggle, and they recolor live when the theme changes. Daily/weekly buckets and chart time axes follow the configured timezone. Status totals (success/error/skipped) are shown under the all-time processed count. Stats are stored independently from the activity log — clearing logs preserves all statistics.</p>
 
 <h2 id="mcp">MCP Server</h2>
 <p>Mailflow exposes a Model Context Protocol (MCP) server so AI agents (Claude Code, OpenCode, Codex) can manage rules, check stats, and trigger polls remotely. Enable it in Settings → MCP Access — you get an API key and ready-to-use config snippets for all platforms.</p>

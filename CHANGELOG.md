@@ -9,11 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Theme system — Mailflow, Catppuccin, Nord, and Cyberpunk, each with a dark and light variant; theme chosen in Settings → Regional, quick dark/light toggle in the nav, syntax highlighting follows the mode
+- `/stats` range selector (7/30/90 days) scoping the daily and weekly volume charts
+- `/stats` Poller card showing last run time, duration, health, and consecutive failures
 
 ### Changed
 - Replaced hardcoded UI colours with theme tokens (buttons, badges, toasts, method badges, focus ring, charts) so all themes apply consistently
+- `/stats` status totals (success/error/skipped) are now shown as a labelled breakdown under the all-time processed count
+- `/stats` charts recolor live when the theme changes (no reload)
 - Refreshed README screenshots and added `scripts/screenshots.sh` (Playwright) to regenerate them from the demo dataset
 - Timezone picker now accepts any IANA zone (searchable field with suggestions) instead of a fixed 10-zone list; validated on save and via MCP `update_settings`
+
+### Fixed
+- `/stats` daily and weekly volume charts were plotted newest-first (reversed); they are now returned in ascending time order
+- `/stats` daily/weekly buckets and runtime-metric time axis now follow the configured timezone instead of UTC/server-local time
 
 ## [0.10.0] - 2026-09-19
 

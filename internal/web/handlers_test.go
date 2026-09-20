@@ -432,8 +432,9 @@ func TestDocsStandaloneHandler(t *testing.T) {
 func TestStatsHandler(t *testing.T) {
 	database := openWebTestDB(t)
 	statsRepo := db.NewStatsRepo(database)
+	settingsRepo := db.NewSettingsRepo(database)
 
-	h := statsHandler(statsRepo)
+	h := statsHandler(statsRepo, settingsRepo, nil)
 	req := httptest.NewRequest("GET", "/stats", nil)
 	rec := serveHandler(h, req)
 
@@ -443,5 +444,56 @@ func TestStatsHandler(t *testing.T) {
 	body := rec.Body.String()
 	if !strings.Contains(body, "Stats") {
 		t.Error("missing 'Stats' in rendered page")
+	}
+}
+
+func TestStatsRange(t *testing.T) {
+	cases := []struct {
+		in   string
+		want int
+	}{
+		{"7", 7},
+		{"30", 30},
+		{"90", 90},
+		{"", 7},
+		{"365", 7},
+		{"bogus", 7},
+	}
+	for _, c := range cases {
+		if got := statsRange(c.in); got != c.want {
+			t.Errorf("statsRange(%q) = %d, want %d", c.in, got, c.want)
+		}
+	}
+}
+
+func TestStatsHandlerRangeAndPoller(t *testing.T) {
+	database := openWebTestDB(t)
+	statsRepo := db.NewStatsRepo(database)
+	settingsRepo := db.NewSettingsRepo(database)
+
+	_ = statsRepo.IncrementStat("total", "processed")
+	_ = statsRepo.IncrementStat("status", "success")
+	_ = statsRepo.IncrementStat("status", "error")
+	_ = statsRepo.IncrementStat("daily", "2026-09-20")
+
+	h := statsHandler(statsRepo, settingsRepo, nil)
+	req := httptest.NewRequest("GET", "/stats?days=90", nil)
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "days=90") {
+		t.Error("missing range control")
+	}
+	if !strings.Contains(body, "IMAP not configured") {
+		t.Error("expected poller fallback when no poller is configured")
+	}
+	if !strings.Contains(body, "success") || !strings.Contains(body, "error") {
+		t.Error("expected status breakdown with success/error")
+	}
+	if !strings.Contains(body, "messages processed (all time)") {
+		t.Error("missing all-time label")
 	}
 }

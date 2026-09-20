@@ -1057,3 +1057,26 @@ func TestExecuteActionsWebhookEmptyURL(t *testing.T) {
 		t.Error("should not call webhook for empty URL")
 	}
 }
+
+func TestStatKeysTimezone(t *testing.T) {
+	instant := time.Date(2026, 1, 1, 0, 30, 0, 0, time.UTC)
+
+	utc := time.UTC
+	la, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	day, week := statKeys(instant, utc)
+	if day != "2026-01-01" {
+		t.Errorf("UTC day = %s, want 2026-01-01", day)
+	}
+	if week != "2026-W01" {
+		t.Errorf("UTC week = %s, want 2026-W01", week)
+	}
+
+	day, _ = statKeys(instant, la)
+	if day != "2025-12-31" {
+		t.Errorf("LA day = %s, want 2025-12-31", day)
+	}
+}

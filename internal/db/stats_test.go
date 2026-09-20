@@ -1,7 +1,9 @@
 package db
 
 import (
+	"strconv"
 	"testing"
+	"time"
 )
 
 func insertLogEntry(t *testing.T, repo *StatsRepo, uid int, fromAddr, ruleName, actionType string) {
@@ -151,7 +153,56 @@ func TestStatsDailyVolume(t *testing.T) {
 	if len(vol) != 2 {
 		t.Fatalf("len = %d, want 2", len(vol))
 	}
-	if vol[0].Date != "2026-07-02" || vol[0].Count != 1 {
-		t.Errorf("day 1: date=%s count=%d, want 2026-07-02 1", vol[0].Date, vol[0].Count)
+	if vol[0].Date != "2026-07-01" || vol[0].Count != 2 {
+		t.Errorf("day 1: date=%s count=%d, want 2026-07-01 2", vol[0].Date, vol[0].Count)
+	}
+	if vol[1].Date != "2026-07-02" || vol[1].Count != 1 {
+		t.Errorf("day 2: date=%s count=%d, want 2026-07-02 1", vol[1].Date, vol[1].Count)
+	}
+}
+
+func TestStatsWeeklyVolumeAscending(t *testing.T) {
+	d := NewTestDB(t)
+	repo := NewStatsRepo(d)
+
+	repo.IncrementStat("weekly", "2026-W30")
+	repo.IncrementStat("weekly", "2026-W28")
+	repo.IncrementStat("weekly", "2026-W29")
+
+	vol, err := repo.WeeklyVolume(2)
+	if err != nil {
+		t.Fatalf("WeeklyVolume: %v", err)
+	}
+	if len(vol) != 2 {
+		t.Fatalf("len = %d, want 2 (most recent)", len(vol))
+	}
+	if vol[0].Date != "2026-W29" || vol[1].Date != "2026-W30" {
+		t.Errorf("want ascending W29,W30; got %s,%s", vol[0].Date, vol[1].Date)
+	}
+}
+
+func TestStatsMetricValuesOrderAndTimezone(t *testing.T) {
+	d := NewTestDB(t)
+	repo := NewStatsRepo(d)
+
+	t1 := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC).Unix()
+	t2 := time.Date(2026, 7, 1, 8, 0, 0, 0, time.UTC).Unix()
+	repo.IncrementStat("cpu", strconv.FormatInt(t1, 10))
+	repo.IncrementStat("cpu", strconv.FormatInt(t2, 10))
+
+	loc, err := time.LoadLocation("Europe/Copenhagen")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	vals, err := repo.MetricValues("cpu", 1440, loc)
+	if err != nil {
+		t.Fatalf("MetricValues: %v", err)
+	}
+	if len(vals) != 2 {
+		t.Fatalf("len = %d, want 2", len(vals))
+	}
+	if vals[0].Date != "10:00" || vals[1].Date != "12:00" {
+		t.Errorf("want ascending 10:00,12:00 (CEST); got %s,%s", vals[0].Date, vals[1].Date)
 	}
 }

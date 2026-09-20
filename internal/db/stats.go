@@ -104,7 +104,9 @@ func (r *StatsRepo) ActionsBreakdown() ([]ActionBreakdown, error) {
 }
 
 func (r *StatsRepo) DailyVolume(days int) ([]DailyVolume, error) {
-	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category='daily' ORDER BY key DESC LIMIT ?`, days)
+	rows, err := r.DB.Query(`SELECT key, value FROM (
+		SELECT key, value FROM stats WHERE category='daily' ORDER BY key DESC LIMIT ?
+	) ORDER BY key ASC`, days)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +157,9 @@ func (r *StatsRepo) FolderDistribution() ([]FolderCount, error) {
 }
 
 func (r *StatsRepo) WeeklyVolume(weeks int) ([]DailyVolume, error) {
-	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category='weekly' ORDER BY key DESC LIMIT ?`, weeks)
+	rows, err := r.DB.Query(`SELECT key, value FROM (
+		SELECT key, value FROM stats WHERE category='weekly' ORDER BY key DESC LIMIT ?
+	) ORDER BY key ASC`, weeks)
 	if err != nil {
 		return nil, err
 	}
@@ -182,8 +186,10 @@ func (r *StatsRepo) PruneStats(category string, before int64) error {
 	return err
 }
 
-func (r *StatsRepo) MetricValues(category string, limit int) ([]DailyVolume, error) {
-	rows, err := r.DB.Query(`SELECT key, value FROM stats WHERE category=? ORDER BY CAST(key AS INTEGER) ASC LIMIT ?`, category, limit)
+func (r *StatsRepo) MetricValues(category string, limit int, loc *time.Location) ([]DailyVolume, error) {
+	rows, err := r.DB.Query(`SELECT key, value FROM (
+		SELECT key, value FROM stats WHERE category=? ORDER BY CAST(key AS INTEGER) DESC LIMIT ?
+	) ORDER BY CAST(key AS INTEGER) ASC`, category, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -195,16 +201,19 @@ func (r *StatsRepo) MetricValues(category string, limit int) ([]DailyVolume, err
 		if err := rows.Scan(&k, &d.Count); err != nil {
 			return nil, err
 		}
-		d.Date = formatMetricKey(k)
+		d.Date = formatMetricKey(k, loc)
 		out = append(out, d)
 	}
 	return out, rows.Err()
 }
 
-func formatMetricKey(unixStr string) string {
+func formatMetricKey(unixStr string, loc *time.Location) string {
 	sec, err := strconv.ParseInt(unixStr, 10, 64)
 	if err != nil {
 		return ""
 	}
-	return time.Unix(sec, 0).UTC().Format("15:04")
+	if loc == nil {
+		loc = time.UTC
+	}
+	return time.Unix(sec, 0).In(loc).Format("15:04")
 }

@@ -316,10 +316,9 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 				if from != "" {
 					p.statsRepo.IncrementStat("sender", from)
 				}
-				now := time.Now()
-				p.statsRepo.IncrementStat("daily", now.Format("2006-01-02"))
-				year, week := now.ISOWeek()
-				p.statsRepo.IncrementStat("weekly", fmt.Sprintf("%d-W%02d", year, week))
+				day, week := statKeys(time.Now(), p.timeLocation())
+				p.statsRepo.IncrementStat("daily", day)
+				p.statsRepo.IncrementStat("weekly", week)
 				messageStatsDone = true
 			}
 			p.statsRepo.IncrementStat("action", action.Type)
@@ -534,6 +533,12 @@ func defaultSendWebhook(url string, payload []byte, secret string) error {
 		return fmt.Errorf("webhook returned status %d", resp.StatusCode)
 	}
 	return nil
+}
+
+func statKeys(now time.Time, loc *time.Location) (day, week string) {
+	t := now.In(loc)
+	year, wk := t.ISOWeek()
+	return t.Format("2006-01-02"), fmt.Sprintf("%d-W%02d", year, wk)
 }
 
 func (p *Poller) timeLocation() *time.Location {

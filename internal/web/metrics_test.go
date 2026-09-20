@@ -22,7 +22,7 @@ func TestCollectCPUPrecision(t *testing.T) {
 	<-done
 	collect(repo, &prevUser, &prevSys)
 
-	vals, _ := repo.MetricValues("cpu", 1440)
+	vals, _ := repo.MetricValues("cpu", 1440, time.UTC)
 	if len(vals) == 0 {
 		t.Fatal("expected cpu stat after collect")
 	}

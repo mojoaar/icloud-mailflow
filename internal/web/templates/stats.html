@@ -1,19 +1,42 @@
 {{define "stats"}}
 <div id="stats-content">
 <div class="flex-between" style="margin-bottom:16px">
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
 <h1 style="margin:0">Stats</h1>
-<a href="/stats" class="btn">
+<div class="chart-toggle">
+    {{range .DaysOptions}}<a class="toggle-btn {{if eq . $.Days}}active{{end}}" href="/stats?days={{.}}" style="text-decoration:none">{{.}}d</a>{{end}}
+</div>
+</div>
+<a href="/stats?days={{.Days}}" class="btn">
     <i data-lucide="refresh-cw" data-size="14"></i> Refresh
 </a>
 </div>
 
 <div class="card" style="text-align:center;padding:32px">
     <div style="font-size:2.5rem;font-weight:700;color:var(--accent)">{{.Total}}</div>
-    <div style="color:var(--muted);font-size:0.9rem">messages processed</div>
+    <div style="color:var(--muted);font-size:0.9rem">messages processed (all time)</div>
     {{if .Errors}}
-    <div style="margin-top:8px;font-size:0.85rem;color:var(--muted)">
-        {{range .Errors}}{{if ne .Status "success"}}{{.Status}}: {{.Count}} ·{{end}}{{end}}
+    <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:14px;font-size:0.85rem">
+        {{range .Errors}}<span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:{{if eq .Status "success"}}var(--green){{else if eq .Status "error"}}var(--red){{else}}var(--muted){{end}}"></span><span class="muted">{{.Status}}</span><strong style="color:var(--text)">{{.Count}}</strong></span>{{end}}
     </div>
+    {{end}}
+</div>
+
+<div class="card" style="margin-top:16px">
+    <div class="flex-between" style="margin-bottom:0">
+        <h2 style="margin:0">Poller</h2>
+        {{if .Poller.Configured}}<span style="font-size:0.8rem;font-weight:600;color:{{if .Poller.Healthy}}var(--green){{else}}var(--red){{end}}">{{if .Poller.Healthy}}Healthy{{else}}Failing{{end}}</span>{{end}}
+    </div>
+    {{if .Poller.Configured}}
+    <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:12px;font-size:0.9rem">
+        <div><div class="muted" style="font-size:0.8rem">Last run</div><div>{{.Poller.LastRun}}</div></div>
+        <div><div class="muted" style="font-size:0.8rem">Duration</div><div>{{.Poller.LastDuration}}</div></div>
+        <div><div class="muted" style="font-size:0.8rem">Failures</div><div>{{.Poller.ConsecutiveFailures}}</div></div>
+        <div><div class="muted" style="font-size:0.8rem">State</div><div>{{if .Poller.Processing}}Processing{{else}}Idle{{end}}</div></div>
+    </div>
+    {{if .Poller.LastError}}<div style="margin-top:10px;font-size:0.85rem;color:var(--red)">{{.Poller.LastError}}</div>{{end}}
+    {{else}}
+    <p class="muted" style="margin:10px 0 0">IMAP not configured</p>
     {{end}}
 </div>
 
@@ -244,18 +267,30 @@ function toggleView(id, view, init) {
 }
 window.toggleView = toggleView;
 
-initChart('daily', 'line', dataDaily.labels, dataDaily.vals);
-initChart('actions', 'doughnut', dataActions.labels, dataActions.vals);
-initChart('folders', 'bar', dataFolders.labels, dataFolders.vals);
-initChart('weekly', 'barv', dataWeekly.labels, dataWeekly.vals);
-if (dataMem.labels.length) {
-    charts['metrics-mem'] = makeChart('metrics-mem-canvas', 'line', dataMem.labels, dataMem.vals, 'Memory (MB)');
-    if (charts['metrics-mem']) charts['metrics-mem'].resize();
+function renderAll() {
+    Object.keys(charts).forEach(function(k){ if (charts[k]) charts[k].destroy(); });
+    charts = {};
+    cssvars   = getComputedStyle(document.documentElement);
+    textColor = cssvars.getPropertyValue('--chart-text').trim() || '#8b949e';
+    gridColor = cssvars.getPropertyValue('--chart-grid').trim() || '#21262d';
+    accent    = cssvars.getPropertyValue('--chart-accent').trim() || '#58a6ff';
+
+    initChart('daily', 'line', dataDaily.labels, dataDaily.vals);
+    initChart('actions', 'doughnut', dataActions.labels, dataActions.vals);
+    initChart('folders', 'bar', dataFolders.labels, dataFolders.vals);
+    initChart('weekly', 'barv', dataWeekly.labels, dataWeekly.vals);
+    if (dataMem.labels.length) {
+        charts['metrics-mem'] = makeChart('metrics-mem-canvas', 'line', dataMem.labels, dataMem.vals, 'Memory (MB)');
+        if (charts['metrics-mem']) charts['metrics-mem'].resize();
+    }
+    if (dataCPU.labels.length) {
+        charts['metrics-cpu'] = makeChart('metrics-cpu-canvas', 'line', dataCPU.labels, dataCPU.vals, 'CPU %');
+        if (charts['metrics-cpu']) charts['metrics-cpu'].resize();
+    }
 }
-if (dataCPU.labels.length) {
-    charts['metrics-cpu'] = makeChart('metrics-cpu-canvas', 'line', dataCPU.labels, dataCPU.vals, 'CPU %');
-    if (charts['metrics-cpu']) charts['metrics-cpu'].resize();
-}
+
+renderAll();
+window.addEventListener('themechange', renderAll);
 })();
 </script>
 </div>

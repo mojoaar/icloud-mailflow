@@ -286,6 +286,7 @@ function setThemeFamily(fam){
     var icon = document.querySelector('.theme-icon');
     if (icon) icon.innerHTML = '<i data-lucide="' + (mode === 'light' ? 'sun' : 'moon') + '" class="nav-icon"></i>';
     if (window.lucide) lucide.createIcons();
+    window.dispatchEvent(new Event('themechange'));
 }
 </script>
 
