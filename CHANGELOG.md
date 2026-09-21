@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `Content-Security-Policy` on all responses (`object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`, allowlisted CDN/font origins) and `Strict-Transport-Security` over HTTPS
+
 ### Security
 - The IMAP password is no longer written to `config.json` — it is stored only in the encrypted database. A legacy plaintext value is migrated into the encrypted store on startup and the `imap_password` field is removed from the file
 - `X-Forwarded-For` is only trusted when `TRUST_PROXY=true`, so the login and MCP rate limits can no longer be bypassed by spoofing the header
@@ -45,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tuned colours in Catppuccin Light, Nord Dark, Nord Light, and Cyberpunk Light to meet WCAG AA contrast (4.5:1 text, 3:1 status/inverse); all themes are now covered by an automated contrast test
 - README and the `/docs` Settings reference updated for the nine theme families
 - Regenerated the README screenshots to reflect the current UI (Stats range selector and Poller card, theme-derived brand wordmark)
+- The HTTP server now sets `ReadHeaderTimeout`/`ReadTimeout`/`IdleTimeout` and shuts down gracefully; the request timeout no longer applies to the MCP SSE transport, and `WriteTimeout` is left unset so streaming is not cut off
 
 ### Fixed
 - `/docs` inline `code` text now uses a contrast-safe background instead of `--accent` on `--border`

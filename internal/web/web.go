@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
@@ -24,7 +25,7 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/poller"
 )
 
-func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *contacts.Collector, logRepo *db.LogRepo, statsRepo *db.StatsRepo, version string, st time.Time, p *poller.Poller) http.Handler {
+func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *contacts.Collector, logRepo *db.LogRepo, statsRepo *db.StatsRepo, version string, st time.Time, p *poller.Poller) (http.Handler, func(context.Context) error) {
 	appVersion = version
 	startTime = st
 	r := chi.NewRouter()
@@ -35,7 +36,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 		r.Use(middleware.RealIP)
 	}
 	r.Use(securityHeaders)
-	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(timeoutExcept("/mcp", 30*time.Second))
 
 	settingsRepo := db.NewSettingsRepo(d)
 	if v, _ := settingsRepo.Get("font_mono"); v != "false" {
@@ -138,7 +139,25 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Get("/api/folders", foldersListHandler(imapClient, foldersRepo, settingsRepo))
 	r.Post("/contacts/seed", seedContactsHandler(collector, foldersRepo, contactsRepo))
 
-	return r
+	shutdown := func(ctx context.Context) error {
+		return mcpServer.Shutdown(ctx)
+	}
+	return r, shutdown
+}
+
+// timeoutExcept applies a request timeout to every route except those under
+// prefix (the MCP SSE transport must not be cut short).
+func timeoutExcept(prefix string, d time.Duration) func(http.Handler) http.Handler {
+	timeout := middleware.Timeout(d)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, prefix) {
+				next.ServeHTTP(w, r)
+				return
+			}
+			timeout(next).ServeHTTP(w, r)
+		})
+	}
 }
 
 var csrfMiddleware = func(next http.Handler) http.Handler {

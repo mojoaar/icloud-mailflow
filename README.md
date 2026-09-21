@@ -49,7 +49,7 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - MCP API key authentication with constant-time comparison
 - bcrypt hashed admin password
 - SameSite=Strict session cookies
-- Security headers on all responses (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)
+- Security headers on all responses (Content-Security-Policy, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy) and HSTS over HTTPS
 - Secure and HttpOnly cookies when behind TLS
 - Logout requires POST with CSRF (no GET-based logout)
 

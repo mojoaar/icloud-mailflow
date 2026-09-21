@@ -33,6 +33,7 @@ type App struct {
 	Poller   *poller.Poller
 	Router   http.Handler
 	cancel   context.CancelFunc
+	shutdown func(context.Context) error
 }
 
 func (a *App) Close() {
@@ -47,6 +48,13 @@ func (a *App) Close() {
 	}
 	if a.DB != nil {
 		a.DB.Close()
+	}
+}
+
+// Shutdown closes long-lived transport sessions (e.g. MCP SSE streams).
+func (a *App) Shutdown(ctx context.Context) {
+	if a.shutdown != nil {
+		_ = a.shutdown(ctx)
 	}
 }
 
@@ -161,7 +169,7 @@ func initialize(dataDir string) (*App, error) {
 		}
 	}
 
-	router := web.New(cfg, database, imapClient, contactsCollector, logRepo, statsRepo, version, startTime, p)
+	router, shutdownMCP := web.New(cfg, database, imapClient, contactsCollector, logRepo, statsRepo, version, startTime, p)
 
 	metricsCtx, metricsCancel := context.WithCancel(context.Background())
 	web.StartMetricsCollector(statsRepo, metricsCtx)
@@ -173,7 +181,19 @@ func initialize(dataDir string) (*App, error) {
 		Poller:   p,
 		Router:   router,
 		cancel:   metricsCancel,
+		shutdown: shutdownMCP,
 	}, nil
+}
+
+func newHTTPServer(addr string, handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              addr,
+		Handler:           handler,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		// WriteTimeout is intentionally unset: /mcp serves long-lived SSE streams.
+	}
 }
 
 func migrateLegacyIMAPPassword(cfg *config.Config, settingsRepo *db.SettingsRepo) error {
@@ -214,12 +234,8 @@ func main() {
 		slog.Error("failed to initialize", "error", err)
 		os.Exit(1)
 	}
-	defer app.Close()
 
-	server := &http.Server{
-		Addr:    app.Config.ListenAddr,
-		Handler: app.Router,
-	}
+	server := newHTTPServer(app.Config.ListenAddr, app.Router)
 
 	go func() {
 		slog.Info("server starting", "addr", app.Config.ListenAddr)
@@ -233,5 +249,13 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	slog.Info("shutting down")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		slog.Warn("graceful shutdown incomplete, forcing close", "error", err)
+	}
+	app.Shutdown(ctx)
 	server.Close()
+	app.Close()
 }

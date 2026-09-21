@@ -125,3 +125,14 @@ func TestMigrateLegacyIMAPPassword(t *testing.T) {
 		t.Error("config.json still contains the plaintext password")
 	}
 }
+
+func TestNewHTTPServerTimeouts(t *testing.T) {
+	s := newHTTPServer("127.0.0.1:0", nil)
+	if s.ReadHeaderTimeout <= 0 || s.ReadTimeout <= 0 || s.IdleTimeout <= 0 {
+		t.Errorf("expected positive timeouts, got read-header=%v read=%v idle=%v",
+			s.ReadHeaderTimeout, s.ReadTimeout, s.IdleTimeout)
+	}
+	if s.WriteTimeout != 0 {
+		t.Error("WriteTimeout must stay 0 so MCP SSE streams are not cut off")
+	}
+}
