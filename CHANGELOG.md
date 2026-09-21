@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-09-21
+
 ### Added
 - Nested AND/OR condition groups in the rule editor (preserved through export, backup, and MCP)
 - Failure alerts: POST a webhook when the poller goes unhealthy or recovers, or a scheduled backup fails
@@ -667,6 +669,7 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
+[0.13.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.12.2...v0.13.0
 [0.12.2]: https://github.com/mojoaar/icloud-mailflow/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/mojoaar/icloud-mailflow/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.11.0...v0.12.0
