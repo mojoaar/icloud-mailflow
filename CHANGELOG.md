@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-09-21
+
 ### Added
 - `Content-Security-Policy` on all responses (`object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`, allowlisted CDN/font origins) and `Strict-Transport-Security` over HTTPS
 
@@ -636,6 +638,7 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
+[0.12.1]: https://github.com/mojoaar/icloud-mailflow/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.9.6...v0.10.0
