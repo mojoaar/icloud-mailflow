@@ -5,11 +5,11 @@
     <h2>IMAP Connection</h2>
     <form method="POST" action="/settings/imap"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
-            <label>Email</label>
+            <label for="settings-email">Email</label>
             <input type="email" id="settings-email" name="imap_email" value="{{.IMAPEmail}}" style="width:100%">
         </div>
         <div class="form-group">
-            <label>App-Specific Password</label>
+            <label for="settings-imap-pass">App-Specific Password</label>
             <input type="password" id="settings-imap-pass" name="imap_password" placeholder="Leave blank to keep current" style="width:100%">
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
@@ -28,7 +28,7 @@
     <h2>Admin Password</h2>
     <form method="POST" action="/settings/password"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
-            <label>New Password</label>
+            <label for="settings-password">New Password</label>
             <input type="password" id="settings-password" name="password" placeholder="Leave blank to keep current" style="width:100%">
         </div>
         <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Update Password</button>
@@ -40,13 +40,13 @@
     {{if .PollError}}<p style="color:var(--red);font-size:0.8rem;margin:-4px 0 8px">Invalid polling settings — not saved</p>{{end}}
     <form method="POST" action="/settings/poll"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
-            <label class="flex-between">
-                <span>Source Folder (where rules run on new mail)</span>
+            <div class="flex-between">
+                <label for="source-folder-select">Source Folder (where rules run on new mail)</label>
                 <button type="button" class="btn"
                     hx-get="/api/folders" hx-target="#source-folder-select" hx-swap="innerHTML">
                     Refresh folders
                 </button>
-            </label>
+            </div>
             <div id="folders-select">
                 <select name="source_folder" id="source-folder-select" style="width:100%">
                     {{range .Folders}}
@@ -56,15 +56,15 @@
             </div>
         </div>
         <div class="form-group">
-            <label>Poll Interval (seconds)</label>
+            <label for="settings-interval">Poll Interval (seconds)</label>
             <input type="number" id="settings-interval" name="poll_interval" value="{{.PollInterval}}" min="60" style="width:120px">
         </div>
         <div class="form-group">
-            <label>Messages Per Poll</label>
+            <label for="settings-batch">Messages Per Poll</label>
             <input type="number" id="settings-batch" name="poll_batch" value="{{.PollBatch}}" min="1" max="200" style="width:120px">
         </div>
         <div class="form-group">
-            <label>Log Retention (entries)</label>
+            <label for="settings-keep">Log Retention (entries)</label>
             <input type="number" id="settings-keep" name="log_keep" value="{{.LogKeep}}" min="100" style="width:120px">
         </div>
         <div class="flex-row">
@@ -83,8 +83,8 @@
     <p style="color:var(--muted);margin-bottom:12px">Shared secret for authenticating outgoing webhook requests.</p>
     <form method="POST" action="/settings/webhook"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
-            <label>Webhook Secret</label>
-            <input type="text" name="webhook_secret" value="{{.WebhookSecret}}" placeholder="Optional X-Webhook-Secret header value" style="width:100%">
+            <label for="settings-webhook">Webhook Secret</label>
+            <input type="text" id="settings-webhook" name="webhook_secret" value="{{.WebhookSecret}}" placeholder="Optional X-Webhook-Secret header value" style="width:100%">
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
             <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save</button>
@@ -102,8 +102,8 @@
             <label><input type="checkbox" name="alerts_enabled" value="true" {{if .AlertsEnabled}}checked{{end}}> Enable alerts</label>
         </div>
         <div class="form-group">
-            <label>Alert webhook URL</label>
-            <input type="text" name="alert_webhook_url" value="{{.AlertWebhookURL}}" placeholder="https://ntfy.sh/your-topic" style="width:100%">
+            <label for="settings-alert-url">Alert webhook URL</label>
+            <input type="text" id="settings-alert-url" name="alert_webhook_url" value="{{.AlertWebhookURL}}" placeholder="https://ntfy.sh/your-topic" style="width:100%">
         </div>
         <div class="flex-row">
             <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save</button>
@@ -159,16 +159,16 @@
             </label>
         </div>
         <div class="form-group">
-            <label>Frequency</label>
-            <select name="backup_frequency" class="auto-submit" style="width:100%">
+            <label for="settings-backup-freq">Frequency</label>
+            <select name="backup_frequency" id="settings-backup-freq" class="auto-submit" style="width:100%">
                 <option value="weekly" {{if eq .BackupFrequency "weekly"}}selected{{end}}>Weekly</option>
                 <option value="daily" {{if eq .BackupFrequency "daily"}}selected{{end}}>Daily</option>
                 <option value="monthly" {{if eq .BackupFrequency "monthly"}}selected{{end}}>Monthly</option>
             </select>
         </div>
         <div class="form-group">
-            <label>Recipient (defaults to your iCloud email)</label>
-            <input type="email" name="backup_recipient" value="{{.BackupRecipient}}" placeholder="{{.IMAPEmail}}" class="auto-submit" style="width:100%">
+            <label for="settings-backup-recipient">Recipient (defaults to your iCloud email)</label>
+            <input type="email" id="settings-backup-recipient" name="backup_recipient" value="{{.BackupRecipient}}" placeholder="{{.IMAPEmail}}" class="auto-submit" style="width:100%">
         </div>
     </form>
     <div class="flex-row">
@@ -196,7 +196,7 @@
     </div>
     {{if .MCPEnabled}}
     <div class="form-group">
-        <label>API Key</label>
+        <span class="form-label">API Key</span>
         <div style="display:flex;gap:8px;align-items:center">
             <code style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-size:0.8rem;word-break:break-all;flex:1">{{.MCPAPIKey}}</code>
             <button type="button" class="btn" data-copy="{{.MCPAPIKey}}" style="white-space:nowrap"><i data-lucide="clipboard" data-size="14"></i> Copy</button>
@@ -206,11 +206,11 @@
         </div>
     </div>
     <div class="form-group">
-        <label>Endpoint</label>
+        <span class="form-label">Endpoint</span>
         <code style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-size:0.8rem;display:block">{{.MCPURL}}</code>
     </div>
     <div class="form-group" style="margin-top:16px">
-        <label style="margin-bottom:8px">Platform Config</label>
+        <span class="form-label" style="margin-bottom:8px">Platform Config</span>
         <div style="display:flex;gap:4px;margin-bottom:8px">
             <button type="button" class="btn" role="tab" aria-selected="true" aria-controls="mcp-opencode" data-snippet="mcp-opencode">OpenCode</button>
             <button type="button" class="btn" role="tab" aria-selected="false" aria-controls="mcp-claude" data-snippet="mcp-claude">Claude Code</button>
@@ -272,8 +272,8 @@
     </form>
     <form method="POST" action="/settings/font" style="margin-top:12px"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
-            <label>Font</label>
-            <select name="font" class="auto-submit" style="width:100%">
+            <label for="settings-font">Font</label>
+            <select name="font" id="settings-font" class="auto-submit" style="width:100%">
                 <option value="default" {{if not .MonoFont}}selected{{end}}>System Default</option>
                 <option value="mono" {{if .MonoFont}}selected{{end}}>JetBrains Mono</option>
             </select>

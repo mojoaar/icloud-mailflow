@@ -23,6 +23,7 @@ type pageData struct {
 	Content   template.HTML
 	CSRFToken string
 	Nonce     string
+	Page      string
 	ShowNav   bool
 	Version   string
 	MonoFont  bool
@@ -49,6 +50,7 @@ var templateFuncs = template.FuncMap{
 	"groupViews":      buildGroupViews,
 	"rootGroupView":   rootGroupView,
 	"totalConditions": totalConditions,
+	"navMatch":        navMatch,
 	"formatCPU": func(v int) string {
 		pct := float64(v) / 10000.0
 		return fmt.Sprintf("%.1f%%", pct)
@@ -61,6 +63,23 @@ var templateFuncs = template.FuncMap{
 		}
 		return false
 	},
+}
+
+// navMatch reports whether the current page belongs to a nav section.
+func navMatch(page, section string) bool {
+	switch section {
+	case "dashboard":
+		return page == "dashboard"
+	case "activity":
+		return page == "activity"
+	case "rules":
+		return page == "rules" || page == "rules_list" || page == "rules_form"
+	case "settings":
+		return page == "settings"
+	case "stats":
+		return page == "stats"
+	}
+	return false
 }
 
 func formatUptime(d time.Duration) string {
@@ -118,6 +137,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 		Content:   template.HTML(buf.String()),
 		CSRFToken: token,
 		Nonce:     nonce,
+		Page:      pageName,
 		ShowNav:   pageName != "login" && pageName != "setup",
 		Version:   appVersion,
 		MonoFont:  useMonoFont.Load(),

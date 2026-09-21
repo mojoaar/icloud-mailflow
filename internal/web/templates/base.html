@@ -12,6 +12,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png?v=2">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png?v=2">
     <meta name="theme-color" content="#0d1117">
+    <meta name="color-scheme" content="dark light">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/mobile.css">
     {{if .MonoFont}}<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">{{end}}
@@ -22,10 +23,10 @@
         <a href="/dashboard" class="brand"><img src="/static/favicon.svg" alt="" aria-hidden="true" class="brand-mark"><span class="brand-text">iCloud Mailflow</span></a>
         {{if .ShowNav}}
         <div class="nav-links">
-            <a href="/dashboard"><i data-lucide="layout-dashboard" class="nav-icon" aria-hidden="true"></i> Dashboard</a>
-            <a href="/activity"><i data-lucide="list" class="nav-icon" aria-hidden="true"></i> Activity</a>
-            <a href="/rules"><i data-lucide="git-branch" class="nav-icon" aria-hidden="true"></i> Rules</a>
-            <a href="/settings"><i data-lucide="settings" class="nav-icon" aria-hidden="true"></i> Settings</a>
+            <a href="/dashboard"{{if navMatch .Page "dashboard"}} aria-current="page"{{end}}><i data-lucide="layout-dashboard" class="nav-icon" aria-hidden="true"></i> Dashboard</a>
+            <a href="/activity"{{if navMatch .Page "activity"}} aria-current="page"{{end}}><i data-lucide="list" class="nav-icon" aria-hidden="true"></i> Activity</a>
+            <a href="/rules"{{if navMatch .Page "rules"}} aria-current="page"{{end}}><i data-lucide="git-branch" class="nav-icon" aria-hidden="true"></i> Rules</a>
+            <a href="/settings"{{if navMatch .Page "settings"}} aria-current="page"{{end}}><i data-lucide="settings" class="nav-icon" aria-hidden="true"></i> Settings</a>
             <form method="POST" action="/logout" style="display:inline;margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}"><button type="submit" class="nav-btn"><i data-lucide="log-out" class="nav-icon" aria-hidden="true"></i> Logout</button></form>
             <a href="#" id="theme-toggle" style="font-size:0.85rem;padding:0" aria-label="Toggle dark/light mode">
                 <span class="theme-icon" aria-hidden="true"><i data-lucide="moon" class="nav-icon"></i></span>
@@ -39,7 +40,7 @@
         Crafted with ❤️ &amp; 🤖 by <a href="https://johansen.foo" target="_blank">Morten Johansen</a> ·
         <a href="https://github.com/mojoaar/icloud-mailflow" target="_blank">GitHub</a> ·
         <a href="https://github.com/mojoaar/icloud-mailflow/blob/main/LICENSE" target="_blank">MIT</a>{{if .ShowNav}} ·{{end}}
-        {{if .ShowNav}}<a href="/stats">Stats</a> ·{{end}}
+        {{if .ShowNav}}<a href="/stats"{{if navMatch .Page "stats"}} aria-current="page"{{end}}>Stats</a> ·{{end}}
         <a href="/docs" target="_blank">Docs</a> ·
         v{{.Version}} · © 2026
     </footer>
@@ -50,9 +51,9 @@
 function toggleTheme(el){var v=document.documentElement.getAttribute('data-theme')||'mailflow-dark';var light=/-(light)$/.test(v);var base=v.replace(/-(light|dark)$/,'');var next=base+(light?'-dark':'-light');document.documentElement.setAttribute('data-theme',next);localStorage.setItem('theme',next);var icon=el.querySelector('.theme-icon');if(icon)icon.innerHTML='<i data-lucide="'+(next.slice(-6)==='-light'?'sun':'moon')+'" class="nav-icon"></i>';themeLink(next);lucide.createIcons();window.dispatchEvent(new Event('themechange'))}
 (function(){var v=document.documentElement.getAttribute('data-theme')||'mailflow-dark';var s=document.querySelector('.theme-icon');if(s)s.innerHTML='<i data-lucide="'+(v.slice(-6)==='-light'?'sun':'moon')+'" class="nav-icon"></i>';themeLink(v)})();
 lucide.createIcons();document.body.addEventListener('htmx:afterSettle',()=>{lucide.createIcons();hljs.highlightAll()});hljs.highlightAll();
-document.body.addEventListener('htmx:responseError',function(e){var t=document.createElement('div');t.className='toast toast-error';t.textContent=e.detail.xhr.status?'Error '+(e.detail.xhr.status):'Request failed';t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
-document.body.addEventListener('htmx:sendError',function(){var t=document.createElement('div');t.className='toast toast-error';t.textContent='Network error';t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
-document.body.addEventListener('showToast',function(e){var t=document.createElement('div');t.className='toast toast-'+e.detail.type;t.textContent=e.detail.message;t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
+document.body.addEventListener('htmx:responseError',function(e){var t=document.createElement('div');t.className='toast toast-error';t.setAttribute('role','alert');t.textContent=e.detail.xhr.status?'Error '+(e.detail.xhr.status):'Request failed';t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
+document.body.addEventListener('htmx:sendError',function(){var t=document.createElement('div');t.className='toast toast-error';t.setAttribute('role','alert');t.textContent='Network error';t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
+document.body.addEventListener('showToast',function(e){var t=document.createElement('div');t.className='toast toast-'+e.detail.type;t.setAttribute('role',e.detail.type==='error'?'alert':'status');t.textContent=e.detail.message;t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
 (function(){var seq='',to=null,nav={d:'/dashboard',a:'/activity',r:'/rules',s:'/stats',t:'/settings'};document.addEventListener('keydown',function(e){if(e.ctrlKey||e.altKey||e.metaKey)return;var t=e.target;if(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable)return;if(e.key==='?'){e.preventDefault();var o=document.getElementById('kb-modal-overlay');if(o)o.classList.add('open');seq='';return}if(e.key==='Escape'){var o=document.getElementById('kb-modal-overlay');if(o&&o.classList.contains('open')){o.classList.remove('open');e.preventDefault()}seq='';if(to){clearTimeout(to);to=null}return}if(e.key==='g'){seq='g';if(to)clearTimeout(to);to=setTimeout(function(){seq='';to=null},1500);return}if(seq==='g'&&nav[e.key]){e.preventDefault();if(to){clearTimeout(to);to=null}window.location.href=nav[e.key];seq='';return}seq=''})})();
 </script>
 <div id="kb-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="kb-modal-title">
@@ -134,7 +135,7 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
     if (ag && window.addGroup) { window.addGroup(ag.getAttribute('data-add-group')); return; }
     var rg = t.closest('.remove-group');
     if (rg) { var gb = rg.closest('.group-block'); if (gb) gb.remove(); return; }
-    if (t.closest('#seed-contacts')) { var st = d.getElementById('seed-toast'); if (st) st.innerHTML = '<div class="toast">Scanning folders...</div>'; return; }
+    if (t.closest('#seed-contacts')) { var st = d.getElementById('seed-toast'); if (st) st.innerHTML = '<div class="toast" role="status">Scanning folders...</div>'; return; }
   });
 
   d.addEventListener('input', function(e){
@@ -150,7 +151,7 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
     var el = e.detail && e.detail.elt;
     if (!el) return;
     if (el.id === 'activity-refresh' && e.detail.successful) { if (window.htmx) htmx.trigger(document.body, 'showToast', {type: 'success', message: 'Activity refreshed'}); }
-    if (el.id === 'seed-contacts' && e.detail.failed) { var st = d.getElementById('seed-toast'); if (st) st.innerHTML = '<div class="toast toast-error">Contact seeding failed</div>'; }
+    if (el.id === 'seed-contacts' && e.detail.failed) { var st = d.getElementById('seed-toast'); if (st) st.innerHTML = '<div class="toast toast-error" role="alert">Contact seeding failed</div>'; }
   });
 
   // Rules list: filter + drag/drop reorder (delegated so it survives htmx swaps).

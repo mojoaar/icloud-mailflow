@@ -9,6 +9,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png">
     <meta name="theme-color" content="#0d1117">
+    <meta name="color-scheme" content="dark light">
     <script nonce="{{.Nonce}}">
 (function(){var v=localStorage.getItem('theme');if(v==='light')v='mailflow-light';if(v==='')v=null;if(!v||v.indexOf('-')<0)v=window.matchMedia('(prefers-color-scheme:light)').matches?'mailflow-light':'mailflow-dark';document.documentElement.setAttribute('data-theme',v);var l=document.createElement('link');l.rel='stylesheet';l.id='hljs-theme';l.href=v.slice(-6)==='-light'?'/static/hljs-light.css':'/static/hljs-dark.css';document.head.appendChild(l);document.addEventListener('DOMContentLoaded',function(){var c=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();var m=document.querySelector('meta[name=theme-color]');if(m&&c)m.setAttribute('content',c)})})();
     </script>
