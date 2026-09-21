@@ -24,6 +24,9 @@ func activityHandler(repo *db.LogRepo, rulesRepo *db.RulesRepo, settingsRepo *db
 		if perPage <= 0 {
 			perPage = 100
 		}
+		if perPage > 500 {
+			perPage = 500
+		}
 		page, _ := strconv.Atoi(pageStr)
 		if page <= 0 {
 			page = 1

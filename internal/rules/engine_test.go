@@ -643,3 +643,42 @@ func TestEvaluateRegexCapturesMultipleGroups(t *testing.T) {
 		t.Errorf("expected 12345, got %q", captures["capture:order"])
 	}
 }
+
+func TestInScheduleWraparound(t *testing.T) {
+	rule := &db.Rule{ScheduleStart: "22:00", ScheduleEnd: "06:00"}
+	at := func(h, m int) time.Time {
+		return time.Date(2026, 1, 1, h, m, 0, 0, time.UTC)
+	}
+	if !inScheduleAt(rule, at(23, 0)) {
+		t.Error("23:00 should match a 22:00-06:00 window")
+	}
+	if !inScheduleAt(rule, at(5, 0)) {
+		t.Error("05:00 should match a 22:00-06:00 window")
+	}
+	if inScheduleAt(rule, at(12, 0)) {
+		t.Error("12:00 should not match a 22:00-06:00 window")
+	}
+}
+
+func TestInScheduleSameDay(t *testing.T) {
+	rule := &db.Rule{ScheduleStart: "09:00", ScheduleEnd: "17:00"}
+	at := func(h int) time.Time { return time.Date(2026, 1, 1, h, 0, 0, 0, time.UTC) }
+	if !inScheduleAt(rule, at(12)) {
+		t.Error("12:00 should match")
+	}
+	if inScheduleAt(rule, at(8)) || inScheduleAt(rule, at(18)) {
+		t.Error("outside window should not match")
+	}
+}
+
+func TestParseDaysRejectsNonPositive(t *testing.T) {
+	if _, err := parseDays("-5 days"); err == nil {
+		t.Error("negative days should be rejected")
+	}
+	if _, err := parseDays("0 days"); err == nil {
+		t.Error("zero days should be rejected")
+	}
+	if d, err := parseDays("7 days"); err != nil || d != 7 {
+		t.Errorf("parseDays(7 days) = %d, %v; want 7, nil", d, err)
+	}
+}

@@ -629,3 +629,65 @@ func TestRuleTestNotFound(t *testing.T) {
 		t.Errorf("expected 404, got %d", rec.Code)
 	}
 }
+
+func TestRulesUpdateKeepsPriorityWhenBlank(t *testing.T) {
+	database := openWebTestDB(t)
+	repo := db.NewRulesRepo(database)
+	settingsRepo := db.NewSettingsRepo(database)
+	rule := &db.Rule{Name: "KeepPri", Priority: 5, Enabled: true}
+	if err := repo.Create(rule); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	h := rulesUpdateHandler(repo, settingsRepo)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", strconv.FormatInt(rule.ID, 10))
+	form := url.Values{"name": {"KeepPri"}, "enabled": {"on"}, "priority": {""}}
+	req := httptest.NewRequest("POST", "/rules/"+strconv.FormatInt(rule.ID, 10), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, want 303", rec.Code)
+	}
+	got, err := repo.Get(rule.ID)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got.Priority != 5 {
+		t.Errorf("priority = %d, want 5 (blank should keep existing)", got.Priority)
+	}
+}
+
+func TestRulesDeleteCatchAllBlocked(t *testing.T) {
+	database := openWebTestDB(t)
+	repo := db.NewRulesRepo(database)
+	if err := repo.EnsureCatchAll(); err != nil {
+		t.Fatalf("EnsureCatchAll: %v", err)
+	}
+	rules, _ := repo.List()
+	var catchID int64
+	for _, r := range rules {
+		if r.Name == "_catch_all" {
+			catchID = r.ID
+		}
+	}
+	if catchID == 0 {
+		t.Fatal("catch-all not created")
+	}
+
+	h := rulesDeleteHandler(repo)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", strconv.FormatInt(catchID, 10))
+	req := httptest.NewRequest("DELETE", "/rules/"+strconv.FormatInt(catchID, 10), nil)
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rec := serveHandler(h, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want 400", rec.Code)
+	}
+	if _, err := repo.Get(catchID); err != nil {
+		t.Error("catch-all should still exist after a blocked delete")
+	}
+}

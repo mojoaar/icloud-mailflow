@@ -277,6 +277,12 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if v, ok := args["per_page"]; ok {
 			perPage = int(v.(float64))
 		}
+		if perPage <= 0 {
+			perPage = 50
+		}
+		if perPage > 500 {
+			perPage = 500
+		}
 		page := 1
 		if v, ok := args["page"]; ok {
 			page = int(v.(float64))

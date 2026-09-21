@@ -110,7 +110,11 @@ func rulesUpdateHandler(repo *db.RulesRepo, settingsRepo *db.SettingsRepo) http.
 		rule.Name = r.FormValue("name")
 		rule.Description = r.FormValue("description")
 		rule.Enabled = r.FormValue("enabled") == "on"
-		rule.Priority, _ = strconv.Atoi(r.FormValue("priority"))
+		if v := strings.TrimSpace(r.FormValue("priority")); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				rule.Priority = n
+			}
+		}
 		rule.ScheduleDays = strings.Join(r.Form["schedule_days"], ",")
 		rule.ScheduleStart = r.FormValue("schedule_start")
 		rule.ScheduleEnd = r.FormValue("schedule_end")
@@ -147,6 +151,14 @@ func rulesDeleteHandler(repo *db.RulesRepo) http.HandlerFunc {
 				return
 			}
 			http.Error(w, "invalid rule id", http.StatusBadRequest)
+			return
+		}
+		if rule, err := repo.Get(int64(id)); err == nil && rule.Name == "_catch_all" {
+			if r.Header.Get("HX-Request") == "true" {
+				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "The catch-all rule cannot be deleted"})
+				return
+			}
+			http.Error(w, "The catch-all rule cannot be deleted", http.StatusBadRequest)
 			return
 		}
 		if err := repo.Delete(int64(id)); err != nil {

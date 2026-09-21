@@ -58,17 +58,25 @@ func inSchedule(rule *db.Rule, loc *time.Location) bool {
 	if rule.ScheduleDays == "" && rule.ScheduleStart == "" && rule.ScheduleEnd == "" {
 		return true
 	}
-	now := time.Now().In(loc)
+	return inScheduleAt(rule, time.Now().In(loc))
+}
+
+func inScheduleAt(rule *db.Rule, now time.Time) bool {
 	day := strings.ToLower(now.Format("mon"))
 	days := strings.ToLower(rule.ScheduleDays)
 	if days != "" && !strings.Contains(days, day) {
 		return false
 	}
 	current := now.Format("15:04")
-	if rule.ScheduleStart != "" && current < rule.ScheduleStart {
+	start, end := rule.ScheduleStart, rule.ScheduleEnd
+	if start != "" && end != "" && start > end {
+		// Window crosses midnight (e.g. 22:00-06:00).
+		return current >= start || current <= end
+	}
+	if start != "" && current < start {
 		return false
 	}
-	if rule.ScheduleEnd != "" && current > rule.ScheduleEnd {
+	if end != "" && current > end {
 		return false
 	}
 	return true
@@ -240,7 +248,7 @@ func evalConditionWithExtras(c db.Condition, msg *imap.Message, extras *msgExtra
 func parseDays(v string) (int, error) {
 	var days int
 	n, _ := fmt.Sscanf(v, "%d days", &days)
-	if n != 1 {
+	if n != 1 || days <= 0 {
 		return 0, fmt.Errorf("invalid days format: %s (expected 'N days')", v)
 	}
 	return days, nil
