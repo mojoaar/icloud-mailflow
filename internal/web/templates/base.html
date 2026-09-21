@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/static/mobile.css">
     {{if .MonoFont}}<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">{{end}}
 </head>
-<body{{if .MonoFont}} style="font-family:'JetBrains Mono',monospace"{{end}}>
+<body{{if .MonoFont}}{{end}} class="mono">
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <nav>
         <a href="/dashboard" class="brand"><img src="/static/favicon.svg" alt="" aria-hidden="true" class="brand-mark"><span class="brand-text">iCloud Mailflow</span></a>
@@ -30,8 +30,8 @@
             <a href="/activity"{{if navMatch .Page "activity"}} aria-current="page"{{end}}><i data-lucide="list" class="nav-icon" aria-hidden="true"></i> Activity</a>
             <a href="/rules"{{if navMatch .Page "rules"}} aria-current="page"{{end}}><i data-lucide="git-branch" class="nav-icon" aria-hidden="true"></i> Rules</a>
             <a href="/settings"{{if navMatch .Page "settings"}} aria-current="page"{{end}}><i data-lucide="settings" class="nav-icon" aria-hidden="true"></i> Settings</a>
-            <form method="POST" action="/logout" style="display:inline;margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}"><button type="submit" class="nav-btn"><i data-lucide="log-out" class="nav-icon" aria-hidden="true"></i> Logout</button></form>
-            <a href="#" id="theme-toggle" style="font-size:0.85rem;padding:0" aria-label="Toggle dark/light mode">
+            <form method="POST" action="/logout" class="inline-form"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}"><button type="submit" class="nav-btn"><i data-lucide="log-out" class="nav-icon" aria-hidden="true"></i> Logout</button></form>
+            <a href="#" id="theme-toggle" aria-label="Toggle dark/light mode" class="nav-theme-link">
                 <span class="theme-icon" aria-hidden="true"><i data-lucide="moon" class="nav-icon"></i></span>
             </a>
         </div>
@@ -117,7 +117,7 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
     if (toast) { toast.remove(); return; }
     var vt = t.closest('[data-view-toggle]');
     if (vt && window.toggleView) { window.toggleView(vt.getAttribute('data-view-toggle'), vt.getAttribute('data-view')); return; }
-    if (t.closest('#apply-toggle')) { var f = d.getElementById('apply-form'); if (f) f.style.display = (f.style.display === 'none' || !f.style.display) ? 'flex' : 'none'; return; }
+    if (t.closest('#apply-toggle')) { var f = d.getElementById('apply-form'); if (f) f.classList.toggle('hidden'); return; }
     if (t.closest('#rule-search-clear')) { var ri = d.getElementById('rule-search'); if (ri) { ri.value = ''; ri.dispatchEvent(new Event('input')); ri.focus(); } return; }
     if (t.closest('#activity-search-clear')) { var ai = d.getElementById('activity-search'); if (ai) { ai.value = ''; if (window.htmx) htmx.trigger(ai, 'keyup'); ai.focus(); } return; }
     if (t.closest('#gen-webhook-secret')) {
@@ -133,9 +133,9 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
     if (cp) { if (navigator.clipboard) navigator.clipboard.writeText(cp.getAttribute('data-copy')); return; }
     var sn = t.closest('[data-snippet]');
     if (sn) {
-      d.querySelectorAll('.mcp-config-snippet').forEach(function(el){ el.style.display = 'none'; });
+      d.querySelectorAll('.mcp-config-snippet').forEach(function(el){ el.classList.add('hidden'); });
       var target = d.getElementById(sn.getAttribute('data-snippet'));
-      if (target) target.style.display = 'block';
+      if (target) target.classList.remove('hidden');
       return;
     }
     if (t.closest('#add-action') && window.addAction) { window.addAction(); return; }
@@ -194,7 +194,7 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
       if (!noResults) {
         noResults = d.createElement('tr');
         noResults.id = 'no-results';
-        noResults.innerHTML = '<td colspan="7" style="text-align:center;color:var(--muted);padding:32px">No matching rules found</td>';
+        noResults.innerHTML = '<td colspan="7" class="empty-state">No matching rules found</td>';
         tbody.appendChild(noResults);
       }
     } else if (noResults) {

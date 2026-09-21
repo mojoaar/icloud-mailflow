@@ -12,7 +12,7 @@
             <label for="settings-imap-pass">App-Specific Password</label>
             <input type="password" id="settings-imap-pass" name="imap_password" placeholder="Leave blank to keep current" class="w-full">
         </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+        <div class="row mt-12">
             <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save IMAP Settings</button>
             <button type="button" class="btn" hx-post="/settings/imap/test"
                 hx-include="[name='imap_email'],[name='imap_password']"
@@ -37,7 +37,7 @@
 
 <div class="card">
     <h2>Polling</h2>
-    {{if .PollError}}<p style="color:var(--red);font-size:0.8rem;margin:-4px 0 8px">Invalid polling settings — not saved</p>{{end}}
+    {{if .PollError}}<p class="error-hint">Invalid polling settings — not saved</p>{{end}}
     <form method="POST" action="/settings/poll"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <div class="flex-between">
@@ -80,13 +80,13 @@
 
 <div class="card">
     <h2>Webhooks</h2>
-    <p style="color:var(--muted);margin-bottom:12px">Shared secret for authenticating outgoing webhook requests.</p>
+    <p class="hint">Shared secret for authenticating outgoing webhook requests.</p>
     <form method="POST" action="/settings/webhook"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="settings-webhook">Webhook Secret</label>
             <input type="text" id="settings-webhook" name="webhook_secret" value="{{.WebhookSecret}}" placeholder="Optional X-Webhook-Secret header value" class="w-full">
         </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+        <div class="row mt-12">
             <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save</button>
             <button type="button" class="btn" id="gen-webhook-secret"><i data-lucide="key" data-size="14"></i> Generate</button>
         </div>
@@ -95,9 +95,9 @@
 
 <div class="card">
     <h2>Alerts</h2>
-    <p style="color:var(--muted);margin-bottom:12px">POST a JSON notification when the poller goes unhealthy, recovers, or a scheduled backup fails. Uses the webhook secret above.</p>
+    <p class="hint">POST a JSON notification when the poller goes unhealthy, recovers, or a scheduled backup fails. Uses the webhook secret above.</p>
     <form method="POST" action="/settings/alerts"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-        {{if .AlertError}}<p style="color:var(--red);font-size:0.8rem;margin:-4px 0 8px">Invalid alert webhook URL — not saved</p>{{end}}
+        {{if .AlertError}}<p class="error-hint">Invalid alert webhook URL — not saved</p>{{end}}
         <div class="form-group">
             <label><input type="checkbox" name="alerts_enabled" value="true" {{if .AlertsEnabled}}checked{{end}}> Enable alerts</label>
         </div>
@@ -115,11 +115,11 @@
 
 <div class="card">
     <h2>Rules</h2>
-    <p style="color:var(--muted);margin-bottom:12px">Export or import your rule configurations.</p>
+    <p class="hint">Export or import your rule configurations.</p>
     <div class="flex-between">
         <a href="/settings/rules/export" class="btn" download><i data-lucide="download" data-size="14"></i> Export</a>
             <form hx-encoding="multipart/form-data" hx-post="/settings/rules/import"
-            hx-target="#rules-import-toast" hx-swap="innerHTML" style="display:flex;gap:8px;align-items:center;margin:0;flex-wrap:wrap">
+            hx-target="#rules-import-toast" hx-swap="innerHTML" class="row m-0 row-wrap">
             <input type="file" name="rules_file" accept=".json">
             <button type="submit" class="btn"><i data-lucide="upload" data-size="14"></i> Import</button>
         </form>
@@ -129,7 +129,7 @@
 
 <div class="card">
     <h2>Contacts</h2>
-    <p style="color:var(--muted);margin-bottom:12px">Import from iCloud or manage collected contacts.</p>
+    <p class="hint">Import from iCloud or manage collected contacts.</p>
     <div class="flex-row">
         <button class="btn btn-primary" hx-post="/settings/carddav-import"
             hx-target="#carddav-toast" hx-swap="innerHTML">
@@ -150,7 +150,7 @@
 
 <div class="card">
     <h2>Backup</h2>
-    <p style="color:var(--muted);margin-bottom:12px">Periodically email your rules as a JSON attachment. Create a rule to file backup emails into a folder.</p>
+    <p class="hint">Periodically email your rules as a JSON attachment. Create a rule to file backup emails into a folder.</p>
     <form method="POST" action="/settings/backup/save"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label>
@@ -183,22 +183,22 @@
 
 <div class="card">
     <h2>MCP Access</h2>
-    <p style="color:var(--muted);margin-bottom:12px">Enable Model Context Protocol access so AI agents (Claude Code, OpenCode, Codex) can manage your rules and check mailflow status.</p>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+    <p class="hint">Enable Model Context Protocol access so AI agents (Claude Code, OpenCode, Codex) can manage your rules and check mailflow status.</p>
+    <div class="row mb-3">
         <form method="POST" action="/settings/mcp/toggle" class="m-0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
             <button type="submit" class="btn {{if .MCPEnabled}}btn-danger{{else}}btn-primary{{end}}">
                 {{if .MCPEnabled}}Disable MCP{{else}}Enable MCP{{end}}
             </button>
         </form>
-        <span style="color:var(--muted);font-size:0.85rem">
-            Status: {{if .MCPEnabled}}<span style="color:var(--green)">Enabled</span>{{else}}<span class="muted">Disabled</span>{{end}}
+        <span class="muted text-md">
+            Status: {{if .MCPEnabled}}<span class="text-green">Enabled</span>{{else}}<span class="muted">Disabled</span>{{end}}
         </span>
     </div>
     {{if .MCPEnabled}}
     <div class="form-group">
         <span class="form-label">API Key</span>
         <div class="row">
-            <code style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-size:0.8rem;word-break:break-all;flex:1">{{.MCPAPIKey}}</code>
+            <code class="code-block flex-1">{{.MCPAPIKey}}</code>
             <button type="button" class="btn nowrap" data-copy="{{.MCPAPIKey}}"><i data-lucide="clipboard" data-size="14"></i> Copy</button>
             <form method="POST" action="/settings/mcp/regenerate" class="m-0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <button type="submit" class="btn nowrap"><i data-lucide="refresh-cw" data-size="14"></i> Regenerate</button>
@@ -207,17 +207,17 @@
     </div>
     <div class="form-group">
         <span class="form-label">Endpoint</span>
-        <code style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-size:0.8rem;display:block">{{.MCPURL}}</code>
+        <code class="code-block d-block">{{.MCPURL}}</code>
     </div>
-    <div class="form-group" style="margin-top:16px">
+    <div class="form-group mt-2">
         <span class="form-label mb-1">Platform Config</span>
-        <div style="display:flex;gap:4px;margin-bottom:8px">
+        <div class="row gap-4 mb-1">
             <button type="button" class="btn" role="tab" aria-selected="true" aria-controls="mcp-opencode" data-snippet="mcp-opencode">OpenCode</button>
             <button type="button" class="btn" role="tab" aria-selected="false" aria-controls="mcp-claude" data-snippet="mcp-claude">Claude Code</button>
             <button type="button" class="btn" role="tab" aria-selected="false" aria-controls="mcp-codex" data-snippet="mcp-codex">Codex</button>
         </div>
-        <div id="mcp-opencode" class="mcp-config-snippet" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
-            <pre style="margin:0;font-size:0.8rem"><code>{
+        <div id="mcp-opencode" class="mcp-config-snippet snippet">
+            <pre class="m-0 text-sm"><code>{
   "mcpServers": {
     "mailflow": {
       "type": "remote",
@@ -230,8 +230,8 @@
   }
 }</code></pre>
         </div>
-        <div id="mcp-claude" class="mcp-config-snippet" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
-            <pre style="margin:0;font-size:0.8rem"><code>{
+        <div id="mcp-claude" class="mcp-config-snippet snippet hidden">
+            <pre class="m-0 text-sm"><code>{
   "mcpServers": {
     "mailflow": {
       "type": "url",
@@ -243,8 +243,8 @@
   }
 }</code></pre>
         </div>
-        <div id="mcp-codex" class="mcp-config-snippet" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
-            <pre style="margin:0;font-size:0.8rem"><code>{
+        <div id="mcp-codex" class="mcp-config-snippet snippet hidden">
+            <pre class="m-0 text-sm"><code>{
   "mcpServers": {
     "mailflow": {
       "type": "remote",
@@ -267,10 +267,10 @@
             <label for="tz-input">Timezone</label>
             <input type="text" id="tz-input" name="timezone" list="tz-list" value="{{.Timezone}}" placeholder="e.g. Europe/Copenhagen" autocomplete="off" class="auto-submit w-full">
             <datalist id="tz-list">{{range .Timezones}}<option value="{{.}}">{{end}}</datalist>
-            {{if .TZError}}<p style="color:var(--red);font-size:0.8rem;margin-top:4px">Unknown timezone — not saved</p>{{end}}
+            {{if .TZError}}<p class="text-red text-sm mt-4px">Unknown timezone — not saved</p>{{end}}
         </div>
     </form>
-    <form method="POST" action="/settings/font" style="margin-top:12px"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    <form method="POST" action="/settings/font" class="mt-12"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="settings-font">Font</label>
             <select name="font" id="settings-font" class="auto-submit w-full">
@@ -279,7 +279,7 @@
             </select>
         </div>
     </form>
-    <div class="form-group" style="margin-top:12px">
+    <div class="form-group mt-12">
         <label for="theme-family">Theme</label>
         <select id="theme-family" class="w-full">
             <option value="mailflow">Mailflow</option>
@@ -292,7 +292,7 @@
             <option value="onedark">One Dark</option>
             <option value="tokyonight">Tokyo Night</option>
         </select>
-        <p class="muted" style="font-size:0.8rem;margin-top:4px">Use the moon/sun icon in the header to switch dark and light</p>
+        <p class="muted text-sm mt-4px">Use the moon/sun icon in the header to switch dark and light</p>
     </div>
 </div>
 
@@ -327,7 +327,7 @@ function setThemeFamily(fam){
         <tr><td>Memory</td><td>{{.Memory}}</td></tr>
         <tr><td>Goroutines</td><td>{{.Goroutines}}</td></tr>
         <tr><td>Version</td><td>v{{.Version}}</td></tr>
-        <tr><td>Repository</td><td><a href="https://github.com/mojoaar/icloud-mailflow" target="_blank" style="color:var(--accent)">github.com/mojoaar/icloud-mailflow</a></td></tr>
+        <tr><td>Repository</td><td><a href="https://github.com/mojoaar/icloud-mailflow" target="_blank" class="text-accent">github.com/mojoaar/icloud-mailflow</a></td></tr>
     </table>
 </div>
 {{end}}

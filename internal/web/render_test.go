@@ -82,15 +82,15 @@ func TestRulesTestResultColors(t *testing.T) {
 	if err := tmpl.ExecuteTemplate(&buf, "rules_test_result", map[string]any{"Matched": true, "Results": nil}); err != nil {
 		t.Fatalf("execute matched: %v", err)
 	}
-	if !strings.Contains(buf.String(), "var(--green)") {
-		t.Error("matched result should use var(--green)")
+	if !strings.Contains(buf.String(), "text-green") {
+		t.Error("matched result should use the text-green class")
 	}
 
 	buf.Reset()
 	if err := tmpl.ExecuteTemplate(&buf, "rules_test_result", map[string]any{"Matched": false, "Results": nil}); err != nil {
 		t.Fatalf("execute no-match: %v", err)
 	}
-	if !strings.Contains(buf.String(), "var(--red)") {
-		t.Error("no-match result should use var(--red)")
+	if !strings.Contains(buf.String(), "text-red") {
+		t.Error("no-match result should use the text-red class")
 	}
 }

@@ -2,7 +2,7 @@
 <h1>Dashboard</h1>
 
 {{if not .Configured}}
-<div class="card" style="border-color:var(--accent)">
+<div class="card card-accent">
     <h2>Setup Required</h2>
     <p class="muted">Configure your IMAP connection and admin password to start processing mail.</p>
     <a href="/settings" class="btn btn-primary">Go to Settings</a>
@@ -10,9 +10,9 @@
 {{end}}
 
 {{if and (not .PollingActive) .Configured}}
-<div class="card" style="border-color:var(--red)">
+<div class="card card-danger">
     <h2>Polling Disabled</h2>
-    <p class="muted">Mail processing is paused. Rules are not running until polling is re-enabled in <a href="/settings" style="color:var(--accent)">Settings</a>.</p>
+    <p class="muted">Mail processing is paused. Rules are not running until polling is re-enabled in <a href="/settings" class="text-accent">Settings</a>.</p>
 </div>
 {{end}}
 
@@ -30,7 +30,7 @@
 {{define "dashboard_rules"}}
 <div id="dashboard-rules" hx-get="/dashboard/rules" hx-trigger="every 60s" hx-swap="outerHTML">
 <div class="card">
-    <h2>Rules <span style="color:var(--muted);font-size:0.9rem;font-weight:normal">({{len .Rules}})</span></h2>
+    <h2>Rules <span class="muted text-lg fw-normal">({{len .Rules}})</span></h2>
     <table>
         <thead><tr><th>Priority</th><th>Name</th><th>Status</th><th></th></tr></thead>
         <tbody>
@@ -50,7 +50,7 @@
 
 {{define "dashboard_status"}}
 <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div class="flex-between mb-2">
         <h2 class="m-0">Status</h2>
         <div class="row row-wrap">
             <button class="btn btn-primary" id="seed-contacts" hx-post="/contacts/seed"
@@ -64,12 +64,12 @@
         </div>
     </div>
     {{if not .PollingHealthy}}
-    <div class="card" style="border-color:var(--red);margin-bottom:12px">
+    <div class="card card-danger mb-2">
         {{if .LastError}}<p>Error: {{.LastError}}</p>{{end}}
         <p class="muted">IMAP disconnected. Reconnecting...</p>
     </div>
     {{end}}
-    <table id="status-table" style="table-layout:auto">
+    <table id="status-table" class="table-auto">
         <tr><td>IMAP Server</td><td>{{.IMAPEmail}} @ imap.mail.me.com</td></tr>
         <tr><td>Source Folder</td><td>{{.SourceFolder}}</td></tr>
         <tr><td>Poll Interval</td><td>{{.PollInterval}}s</td></tr>
@@ -85,7 +85,7 @@
         {{end}}
     </table>
     {{if .Processing}}
-    <div style="margin-top:8px;color:var(--muted)"><span class="spinner"></span> Polling...</div>
+    <div class="mt-1 muted"><span class="spinner"></span> Polling...</div>
     {{end}}
 </div>
 {{end}}

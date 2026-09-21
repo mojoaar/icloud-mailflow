@@ -23,7 +23,7 @@
             </div>
             <div class="form-group">
                 <div aria-hidden="true"></div>
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <label class="label-inline">
                     <input type="checkbox" name="enabled" {{if .Rule.Enabled}}checked{{end}}>
                     Enabled
                 </label>
@@ -34,7 +34,7 @@
     <div class="card" id="schedule">
         <h3>Schedule (optional)</h3>
         <p class="hint">Leave blank to always run. Timezone: {{.Timezone}}</p>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+        <div class="row row-wrap gap-4 mb-1">
             {{$days := .ScheduleDays}}
             <label><input type="checkbox" name="schedule_days" value="mon"{{if hasDay $days "mon"}} checked{{end}}> Mon</label>
             <label><input type="checkbox" name="schedule_days" value="tue"{{if hasDay $days "tue"}} checked{{end}}> Tue</label>
@@ -88,9 +88,9 @@
             {{else if eq .Type "webhook"}}
             <input type="text" name="action_value" value="{{.Value}}" placeholder="Webhook URL (e.g. https://ntfy.sh/topic)">
             {{else if eq .Type "delete"}}
-            <input type="text" name="action_value" value="" placeholder="" style="display:none">
+            <input type="text" name="action_value" value="" placeholder="" class="hidden">
             {{else}}
-            <input type="text" name="action_value" value="{{.Value}}" placeholder="Value (optional)" style="display:none">
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Value (optional)" class="hidden">
             {{end}}
             <button type="button" class="btn btn-sm remove-row">×</button>
         </div>
@@ -117,7 +117,7 @@
                 <option value="content_type">Content Type</option>
                 <option value="header">Header:</option>
             </select>
-            <input type="text" name="cond_header_name" placeholder="Header name" style="display:none" value="">
+            <input type="text" name="cond_header_name" placeholder="Header name" value="" class="hidden">
             <select name="cond_op">
                 <option value="contains">contains</option>
                 <option value="not_contains">doesn't contain</option>
@@ -169,7 +169,7 @@
         </div>
         <button type="submit" class="btn mt-1">Test (Synthetic)</button>
     </form>
-    <form hx-post="/rules/{{.Rule.ID}}/test-message" hx-target="#test-result" hx-swap="innerHTML" style="margin-top:8px">
+    <form hx-post="/rules/{{.Rule.ID}}/test-message" hx-target="#test-result" hx-swap="innerHTML" class="mt-1">
         <input name="folder" placeholder="Folder name" list="folder-list">
         <button type="submit" class="btn">Test (Real Message)</button>
     </form>
@@ -177,7 +177,7 @@
 </div>
 {{end}}
 
-<div style="margin-top:24px;display:flex;gap:8px">
+<div class="row mt-3">
     <button type="submit" form="rule-form" class="btn btn-primary">Save Rule</button>
     <a href="/rules" class="btn">Cancel</a>
 </div>
@@ -224,29 +224,29 @@ function updateActionInput(select) {
     if (!input) { input = select.closest('.action-row').querySelector('textarea'); }
     if (select.value === 'move_to_folder') {
         if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Folder name'; inp.setAttribute('list', 'folder-list'); inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
-        else { input.style.display = ''; input.removeAttribute('list'); input.setAttribute('list', 'folder-list'); input.placeholder = 'Folder name'; }
+        else { input.classList.remove('hidden'); input.removeAttribute('list'); input.setAttribute('list', 'folder-list'); input.placeholder = 'Folder name'; }
     } else if (select.value === 'set_flag') {
         if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Flag (e.g. \\Flagged)'; inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
-        else { input.style.display = ''; input.removeAttribute('list'); input.placeholder = 'Flag (e.g. \\Flagged)'; }
+        else { input.classList.remove('hidden'); input.removeAttribute('list'); input.placeholder = 'Flag (e.g. \\Flagged)'; }
     } else if (select.value === 'auto_reply') {
         if (!input || input.tagName !== 'TEXTAREA') { var ta = document.createElement('textarea'); ta.name = 'action_value'; ta.placeholder = 'Reply body. Templates: [subject], [from], [date]'; ta.style.cssText = 'flex:1;min-height:80px'; ta.value = input ? input.value : ''; if (input) input.replaceWith(ta); else select.closest('.action-row').querySelector('button').before(ta); }
     } else if (select.value === 'forward') {
         if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Email to forward to'; inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
-        else { input.style.display = ''; input.removeAttribute('list'); input.placeholder = 'Email to forward to'; }
+        else { input.classList.remove('hidden'); input.removeAttribute('list'); input.placeholder = 'Email to forward to'; }
     } else if (select.value === 'remove_flag') {
         if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Flag to remove (e.g. \\Flagged)'; inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
-        else { input.style.display = ''; input.removeAttribute('list'); input.placeholder = 'Flag to remove (e.g. \\Flagged)'; }
+        else { input.classList.remove('hidden'); input.removeAttribute('list'); input.placeholder = 'Flag to remove (e.g. \\Flagged)'; }
     } else if (select.value === 'webhook') {
         if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Webhook URL (e.g. https://ntfy.sh/topic)'; inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
-        else { input.style.display = ''; input.removeAttribute('list'); input.placeholder = 'Webhook URL (e.g. https://ntfy.sh/topic)'; }
+        else { input.classList.remove('hidden'); input.removeAttribute('list'); input.placeholder = 'Webhook URL (e.g. https://ntfy.sh/topic)'; }
     } else {
-        if (input) { input.value = ''; input.style.display = 'none'; }
+        if (input) { input.value = ''; input.classList.add('hidden'); }
     }
 }
 function onFieldChange(select) {
     var row = select.closest('.condition-row');
     var hi = row.querySelector('input[name="cond_header_name"]');
-    if (hi) hi.style.display = select.value === 'header' ? '' : 'none';
+    if (hi) hi.classList.toggle('hidden', select.value !== 'header');
 }
 </script>
 {{end}}
@@ -264,7 +264,7 @@ function onFieldChange(select) {
         <option value="content_type" {{if eq .Field "content_type"}}selected{{end}}>Content Type</option>
         <option value="header" {{if eq .Field "header"}}selected{{end}}>Header:</option>
     </select>
-    <input type="text" name="cond_header_name" placeholder="Header name"{{if ne .Field "header"}}style="display:none"{{end}} value="{{.HeaderName}}">
+    <input type="text" name="cond_header_name" placeholder="Header name" class="{{if ne .Field "header"}}hidden{{end}}" value="{{.HeaderName}}">
     <select name="cond_op">
         <option value="contains" {{if eq .Operator "contains"}}selected{{end}}>contains</option>
         <option value="not_contains" {{if eq .Operator "not_contains"}}selected{{end}}>doesn't contain</option>

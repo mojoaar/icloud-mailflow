@@ -6,7 +6,7 @@
     hx-indicator="#activity-refresh-spinner">
     <i data-lucide="refresh-cw" data-size="14"></i> Refresh
 </button>
-<span id="activity-refresh-spinner" class="htmx-indicator" style="align-self:center;color:var(--muted)"><span class="spinner"></span></span>
+<span id="activity-refresh-spinner" class="htmx-indicator spinner-cell"><span class="spinner"></span></span>
 {{if .Entries}}
 <button class="btn btn-danger" hx-post="/activity/delete" hx-target="#activity-content" hx-swap="outerHTML"
     hx-confirm="Clear all activity logs? Stats are stored separately and won't be affected.">
@@ -21,12 +21,12 @@
 
 {{define "activity_content"}}
 <div id="activity-content">
-<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-    <div class="search-wrapper" style="flex:1">
+<div class="row row-wrap mb-2">
+    <div class="search-wrapper flex-1">
         <input type="search" name="q" id="activity-search" value="{{.Search}}" placeholder="Search..."
             hx-get="/activity" hx-trigger="keyup changed delay:300ms"
             hx-target="#activity-content" hx-swap="outerHTML" hx-indicator="#activity-spinner"
-            hx-include="[name='rule'],[name='status'],[name='per_page']" style="width:100%;max-width:none">
+            hx-include="[name='rule'],[name='status'],[name='per_page']" class="w-full search-full">
         <button class="search-clear" id="activity-search-clear" aria-label="Clear search">&#10005;</button>
     </div>
     <select name="rule" hx-get="/activity" hx-trigger="change"
@@ -50,7 +50,7 @@
         <option value="500" {{if eq .PerPage "500"}}selected{{end}}>500</option>
         <option value="1000" {{if eq .PerPage "1000"}}selected{{end}}>1000</option>
     </select>
-    <span id="activity-spinner" class="htmx-indicator" style="align-self:center;color:var(--muted);margin-left:4px"><span class="spinner"></span></span>
+    <span id="activity-spinner" class="htmx-indicator spinner-cell ml-4"><span class="spinner"></span></span>
 </div>
 {{if not .Entries}}
 <div class="card">
@@ -82,9 +82,9 @@
         <tbody>
         {{range .Entries}}
         <tr>
-            <td style="white-space:nowrap;font-size:0.8rem;color:var(--muted)">{{.CreatedAt}}</td>
+            <td class="nowrap text-sm muted">{{.CreatedAt}}</td>
             <td>{{.Subject}}</td>
-            <td style="white-space:nowrap;font-size:0.8rem;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis">{{.FromAddr}}</td>
+            <td class="cell-truncate">{{.FromAddr}}</td>
             <td>{{.RuleName}}</td>
             <td>{{.ActionType}}{{if .ActionValue}} → {{.ActionValue}}{{end}}</td>
             <td>{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else if eq .Status "skipped"}}<span class="badge">skipped</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>
@@ -101,9 +101,9 @@
     </table>
     <div id="rerun-result"></div>
     {{if gt .TotalPages 1}}
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+    <div class="flex-between mt-12">
         <span class="muted">Page {{.Page}} of {{.TotalPages}} ({{.TotalEntries}} entries)</span>
-        <div style="display:flex;gap:4px">
+        <div class="row gap-4">
             {{if gt .Page 1}}
             <button class="btn" hx-get="/activity?page={{subtract .Page 1}}&per_page={{.PerPage}}&q={{.Search | urlquery}}&rule={{.Rule | urlquery}}&status={{.Status | urlquery}}" hx-target="#activity-content" hx-swap="outerHTML">Prev</button>
             {{end}}

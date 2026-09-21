@@ -9,14 +9,14 @@
 </div>
 
 {{if .Rules}}
-<div style="margin-top:12px;margin-bottom:8px">
+<div class="mt-12 mb-1">
     <div class="search-wrapper">
-        <input type="text" id="rule-search" placeholder="Search rules by name, description, or condition value..." style="width:100%" autocomplete="off" aria-label="Search rules"{{if .Search}} value="{{.Search}}"{{end}}>
+        <input type="text" id="rule-search" placeholder="Search rules by name, description, or condition value..." autocomplete="off" aria-label="Search rules"{{if .Search}} value="{{.Search}}"{{end}} class="w-full">
         <button class="search-clear" id="rule-search-clear" aria-label="Clear search">&#10005;</button>
     </div>
-    <div id="rule-search-count" class="muted" style="font-size:0.8rem;margin-top:4px" aria-live="polite"></div>
+    <div id="rule-search-count" class="muted text-sm mt-4px" aria-live="polite"></div>
 </div>
-<form id="apply-form" hx-post="/rules/apply" hx-target="#apply-result" hx-swap="innerHTML" style="display:none;gap:8px;align-items:center;margin-bottom:16px">
+<form id="apply-form" hx-post="/rules/apply" hx-target="#apply-result" hx-swap="innerHTML" class="row mb-3 hidden">
     <select name="folder" required>
         <option value="">Select folder...</option>
         {{range .Folders}}<option value="{{.Name}}">{{.Name}}</option>{{end}}
@@ -26,7 +26,7 @@
 </form>
 <div id="apply-result"></div>
 <div class="card mt-2">
-    <div id="reorder-spinner" class="htmx-indicator" style="text-align:center;padding:8px;color:var(--muted)"><span class="spinner"></span> Reordering...</div>
+    <div id="reorder-spinner" class="htmx-indicator loading-text"><span class="spinner"></span> Reordering...</div>
     <table class="rules-table">
         <colgroup>
             <col>
@@ -41,7 +41,7 @@
         <tbody id="rules-tbody">
         {{range .Rules}}
         <tr draggable="true" data-rule-id="{{.ID}}" data-search="{{.Name}} {{.Description}}{{range .Groups}}{{range .Conditions}} {{.Value}}{{end}}{{end}}">
-            <td style="cursor:grab;color:var(--muted)"><i data-lucide="grip-vertical" data-size="14"></i></td>
+            <td class="drag-handle"><i data-lucide="grip-vertical" data-size="14"></i></td>
             <td>{{.Priority}}</td>
             <td><strong>{{.Name}}</strong>{{if .Description}}<br><small class="muted">{{.Description}}</small>{{end}}</td>
             <td>{{if .Enabled}}<span class="badge badge-on">on</span>{{else}}<span class="badge badge-off">off</span>{{end}}</td>
@@ -56,14 +56,14 @@
                     hx-swap="outerHTML">
                     Delete
                 </button>
-                <button class="btn reorder-btn" style="font-size:0.7rem;padding:2px 6px" aria-label="Move rule up"
+                <button class="btn reorder-btn btn-xs" aria-label="Move rule up"
                     hx-post="/rules/reorder/move"
                     hx-vals='{"rule_id":{{.ID}},"direction":"up"}'
                     hx-target="#rules-panel" hx-swap="outerHTML"
                     hx-indicator="#reorder-spinner">
                     <i data-lucide="chevron-up" data-size="12"></i>
                 </button>
-                <button class="reorder-btn" style="font-size:0.7rem" aria-label="Move rule down"
+                <button class="reorder-btn text-2xs" aria-label="Move rule down"
                     hx-post="/rules/reorder/move"
                     hx-vals='{"rule_id":{{.ID}},"direction":"down"}'
                     hx-target="#rules-panel" hx-swap="outerHTML"
@@ -77,7 +77,7 @@
     </table>
 </div>
 {{else}}
-<div class="card" style="margin-top:16px;text-align:center;color:var(--muted);padding:32px">
+<div class="card empty-state">
     <p>No rules yet. Create your first rule to start sorting mail.</p>
 </div>
 {{end}}

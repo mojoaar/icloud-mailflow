@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/static/mobile.css">
     {{if .MonoFont}}<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">{{end}}
 </head>
-<body{{if .MonoFont}} style="font-family:'JetBrains Mono',monospace"{{end}}>
+<body{{if .MonoFont}}{{end}} class="mono">
 
 <div class="docs-wrap">
 <aside class="docs-sidebar">
@@ -611,8 +611,8 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 hljs.highlightAll();
 
 </script>
-<footer style="text-align:center;padding:24px 0;font-size:0.8rem;color:var(--muted);margin-top:48px;border-top:1px solid var(--border)">
-    iCloud Mailflow · <a href="/" style="color:var(--accent)">Back to Dashboard</a> · v{{.Version}}
+<footer class="docs-footer">
+    iCloud Mailflow · <a href="/" class="text-accent">Back to Dashboard</a> · v{{.Version}}
 </footer>
 </body>
 </html>

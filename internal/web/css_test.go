@@ -8,7 +8,7 @@ import (
 // TestInlineStyleBudget guards against inline-style regrowth while the remaining
 // styles are migrated to classes. Lower the budget as they are extracted.
 func TestInlineStyleBudget(t *testing.T) {
-	const budget = 143
+	const budget = 5
 
 	entries, err := templatesFS.ReadDir("templates")
 	if err != nil {

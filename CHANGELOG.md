@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Accessibility: form labels are associated with their inputs, toasts announce via `role`, the nav marks the current page with `aria-current`, links/buttons get a shared focus ring, `prefers-reduced-motion` is honoured, and `color-scheme` + thin scrollbars match the theme
 - Responsive: the mobile stylesheet no longer forces every button full-width, form-control widths moved from inline styles to classes so they flow on small screens, and the nav collapses behind a toggle
 - CSS cleanup: removed duplicate `method-*` rules, stopped blanket table-cell truncation, added utility classes and migrated many inline styles, and htmx actions now show a loading state (`aria-busy`)
+- Extracted the remaining static inline styles into utility/component classes (spacing/typography tokens, `.hint`, `.empty-state`, `.chart-grid`, `.bar`, `.snippet`, `.code-block`, …); only template-interpolated values stay inline, and JS visibility toggles use `.hidden`
 
 ## [0.12.2] - 2026-09-21
 
