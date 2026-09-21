@@ -186,6 +186,15 @@ func csrfToken() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
+// csrfTokenForRequest reuses the browser's existing CSRF cookie so the token is
+// stable across renders/tabs; it only mints a new one when none is present.
+func csrfTokenForRequest(r *http.Request) (string, error) {
+	if c, err := r.Cookie("mailflow_csrf"); err == nil && c.Value != "" {
+		return c.Value, nil
+	}
+	return csrfToken()
+}
+
 func csrfCookieWithToken(token string, r *http.Request) *http.Cookie {
 	return &http.Cookie{
 		Name:     "mailflow_csrf",

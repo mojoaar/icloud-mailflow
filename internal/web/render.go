@@ -91,7 +91,7 @@ func init() {
 }
 
 func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName string, data any) {
-	token, err := csrfToken()
+	token, err := csrfTokenForRequest(r)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
