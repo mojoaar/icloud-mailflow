@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/emersion/go-vcard"
@@ -14,13 +15,16 @@ import (
 )
 
 type basicAuthTransport struct {
-	Username string
-	Password string
-	Next     http.RoundTripper
+	Username    string
+	Password    string
+	AllowedHost string
+	Next        http.RoundTripper
 }
 
 func (t *basicAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.SetBasicAuth(t.Username, t.Password)
+	if t.AllowedHost == "" || strings.EqualFold(req.URL.Hostname(), t.AllowedHost) {
+		req.SetBasicAuth(t.Username, t.Password)
+	}
 	return t.Next.RoundTrip(req)
 }
 
@@ -38,9 +42,10 @@ func (i *Importer) ImportFromiCloud(email, password string) (int, error) {
 
 	httpClient := &http.Client{
 		Transport: &basicAuthTransport{
-			Username: email,
-			Password: password,
-			Next:     http.DefaultTransport,
+			Username:    email,
+			Password:    password,
+			AllowedHost: "contacts.icloud.com",
+			Next:        http.DefaultTransport,
 		},
 	}
 

@@ -17,6 +17,8 @@ type Attachment struct {
 	Data []byte
 }
 
+const smtpHost = "smtp.mail.me.com:587"
+
 func Send(to, from, password, subject, body string, attachments ...Attachment) error {
 	var buf bytes.Buffer
 	buf.WriteString(fmt.Sprintf("From: %s\r\n", from))
@@ -33,24 +35,35 @@ func Send(to, from, password, subject, body string, attachments ...Attachment) e
 
 	textHeader := textproto.MIMEHeader{}
 	textHeader.Set("Content-Type", "text/plain; charset=utf-8")
-	tw, _ := mp.CreatePart(textHeader)
-	tw.Write([]byte(body))
+	tw, err := mp.CreatePart(textHeader)
+	if err != nil {
+		return err
+	}
+	if _, err := tw.Write([]byte(body)); err != nil {
+		return err
+	}
 
 	for _, a := range attachments {
 		attHeader := textproto.MIMEHeader{}
 		attHeader.Set("Content-Type", "application/json; charset=utf-8")
 		attHeader.Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", a.Name))
 		attHeader.Set("Content-Transfer-Encoding", "binary")
-		aw, _ := mp.CreatePart(attHeader)
-		aw.Write(a.Data)
+		aw, err := mp.CreatePart(attHeader)
+		if err != nil {
+			return err
+		}
+		if _, err := aw.Write(a.Data); err != nil {
+			return err
+		}
 	}
 
-	mp.Close()
+	if err := mp.Close(); err != nil {
+		return err
+	}
 
-	host := "smtp.mail.me.com:587"
-	server, _, _ := strings.Cut(host, ":")
+	server, _, _ := strings.Cut(smtpHost, ":")
 	auth := smtp.PlainAuth("", from, password, server)
-	if err := smtp.SendMail(host, auth, from, []string{to}, buf.Bytes()); err != nil {
+	if err := smtp.SendMail(smtpHost, auth, from, []string{to}, buf.Bytes()); err != nil {
 		return err
 	}
 	slog.Debug("smtp send", "to", to, "subject", subject)
@@ -58,10 +71,9 @@ func Send(to, from, password, subject, body string, attachments ...Attachment) e
 }
 
 func SendRaw(to, from, password string, raw []byte) error {
-	host := "smtp.mail.me.com:587"
-	server, _, _ := strings.Cut(host, ":")
+	server, _, _ := strings.Cut(smtpHost, ":")
 	auth := smtp.PlainAuth("", from, password, server)
-	if err := smtp.SendMail(host, auth, from, []string{to}, raw); err != nil {
+	if err := smtp.SendMail(smtpHost, auth, from, []string{to}, raw); err != nil {
 		return err
 	}
 	slog.Debug("smtp send raw", "to", to)

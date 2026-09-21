@@ -1,6 +1,9 @@
 package carddav
 
 import (
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/emersion/go-vcard"
@@ -64,5 +67,34 @@ func TestExtractContactEmptyCard(t *testing.T) {
 	name, email := extractContact(card)
 	if name != "" || email != "" {
 		t.Errorf("name = %q, email = %q, want empty", name, email)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+func TestBasicAuthTransportScopesCredentials(t *testing.T) {
+	var gotAuth string
+	rt := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		gotAuth = req.Header.Get("Authorization")
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(""))}, nil
+	})
+	tr := &basicAuthTransport{Username: "u", Password: "p", AllowedHost: "contacts.icloud.com", Next: rt}
+
+	req, _ := http.NewRequest("GET", "https://contacts.icloud.com/foo", nil)
+	if _, err := tr.RoundTrip(req); err != nil {
+		t.Fatalf("RoundTrip: %v", err)
+	}
+	if gotAuth == "" {
+		t.Error("expected basic auth for the allowed host")
+	}
+
+	req2, _ := http.NewRequest("GET", "https://evil.example.com/foo", nil)
+	if _, err := tr.RoundTrip(req2); err != nil {
+		t.Fatalf("RoundTrip: %v", err)
+	}
+	if gotAuth != "" {
+		t.Error("credentials must not be sent to another host")
 	}
 }
