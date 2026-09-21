@@ -22,7 +22,10 @@
     <nav>
         <a href="/dashboard" class="brand"><img src="/static/favicon.svg" alt="" aria-hidden="true" class="brand-mark"><span class="brand-text">iCloud Mailflow</span></a>
         {{if .ShowNav}}
-        <div class="nav-links">
+        <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="nav-links" aria-label="Toggle navigation">
+            <i data-lucide="menu" class="nav-icon" aria-hidden="true"></i>
+        </button>
+        <div class="nav-links" id="nav-links">
             <a href="/dashboard"{{if navMatch .Page "dashboard"}} aria-current="page"{{end}}><i data-lucide="layout-dashboard" class="nav-icon" aria-hidden="true"></i> Dashboard</a>
             <a href="/activity"{{if navMatch .Page "activity"}} aria-current="page"{{end}}><i data-lucide="list" class="nav-icon" aria-hidden="true"></i> Activity</a>
             <a href="/rules"{{if navMatch .Page "rules"}} aria-current="page"{{end}}><i data-lucide="git-branch" class="nav-icon" aria-hidden="true"></i> Rules</a>
@@ -88,6 +91,13 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
   var kbClose = d.getElementById('kb-close');
   if (kb) kb.addEventListener('click', function(e){ if (e.target === kb) kb.classList.remove('open'); });
   if (kbClose) kbClose.addEventListener('click', function(){ if (kb) kb.classList.remove('open'); });
+  var navToggle = d.querySelector('.nav-toggle');
+  if (navToggle) navToggle.addEventListener('click', function(){
+    var links = d.getElementById('nav-links');
+    if (!links) return;
+    var open = links.classList.toggle('nav-open');
+    this.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
 
   d.addEventListener('change', function(e){
     var t = e.target;

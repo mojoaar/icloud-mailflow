@@ -17,7 +17,7 @@
     <div style="color:var(--muted);font-size:0.9rem">messages processed (all time)</div>
     {{if .Errors}}
     <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:14px;font-size:0.85rem">
-        {{range .Errors}}<span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:{{if eq .Status "success"}}var(--green){{else if eq .Status "error"}}var(--red){{else}}var(--muted){{end}}"></span><span class="muted">{{.Status}}</span><strong style="color:var(--text)">{{.Count}}</strong></span>{{end}}
+        {{range .Errors}}<span style="display:flex;align-items:center;gap:6px"><span class="status-dot" style="background:{{if eq .Status "success"}}var(--green){{else if eq .Status "error"}}var(--red){{else}}var(--muted){{end}}"></span><span class="muted">{{.Status}}</span><strong style="color:var(--text)">{{.Count}}</strong></span>{{end}}
     </div>
     {{end}}
 </div>
@@ -157,13 +157,13 @@
 <div class="card chartable" style="flex:1">
 <div class="flex-between"><h2>Runtime Metrics</h2></div>
 <div style="display:flex;gap:16px;flex-wrap:wrap">
-<div style="flex:1;min-width:260px">
+<div class="metric-card">
     <h3 style="font-size:0.85rem;color:var(--muted);margin:0 0 8px 0">Memory (MB)</h3>
     <div id="metrics-mem-chart">
         {{if .MetricsMem}}<canvas id="metrics-mem-canvas" style="max-height:280px"></canvas>{{else}}<p class="muted" style="text-align:center;padding:60px 0">No data yet</p>{{end}}
     </div>
 </div>
-<div style="flex:1;min-width:260px">
+<div class="metric-card">
     <h3 style="font-size:0.85rem;color:var(--muted);margin:0 0 8px 0">CPU %</h3>
     <div id="metrics-cpu-chart">
         {{if .MetricsCPU}}<canvas id="metrics-cpu-canvas" style="max-height:280px"></canvas>{{else}}<p class="muted" style="text-align:center;padding:60px 0">No data yet</p>{{end}}

@@ -21,20 +21,20 @@
         <option value="">Select folder...</option>
         {{range .Folders}}<option value="{{.Name}}">{{.Name}}</option>{{end}}
     </select>
-    <input name="limit" type="number" value="50" min="1" max="200" style="width:80px" title="Max messages">
+    <input name="limit" type="number" value="50" min="1" max="200" class="input-xs" title="Max messages">
     <button type="submit" class="btn">Apply Rules to Folder</button>
 </form>
 <div id="apply-result"></div>
 <div class="card mt-2">
     <div id="reorder-spinner" class="htmx-indicator" style="text-align:center;padding:8px;color:var(--muted)"><span class="spinner"></span> Reordering...</div>
-    <table style="table-layout:auto">
+    <table class="rules-table">
         <colgroup>
-            <col style="width:24px">
-            <col style="width:100px">
             <col>
-            <col style="width:100px">
-            <col style="width:120px">
-            <col style="width:100px">
+            <col>
+            <col>
+            <col>
+            <col>
+            <col>
             <col>
         </colgroup>
         <thead><tr><th></th><th>Priority</th><th>Name</th><th>Status</th><th>Conditions</th><th>Actions</th><th style="white-space:nowrap"></th></tr></thead>

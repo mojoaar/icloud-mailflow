@@ -10,16 +10,16 @@
     <div class="card">
         <div class="form-group">
             <label for="rule-name">Name</label>
-            <input type="text" id="rule-name" name="name" value="{{.Rule.Name}}" required style="width:100%">
+            <input type="text" id="rule-name" name="name" value="{{.Rule.Name}}" required class="w-full">
         </div>
         <div class="form-group">
             <label for="rule-desc">Description</label>
-            <input type="text" id="rule-desc" name="description" value="{{.Rule.Description}}" style="width:100%">
+            <input type="text" id="rule-desc" name="description" value="{{.Rule.Description}}" class="w-full">
         </div>
         <div style="display:flex;gap:16px">
             <div class="form-group">
                 <label for="rule-priority">Priority</label>
-                <input type="number" id="rule-priority" name="priority" value="{{.Rule.Priority}}" style="width:80px">
+                <input type="number" id="rule-priority" name="priority" value="{{.Rule.Priority}}" class="rule-priority">
             </div>
             <div class="form-group">
                 <div aria-hidden="true"></div>
@@ -63,8 +63,8 @@
     <h2 class="mt-3">Actions</h2>
     <div class="card" id="actions">
         {{range .Rule.Actions}}
-        <div class="action-row" style="display:flex;gap:8px;margin-bottom:8px">
-            <select name="action_type" style="width:160px">
+        <div class="action-row">
+            <select name="action_type">
                 <option value="move_to_folder" {{if eq .Type "move_to_folder"}}selected{{end}}>Move to Folder</option>
                 <option value="mark_as_read" {{if eq .Type "mark_as_read"}}selected{{end}}>Mark as Read</option>
                 <option value="mark_as_unread" {{if eq .Type "mark_as_unread"}}selected{{end}}>Mark as Unread</option>
@@ -76,23 +76,23 @@
                 <option value="webhook" {{if eq .Type "webhook"}}selected{{end}}>Post Webhook</option>
             </select>
             {{if eq .Type "move_to_folder"}}
-            <input type="text" name="action_value" value="{{.Value}}" placeholder="Folder name" list="folder-list" style="flex:1">
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Folder name" list="folder-list">
             {{else if eq .Type "set_flag"}}
-            <input type="text" name="action_value" value="{{.Value}}" placeholder="Flag (e.g. \\Flagged)" style="flex:1">
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Flag (e.g. \\Flagged)">
             {{else if eq .Type "auto_reply"}}
-            <textarea name="action_value" placeholder="Reply body. Templates: [subject], [from], [date]" style="flex:1;min-height:80px">{{.Value}}</textarea>
+            <textarea name="action_value" placeholder="Reply body. Templates: [subject], [from], [date]">{{.Value}}</textarea>
             {{else if eq .Type "forward"}}
-            <input type="text" name="action_value" value="{{.Value}}" placeholder="Email to forward to" style="flex:1">
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Email to forward to">
             {{else if eq .Type "remove_flag"}}
-            <input type="text" name="action_value" value="{{.Value}}" placeholder="Flag to remove (e.g. \\Flagged)" style="flex:1">
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Flag to remove (e.g. \\Flagged)">
             {{else if eq .Type "webhook"}}
-            <input type="text" name="action_value" value="{{.Value}}" placeholder="Webhook URL (e.g. https://ntfy.sh/topic)" style="flex:1">
+            <input type="text" name="action_value" value="{{.Value}}" placeholder="Webhook URL (e.g. https://ntfy.sh/topic)">
             {{else if eq .Type "delete"}}
             <input type="text" name="action_value" value="" placeholder="" style="display:none">
             {{else}}
             <input type="text" name="action_value" value="{{.Value}}" placeholder="Value (optional)" style="display:none">
             {{end}}
-            <button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>
+            <button type="button" class="btn btn-sm remove-row">×</button>
         </div>
         {{end}}
     </div>
@@ -105,7 +105,7 @@
     <button type="button" class="btn mt-1" id="add-action">+ Add Action</button>
 
     <template id="cond-row-tpl">
-        <div class="condition-row" style="display:flex;gap:8px;margin-bottom:8px">
+        <div class="condition-row">
             <input type="hidden" name="cond_group" value="">
             <select name="cond_field">
                 <option value="from">From</option>
@@ -117,8 +117,8 @@
                 <option value="content_type">Content Type</option>
                 <option value="header">Header:</option>
             </select>
-            <input type="text" name="cond_header_name" placeholder="Header name" style="width:120px;display:none" value="">
-            <select name="cond_op" style="width:140px">
+            <input type="text" name="cond_header_name" placeholder="Header name" style="display:none" value="">
+            <select name="cond_op">
                 <option value="contains">contains</option>
                 <option value="not_contains">doesn't contain</option>
                 <option value="equals">equals</option>
@@ -133,24 +133,24 @@
                 <option value="before">before (date)</option>
                 <option value="after">after (date)</option>
             </select>
-            <input type="text" name="cond_value" placeholder="value" list="contact-list" style="flex:1" value="">
-            <button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>
+            <input type="text" name="cond_value" placeholder="value" list="contact-list" value="">
+            <button type="button" class="btn btn-sm remove-row">×</button>
         </div>
     </template>
     <template id="group-tpl">
-        <div class="group-block" data-group="" style="border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:8px">
+        <div class="group-block" data-group="">
             <input type="hidden" name="group_id" value="">
             <input type="hidden" name="group_parent" value="">
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-                <select name="group_op" style="width:90px"><option value="AND">ALL</option><option value="OR" selected>ANY</option></select>
+            <div>
+                <select name="group_op"><option value="AND">ALL</option><option value="OR" selected>ANY</option></select>
                 <span class="muted" style="font-size:0.8rem">of these</span>
-                <button type="button" class="btn remove-group" data-group="" style="font-size:0.75rem">Remove group</button>
+                <button type="button" class="btn btn-sm remove-group" data-group="">Remove group</button>
             </div>
             <div class="group-conds"></div>
             <div class="group-children"></div>
             <div style="display:flex;gap:8px">
-                <button type="button" class="btn" data-add-condition="" style="font-size:0.75rem">+ Condition</button>
-                <button type="button" class="btn" data-add-group="" style="font-size:0.75rem">+ Group</button>
+                <button type="button" class="btn btn-sm" data-add-condition="">+ Condition</button>
+                <button type="button" class="btn btn-sm" data-add-group="">+ Group</button>
             </div>
         </div>
     </template>
@@ -162,15 +162,15 @@
 <div class="card" id="rule-test">
     <form hx-post="/rules/{{.Rule.ID}}/test" hx-target="#test-result" hx-swap="innerHTML">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <input name="from" placeholder="From email" style="flex:1;min-width:200px">
-            <input name="to" placeholder="To email" style="flex:1;min-width:200px">
-            <input name="cc" placeholder="CC email" style="flex:1;min-width:200px">
-            <input name="subject" placeholder="Subject" style="flex:1;min-width:200px">
+            <input name="from" placeholder="From email" class="rule-test-field">
+            <input name="to" placeholder="To email" class="rule-test-field">
+            <input name="cc" placeholder="CC email" class="rule-test-field">
+            <input name="subject" placeholder="Subject" class="rule-test-field">
         </div>
         <button type="submit" class="btn mt-1">Test (Synthetic)</button>
     </form>
     <form hx-post="/rules/{{.Rule.ID}}/test-message" hx-target="#test-result" hx-swap="innerHTML" style="margin-top:8px">
-        <input name="folder" placeholder="Folder name" list="folder-list" style="width:200px">
+        <input name="folder" placeholder="Folder name" list="folder-list">
         <button type="submit" class="btn">Test (Real Message)</button>
     </form>
     <div id="test-result"></div>
@@ -214,9 +214,9 @@ function addAction() {
     var div = document.createElement('div');
     div.className = 'action-row';
     div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
-    div.innerHTML = '<select name="action_type" style="width:160px"><option value="move_to_folder">Move to Folder</option><option value="mark_as_read">Mark as Read</option><option value="mark_as_unread">Mark as Unread</option><option value="set_flag">Set Flag</option><option value="auto_reply">Auto Reply</option><option value="forward">Forward</option><option value="delete">Delete</option><option value="remove_flag">Remove Flag</option><option value="webhook">Post Webhook</option></select>' +
-        '<input type="text" name="action_value" placeholder="Folder name" list="folder-list" style="flex:1">' +
-        '<button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>';
+    div.innerHTML = '<select name="action_type"><option value="move_to_folder">Move to Folder</option><option value="mark_as_read">Mark as Read</option><option value="mark_as_unread">Mark as Unread</option><option value="set_flag">Set Flag</option><option value="auto_reply">Auto Reply</option><option value="forward">Forward</option><option value="delete">Delete</option><option value="remove_flag">Remove Flag</option><option value="webhook">Post Webhook</option></select>' +
+        '<input type="text" name="action_value" placeholder="Folder name" list="folder-list">' +
+        '<button type="button" class="btn btn-sm remove-row">×</button>';
     document.getElementById('actions').appendChild(div);
 }
 function updateActionInput(select) {
@@ -252,7 +252,7 @@ function onFieldChange(select) {
 {{end}}
 
 {{define "condition_row"}}
-<div class="condition-row" style="display:flex;gap:8px;margin-bottom:8px">
+<div class="condition-row">
     <input type="hidden" name="cond_group" value="{{.Group}}">
     <select name="cond_field">
         <option value="from" {{if eq .Field "from"}}selected{{end}}>From</option>
@@ -264,8 +264,8 @@ function onFieldChange(select) {
         <option value="content_type" {{if eq .Field "content_type"}}selected{{end}}>Content Type</option>
         <option value="header" {{if eq .Field "header"}}selected{{end}}>Header:</option>
     </select>
-    <input type="text" name="cond_header_name" placeholder="Header name" style="width:120px;{{if ne .Field "header"}}display:none{{end}}" value="{{.HeaderName}}">
-    <select name="cond_op" style="width:140px">
+    <input type="text" name="cond_header_name" placeholder="Header name"{{if ne .Field "header"}}style="display:none"{{end}} value="{{.HeaderName}}">
+    <select name="cond_op">
         <option value="contains" {{if eq .Operator "contains"}}selected{{end}}>contains</option>
         <option value="not_contains" {{if eq .Operator "not_contains"}}selected{{end}}>doesn't contain</option>
         <option value="equals" {{if eq .Operator "equals"}}selected{{end}}>equals</option>
@@ -280,22 +280,22 @@ function onFieldChange(select) {
         <option value="before" {{if eq .Operator "before"}}selected{{end}}>before (date)</option>
         <option value="after" {{if eq .Operator "after"}}selected{{end}}>after (date)</option>
     </select>
-    <input type="text" name="cond_value" value="{{.Value}}" placeholder="value" list="contact-list" style="flex:1">
-    <button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>
+    <input type="text" name="cond_value" value="{{.Value}}" placeholder="value" list="contact-list">
+    <button type="button" class="btn btn-sm remove-row">×</button>
 </div>
 {{end}}
 
 {{define "condition_group"}}
-<div class="group-block" data-group="{{.Path}}" style="border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:8px">
+<div class="group-block" data-group="{{.Path}}">
     <input type="hidden" name="group_id" value="{{.Path}}">
     <input type="hidden" name="group_parent" value="{{.Parent}}">
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-        <select name="group_op" style="width:90px">
+    <div>
+        <select name="group_op">
             <option value="AND" {{if eq .Operator "AND"}}selected{{end}}>ALL</option>
             <option value="OR" {{if eq .Operator "OR"}}selected{{end}}>ANY</option>
         </select>
         <span class="muted" style="font-size:0.8rem">of these</span>
-        {{if .Parent}}<button type="button" class="btn remove-group" data-group="{{.Path}}" style="font-size:0.75rem">Remove group</button>{{end}}
+        {{if .Parent}}<button type="button" class="btn btn-sm remove-group" data-group="{{.Path}}">Remove group</button>{{end}}
     </div>
     <div class="group-conds">
         {{range .Conditions}}{{template "condition_row" .}}{{end}}
@@ -304,8 +304,8 @@ function onFieldChange(select) {
         {{range .Children}}{{template "condition_group" .}}{{end}}
     </div>
     <div style="display:flex;gap:8px">
-        <button type="button" class="btn" data-add-condition="{{.Path}}" style="font-size:0.75rem">+ Condition</button>
-        <button type="button" class="btn" data-add-group="{{.Path}}" style="font-size:0.75rem">+ Group</button>
+        <button type="button" class="btn btn-sm" data-add-condition="{{.Path}}">+ Condition</button>
+        <button type="button" class="btn btn-sm" data-add-group="{{.Path}}">+ Group</button>
     </div>
 </div>
 {{end}}

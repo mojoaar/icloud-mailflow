@@ -6,11 +6,11 @@
     <form method="POST" action="/settings/imap"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="settings-email">Email</label>
-            <input type="email" id="settings-email" name="imap_email" value="{{.IMAPEmail}}" style="width:100%">
+            <input type="email" id="settings-email" name="imap_email" value="{{.IMAPEmail}}" class="w-full">
         </div>
         <div class="form-group">
             <label for="settings-imap-pass">App-Specific Password</label>
-            <input type="password" id="settings-imap-pass" name="imap_password" placeholder="Leave blank to keep current" style="width:100%">
+            <input type="password" id="settings-imap-pass" name="imap_password" placeholder="Leave blank to keep current" class="w-full">
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
             <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save IMAP Settings</button>
@@ -29,7 +29,7 @@
     <form method="POST" action="/settings/password"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="settings-password">New Password</label>
-            <input type="password" id="settings-password" name="password" placeholder="Leave blank to keep current" style="width:100%">
+            <input type="password" id="settings-password" name="password" placeholder="Leave blank to keep current" class="w-full">
         </div>
         <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Update Password</button>
     </form>
@@ -48,7 +48,7 @@
                 </button>
             </div>
             <div id="folders-select">
-                <select name="source_folder" id="source-folder-select" style="width:100%">
+                <select name="source_folder" id="source-folder-select" class="w-full">
                     {{range .Folders}}
                     <option value="{{.Name}}" {{if eq $.SourceFolder .Name}}selected{{end}}>{{.Name}}</option>
                     {{end}}
@@ -57,15 +57,15 @@
         </div>
         <div class="form-group">
             <label for="settings-interval">Poll Interval (seconds)</label>
-            <input type="number" id="settings-interval" name="poll_interval" value="{{.PollInterval}}" min="60" style="width:120px">
+            <input type="number" id="settings-interval" name="poll_interval" value="{{.PollInterval}}" min="60" class="input-narrow">
         </div>
         <div class="form-group">
             <label for="settings-batch">Messages Per Poll</label>
-            <input type="number" id="settings-batch" name="poll_batch" value="{{.PollBatch}}" min="1" max="200" style="width:120px">
+            <input type="number" id="settings-batch" name="poll_batch" value="{{.PollBatch}}" min="1" max="200" class="input-narrow">
         </div>
         <div class="form-group">
             <label for="settings-keep">Log Retention (entries)</label>
-            <input type="number" id="settings-keep" name="log_keep" value="{{.LogKeep}}" min="100" style="width:120px">
+            <input type="number" id="settings-keep" name="log_keep" value="{{.LogKeep}}" min="100" class="input-narrow">
         </div>
         <div class="flex-row">
             <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save Poll Settings</button>
@@ -84,7 +84,7 @@
     <form method="POST" action="/settings/webhook"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="settings-webhook">Webhook Secret</label>
-            <input type="text" id="settings-webhook" name="webhook_secret" value="{{.WebhookSecret}}" placeholder="Optional X-Webhook-Secret header value" style="width:100%">
+            <input type="text" id="settings-webhook" name="webhook_secret" value="{{.WebhookSecret}}" placeholder="Optional X-Webhook-Secret header value" class="w-full">
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
             <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save</button>
@@ -103,7 +103,7 @@
         </div>
         <div class="form-group">
             <label for="settings-alert-url">Alert webhook URL</label>
-            <input type="text" id="settings-alert-url" name="alert_webhook_url" value="{{.AlertWebhookURL}}" placeholder="https://ntfy.sh/your-topic" style="width:100%">
+            <input type="text" id="settings-alert-url" name="alert_webhook_url" value="{{.AlertWebhookURL}}" placeholder="https://ntfy.sh/your-topic" class="w-full">
         </div>
         <div class="flex-row">
             <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save</button>
@@ -160,7 +160,7 @@
         </div>
         <div class="form-group">
             <label for="settings-backup-freq">Frequency</label>
-            <select name="backup_frequency" id="settings-backup-freq" class="auto-submit" style="width:100%">
+            <select name="backup_frequency" id="settings-backup-freq" class="auto-submit w-full">
                 <option value="weekly" {{if eq .BackupFrequency "weekly"}}selected{{end}}>Weekly</option>
                 <option value="daily" {{if eq .BackupFrequency "daily"}}selected{{end}}>Daily</option>
                 <option value="monthly" {{if eq .BackupFrequency "monthly"}}selected{{end}}>Monthly</option>
@@ -168,7 +168,7 @@
         </div>
         <div class="form-group">
             <label for="settings-backup-recipient">Recipient (defaults to your iCloud email)</label>
-            <input type="email" id="settings-backup-recipient" name="backup_recipient" value="{{.BackupRecipient}}" placeholder="{{.IMAPEmail}}" class="auto-submit" style="width:100%">
+            <input type="email" id="settings-backup-recipient" name="backup_recipient" value="{{.BackupRecipient}}" placeholder="{{.IMAPEmail}}" class="auto-submit w-full">
         </div>
     </form>
     <div class="flex-row">
@@ -265,7 +265,7 @@
     <form method="POST" action="/settings/timezone"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="tz-input">Timezone</label>
-            <input type="text" id="tz-input" name="timezone" list="tz-list" value="{{.Timezone}}" placeholder="e.g. Europe/Copenhagen" autocomplete="off" class="auto-submit" style="width:100%">
+            <input type="text" id="tz-input" name="timezone" list="tz-list" value="{{.Timezone}}" placeholder="e.g. Europe/Copenhagen" autocomplete="off" class="auto-submit w-full">
             <datalist id="tz-list">{{range .Timezones}}<option value="{{.}}">{{end}}</datalist>
             {{if .TZError}}<p style="color:var(--red);font-size:0.8rem;margin-top:4px">Unknown timezone — not saved</p>{{end}}
         </div>
@@ -273,7 +273,7 @@
     <form method="POST" action="/settings/font" style="margin-top:12px"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="settings-font">Font</label>
-            <select name="font" id="settings-font" class="auto-submit" style="width:100%">
+            <select name="font" id="settings-font" class="auto-submit w-full">
                 <option value="default" {{if not .MonoFont}}selected{{end}}>System Default</option>
                 <option value="mono" {{if .MonoFont}}selected{{end}}>JetBrains Mono</option>
             </select>
@@ -281,7 +281,7 @@
     </form>
     <div class="form-group" style="margin-top:12px">
         <label for="theme-family">Theme</label>
-        <select id="theme-family" style="width:100%">
+        <select id="theme-family" class="w-full">
             <option value="mailflow">Mailflow</option>
             <option value="ayu">Ayu</option>
             <option value="catppuccin">Catppuccin</option>

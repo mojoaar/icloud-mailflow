@@ -1,46 +1,34 @@
 @media (max-width: 768px) {
-    nav {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        padding: 8px;
+    nav { flex-wrap: wrap; padding: 8px 12px; }
+    main { padding: 16px; }
+    .card { padding: 12px; margin-left: 0; margin-right: 0; }
+
+    .flex-between, .flex-row { flex-direction: column; align-items: stretch; gap: 8px; }
+    .flex-between > *, .flex-row > * { width: 100%; }
+
+    table { display: block; overflow-x: auto; }
+
+    input:not([type="checkbox"]):not([type="radio"]), select, textarea { width: 100%; box-sizing: border-box; }
+    .btn-primary, .btn-block { width: 100%; }
+    .btn { min-height: 40px; }
+    .btn-icon, .search-clear, .reorder-btn, .nav-btn, .nav-toggle { width: auto; min-height: 0; }
+
+    /* Collapsible nav */
+    .nav-toggle { display: inline-flex; }
+    .nav-links { display: none; }
+    .nav-links.nav-open {
+        display: flex; flex-direction: column; align-items: stretch;
+        gap: 4px; width: 100%; padding-top: 8px;
     }
-    nav a {
-        display: block;
-        font-size: 0.85rem;
-        padding: 8px;
-    }
-    .flex-between, .flex-row {
-        flex-direction: column;
-        gap: 8px;
-    }
-    .flex-between > *, .flex-row > * {
-        width: 100%;
-    }
-    table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-    th, td {
-        min-width: 80px;
-    }
-    .card {
-        margin-left: 0;
-        margin-right: 0;
-    }
-    input, select, textarea, button, .btn {
-        width: 100%;
-        box-sizing: border-box;
-    }
-    button, .btn {
-        min-height: 44px;
-    }
-    td p, td span, td a, .muted {
-        word-break: break-all;
-        overflow-wrap: anywhere;
-    }
-    h1 {
-        font-size: 1.2rem;
-    }
+    .nav-links a, .nav-links .nav-btn { width: 100%; padding: 8px; font-size: 0.9rem; text-align: left; }
+
+    h1 { font-size: 1.2rem; }
+
+    .condition-row, .action-row, .group-head { flex-wrap: wrap; }
+    .condition-row select[name], .condition-row input[name],
+    .action-row select[name], .action-row input[name], .action-row textarea[name],
+    .group-head select[name] { width: 100%; min-width: 0; }
+    .input-narrow, .metric-card, #rule-test input[name="folder"] { width: 100%; }
+
+    td p, td span, td a, .muted { overflow-wrap: anywhere; }
 }

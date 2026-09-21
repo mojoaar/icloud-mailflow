@@ -767,3 +767,45 @@ html { scrollbar-color: var(--border) var(--bg); scrollbar-width: thin; }
         transition-duration: 0.01ms !important;
     }
 }
+
+/* Sizing & components */
+.w-full { width: 100%; }
+.input-narrow { width: 120px; }
+.rule-priority { width: 80px; }
+.rule-test-field { flex: 1; min-width: 200px; }
+.metric-card { flex: 1; min-width: 260px; }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.auth-card { max-width: 500px; margin: 60px auto; }
+.nav-toggle { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: 4px; }
+
+.condition-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.condition-row select[name="cond_field"] { width: 130px; }
+.condition-row select[name="cond_op"] { width: 140px; }
+.condition-row input[name="cond_header_name"] { width: 120px; }
+.condition-row input[name="cond_value"] { flex: 1; min-width: 0; }
+.group-head { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.group-head select[name="group_op"] { width: 90px; }
+.action-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.action-row select[name="action_type"] { width: 160px; }
+.action-row input[name="action_value"], .action-row textarea[name="action_value"] { flex: 1; min-width: 0; }
+.action-row textarea[name="action_value"] { min-height: 80px; }
+#rule-test input[name="folder"] { width: 200px; }
+
+.btn-sm { padding: 2px 6px; font-size: 0.75rem; }
+.group-block { border: 1px solid var(--border); border-radius: 6px; padding: 8px; margin-bottom: 8px; }
+.rules-table { table-layout: auto; }
+.rules-table col:nth-child(1) { width: 24px; }
+.rules-table col:nth-child(2) { width: 100px; }
+.rules-table col:nth-child(4) { width: 100px; }
+.rules-table col:nth-child(5) { width: 120px; }
+.rules-table col:nth-child(6) { width: 100px; }
+
+.activity-table { table-layout: auto; }
+.activity-table col:nth-child(1) { width: 185px; }
+.activity-table col:nth-child(3) { width: 180px; }
+.activity-table col:nth-child(4) { width: 130px; }
+.activity-table col:nth-child(5) { width: 150px; }
+.activity-table col:nth-child(6) { width: 80px; }
+.activity-table col:nth-child(7) { width: 110px; }
+.input-xs { width: 80px; }
+.auth-card-sm { max-width: 360px; margin: 80px auto; }
