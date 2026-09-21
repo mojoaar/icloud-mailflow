@@ -87,9 +87,10 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 					slog.Error("settings decrypt imap password failed", "error", err)
 				}
 				if email != "" && password != "" {
-					cfg.IMAPEmail = email
-					cfg.IMAPPassword = password
-					temp := imap.New(cfg)
+					tempCfg := *cfg
+					tempCfg.IMAPEmail = email
+					tempCfg.IMAPPassword = password
+					temp := imap.New(&tempCfg)
 					if err := temp.Connect(); err == nil {
 						if imapFolders, err := temp.ListFolders(); err == nil {
 							syncFoldersToDB(imapFolders, foldersRepo)

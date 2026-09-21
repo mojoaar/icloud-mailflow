@@ -137,7 +137,18 @@ func initialize(dataDir string) (*App, error) {
 			logRepo, settingsRepo, statsRepo, foldersRepo, cfg, batchSize, cfg.PollInterval, cfg.SourceFolder,
 			imapEmail,
 			func() (imap.Client, error) {
-				conn := imap.New(cfg)
+				connCfg := *cfg
+				if e, _ := settingsRepo.Get("imap_email"); e != "" {
+					connCfg.IMAPEmail = e
+				}
+				if enc, _ := settingsRepo.Get("imap_password"); enc != "" {
+					if key, err := hex.DecodeString(cfg.EncryptionKey); err == nil {
+						if dec, err := crypto.Decrypt([]byte(enc), key); err == nil {
+							connCfg.IMAPPassword = string(dec)
+						}
+					}
+				}
+				conn := imap.New(&connCfg)
 				if err := conn.Connect(); err != nil {
 					return nil, err
 				}

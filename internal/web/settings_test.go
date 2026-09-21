@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mojoaar/icloud-mailflow/internal/config"
+	"github.com/mojoaar/icloud-mailflow/internal/crypto"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 )
 
@@ -206,5 +208,39 @@ func TestDashboardHandlerDisconnected(t *testing.T) {
 
 	if rec.Code != 200 {
 		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+}
+
+func TestSettingsPageDoesNotMutateConfig(t *testing.T) {
+	database := openWebTestDB(t)
+	settingsRepo := db.NewSettingsRepo(database)
+	foldersRepo := db.NewFoldersRepo(database)
+	contactsRepo := db.NewContactsRepo(database)
+
+	cfg := &config.Config{
+		IMAPServer:    "127.0.0.1",
+		IMAPPort:      1,
+		IMAPEmail:     "original@example.com",
+		EncryptionKey: testHexKey,
+		PollInterval:  300,
+		ListenAddr:    "127.0.0.1:8080",
+	}
+	key, _ := hex.DecodeString(testHexKey)
+	enc, err := crypto.Encrypt([]byte("secret"), key)
+	if err != nil {
+		t.Fatalf("encrypt: %v", err)
+	}
+	settingsRepo.Set("imap_email", "other@example.com")
+	settingsRepo.Set("imap_password", string(enc))
+
+	h := settingsPage(settingsRepo, foldersRepo, cfg, nil, "0.4.2", contactsRepo)
+	req := httptest.NewRequest("GET", "/settings", nil)
+	serveHandler(h, req)
+
+	if cfg.IMAPEmail != "original@example.com" {
+		t.Errorf("shared config IMAPEmail mutated to %q", cfg.IMAPEmail)
+	}
+	if cfg.IMAPPassword != "" {
+		t.Errorf("shared config IMAPPassword mutated to %q", cfg.IMAPPassword)
 	}
 }

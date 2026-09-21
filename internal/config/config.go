@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 type Config struct {
@@ -138,7 +139,12 @@ func ValidateLogKeep(n int) error {
 	return nil
 }
 
+var saveMu sync.Mutex
+
 func (c *Config) Save() error {
+	saveMu.Lock()
+	defer saveMu.Unlock()
+
 	path := filepath.Join(c.DataDir, "config.json")
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return err
@@ -147,5 +153,9 @@ func (c *Config) Save() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0600)
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, 0600); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
 }

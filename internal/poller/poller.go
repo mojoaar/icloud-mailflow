@@ -2,6 +2,7 @@ package poller
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/mojoaar/icloud-mailflow/internal/config"
 	"github.com/mojoaar/icloud-mailflow/internal/contacts"
+	"github.com/mojoaar/icloud-mailflow/internal/crypto"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
 	"github.com/mojoaar/icloud-mailflow/internal/metrics"
@@ -416,7 +418,7 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 			} else {
 				forwardSubject := strings.ReplaceAll("Fwd: [subject]", "[subject]", msg.Subject)
 				mimeData := buildForwardMIME(string(raw), forwardSubject, p.imapEmail)
-				if err := smtp.SendRaw(action.Value, p.imapEmail, p.cfg.IMAPPassword, mimeData); err != nil {
+				if err := smtp.SendRaw(action.Value, p.getIMAPEmail(), p.imapPassword(), mimeData); err != nil {
 					logAction(effectiveUID, action, "error")
 				} else {
 					logAction(effectiveUID, action, "success")
@@ -484,7 +486,7 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 			if send == nil {
 				send = smtp.Send
 			}
-			if err := send(from, p.getIMAPEmail(), p.cfg.IMAPPassword, replySubject, body); err != nil {
+			if err := send(from, p.getIMAPEmail(), p.imapPassword(), replySubject, body); err != nil {
 				slog.Error("auto_reply failed", "to", from, "error", err)
 				logAction(effectiveUID, action, "error")
 			} else {
@@ -525,10 +527,36 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 }
 
 func (p *Poller) getIMAPEmail() string {
+	if p.settingsRepo != nil {
+		if e, _ := p.settingsRepo.Get("imap_email"); e != "" {
+			return e
+		}
+	}
 	if p.imapEmail != "" {
 		return p.imapEmail
 	}
-	return p.cfg.IMAPEmail
+	if p.cfg != nil {
+		return p.cfg.IMAPEmail
+	}
+	return ""
+}
+
+// imapPassword returns the current account password, preferring the encrypted
+// store so a password change takes effect without a restart.
+func (p *Poller) imapPassword() string {
+	if p.settingsRepo != nil {
+		if enc, _ := p.settingsRepo.Get("imap_password"); enc != "" && p.cfg != nil {
+			if key, err := hex.DecodeString(p.cfg.EncryptionKey); err == nil {
+				if dec, err := crypto.Decrypt([]byte(enc), key); err == nil {
+					return string(dec)
+				}
+			}
+		}
+	}
+	if p.cfg != nil {
+		return p.cfg.IMAPPassword
+	}
+	return ""
 }
 
 func msgToStr(msg *imap.Message) string {
@@ -643,7 +671,7 @@ func (p *Poller) BackupNow() error {
 	if recipient == "" {
 		recipient = from
 	}
-	password := p.cfg.IMAPPassword
+	password := p.imapPassword()
 
 	ts := time.Now().Format("2006-01-02 15:04")
 	subject := fmt.Sprintf("[Mailflow Backup] Rules - %s", ts)
