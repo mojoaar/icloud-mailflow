@@ -185,23 +185,23 @@
     <h2>MCP Access</h2>
     <p style="color:var(--muted);margin-bottom:12px">Enable Model Context Protocol access so AI agents (Claude Code, OpenCode, Codex) can manage your rules and check mailflow status.</p>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
-        <form method="POST" action="/settings/mcp/toggle" style="margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <form method="POST" action="/settings/mcp/toggle" class="m-0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
             <button type="submit" class="btn {{if .MCPEnabled}}btn-danger{{else}}btn-primary{{end}}">
                 {{if .MCPEnabled}}Disable MCP{{else}}Enable MCP{{end}}
             </button>
         </form>
         <span style="color:var(--muted);font-size:0.85rem">
-            Status: {{if .MCPEnabled}}<span style="color:var(--green)">Enabled</span>{{else}}<span style="color:var(--muted)">Disabled</span>{{end}}
+            Status: {{if .MCPEnabled}}<span style="color:var(--green)">Enabled</span>{{else}}<span class="muted">Disabled</span>{{end}}
         </span>
     </div>
     {{if .MCPEnabled}}
     <div class="form-group">
         <span class="form-label">API Key</span>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div class="row">
             <code style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-size:0.8rem;word-break:break-all;flex:1">{{.MCPAPIKey}}</code>
-            <button type="button" class="btn" data-copy="{{.MCPAPIKey}}" style="white-space:nowrap"><i data-lucide="clipboard" data-size="14"></i> Copy</button>
-            <form method="POST" action="/settings/mcp/regenerate" style="margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                <button type="submit" class="btn" style="white-space:nowrap"><i data-lucide="refresh-cw" data-size="14"></i> Regenerate</button>
+            <button type="button" class="btn nowrap" data-copy="{{.MCPAPIKey}}"><i data-lucide="clipboard" data-size="14"></i> Copy</button>
+            <form method="POST" action="/settings/mcp/regenerate" class="m-0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <button type="submit" class="btn nowrap"><i data-lucide="refresh-cw" data-size="14"></i> Regenerate</button>
             </form>
         </div>
     </div>
@@ -210,7 +210,7 @@
         <code style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-size:0.8rem;display:block">{{.MCPURL}}</code>
     </div>
     <div class="form-group" style="margin-top:16px">
-        <span class="form-label" style="margin-bottom:8px">Platform Config</span>
+        <span class="form-label mb-1">Platform Config</span>
         <div style="display:flex;gap:4px;margin-bottom:8px">
             <button type="button" class="btn" role="tab" aria-selected="true" aria-controls="mcp-opencode" data-snippet="mcp-opencode">OpenCode</button>
             <button type="button" class="btn" role="tab" aria-selected="false" aria-controls="mcp-claude" data-snippet="mcp-claude">Claude Code</button>

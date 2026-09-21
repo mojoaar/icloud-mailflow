@@ -1,8 +1,8 @@
 {{define "stats"}}
 <div id="stats-content">
-<div class="flex-between" style="margin-bottom:16px">
+<div class="flex-between mb-3">
 <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-<h1 style="margin:0">Stats</h1>
+<h1 class="m-0">Stats</h1>
 <div class="chart-toggle">
     {{range .DaysOptions}}<a class="toggle-btn {{if eq . $.Days}}active{{end}}" href="/stats?days={{.}}" style="text-decoration:none">{{.}}d</a>{{end}}
 </div>
@@ -24,15 +24,15 @@
 
 <div class="card" style="margin-top:16px">
     <div class="flex-between" style="margin-bottom:0">
-        <h2 style="margin:0">Poller</h2>
+        <h2 class="m-0">Poller</h2>
         {{if .Poller.Configured}}<span style="font-size:0.8rem;font-weight:600;color:{{if .Poller.Healthy}}var(--green){{else}}var(--red){{end}}">{{if .Poller.Healthy}}Healthy{{else}}Failing{{end}}</span>{{end}}
     </div>
     {{if .Poller.Configured}}
     <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:12px;font-size:0.9rem">
-        <div><div class="muted" style="font-size:0.8rem">Last run</div><div>{{.Poller.LastRun}}</div></div>
-        <div><div class="muted" style="font-size:0.8rem">Duration</div><div>{{.Poller.LastDuration}}</div></div>
-        <div><div class="muted" style="font-size:0.8rem">Failures</div><div>{{.Poller.ConsecutiveFailures}}</div></div>
-        <div><div class="muted" style="font-size:0.8rem">State</div><div>{{if .Poller.Processing}}Processing{{else}}Idle{{end}}</div></div>
+        <div><div class="muted text-sm">Last run</div><div>{{.Poller.LastRun}}</div></div>
+        <div><div class="muted text-sm">Duration</div><div>{{.Poller.LastDuration}}</div></div>
+        <div><div class="muted text-sm">Failures</div><div>{{.Poller.ConsecutiveFailures}}</div></div>
+        <div><div class="muted text-sm">State</div><div>{{if .Poller.Processing}}Processing{{else}}Idle{{end}}</div></div>
     </div>
     {{if .Poller.LastError}}<div style="margin-top:10px;font-size:0.85rem;color:var(--red)">{{.Poller.LastError}}</div>{{end}}
     {{else}}
@@ -44,7 +44,7 @@
 <div class="card" style="flex:1">
 <h2>Rule Hits</h2>
 {{range .Rules}}
-<div style="margin-bottom:8px">
+<div class="mb-1">
     <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:4px">
         <span>{{.Name}}</span><span class="muted">{{.Count}}</span>
     </div>
@@ -59,7 +59,7 @@
 <h2>Top Senders</h2>
 <table style="table-layout:auto">
 {{range .Senders}}
-<tr><td>{{.Email}}</td><td class="muted" style="text-align:right">{{.Count}}</td></tr>
+<tr><td>{{.Email}}</td><td class="muted text-right">{{.Count}}</td></tr>
 {{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
 {{end}}
 </table>
@@ -96,7 +96,7 @@
 <div id="daily-list" class="chart-list">
 <table>
 {{range .Daily}}
-<tr><td>{{.Date}}</td><td class="muted" style="text-align:right">{{.Count}}</td></tr>
+<tr><td>{{.Date}}</td><td class="muted text-right">{{.Count}}</td></tr>
 {{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
 {{end}}
 </table>
@@ -117,7 +117,7 @@
 </div>
 <div id="folders-list" class="chart-list">
 {{range .Folders}}
-<div style="margin-bottom:8px">
+<div class="mb-1">
     <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:4px">
         <span>{{.Folder}}</span><span class="muted">{{.Count}}</span>
     </div>
@@ -142,7 +142,7 @@
 <div id="weekly-list" class="chart-list">
 <table>
 {{range .Weekly}}
-<tr><td>{{.Date}}</td><td class="muted" style="text-align:right">{{.Count}}</td></tr>
+<tr><td>{{.Date}}</td><td class="muted text-right">{{.Count}}</td></tr>
 {{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
 {{end}}
 </table>

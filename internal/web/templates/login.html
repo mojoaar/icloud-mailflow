@@ -1,5 +1,5 @@
 {{define "login"}}
-<div class="card" class="auth-card-sm">
+<div class="card auth-card-sm">
     <h1>iCloud Mailflow</h1>
     <p style="color:var(--muted);margin-bottom:16px">Sign in to manage your rules</p>
     {{if .Error}}
@@ -10,7 +10,7 @@
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required class="w-full">
         </div>
-        <button type="submit" class="btn btn-primary" class="w-full">Sign In</button>
+        <button type="submit" class="btn btn-primary w-full">Sign In</button>
     </form>
 </div>
 {{end}}

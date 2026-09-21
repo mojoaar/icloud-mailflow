@@ -1,6 +1,6 @@
     {{define "activity"}}
-<div class="flex-between" style="margin-bottom:16px">
-<h1 style="margin:0">Activity Log</h1>
+<div class="flex-between mb-3">
+<h1 class="m-0">Activity Log</h1>
 <div class="flex-row">
 <button class="btn" id="activity-refresh" hx-get="/activity" hx-include="[name='q'],[name='rule'],[name='status'],[name='per_page']" hx-target="#activity-content" hx-swap="outerHTML"
     hx-indicator="#activity-refresh-spinner">
@@ -89,10 +89,10 @@
             <td>{{.ActionType}}{{if .ActionValue}} → {{.ActionValue}}{{end}}</td>
             <td>{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else if eq .Status "skipped"}}<span class="badge">skipped</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>
             <td>
-                <form hx-post="/activity/rerun" hx-target="#rerun-result" hx-swap="innerHTML" style="margin:0">
+                <form hx-post="/activity/rerun" hx-target="#rerun-result" hx-swap="innerHTML" class="m-0">
                     <input type="hidden" name="uid" value="{{.UID}}">
                     <input type="hidden" name="folder" value="{{.Folder}}">
-                    <button type="submit" class="btn" style="font-size:0.75rem">Run rules</button>
+                    <button type="submit" class="btn text-xs">Run rules</button>
                 </form>
             </td>
         </tr>

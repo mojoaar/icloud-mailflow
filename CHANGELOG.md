@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP `run_poll` reports "poll already in progress" instead of a false success
 - Accessibility: form labels are associated with their inputs, toasts announce via `role`, the nav marks the current page with `aria-current`, links/buttons get a shared focus ring, `prefers-reduced-motion` is honoured, and `color-scheme` + thin scrollbars match the theme
 - Responsive: the mobile stylesheet no longer forces every button full-width, form-control widths moved from inline styles to classes so they flow on small screens, and the nav collapses behind a toggle
+- CSS cleanup: removed duplicate `method-*` rules, stopped blanket table-cell truncation, added utility classes and migrated many inline styles, and htmx actions now show a loading state (`aria-busy`)
 
 ## [0.12.2] - 2026-09-21
 

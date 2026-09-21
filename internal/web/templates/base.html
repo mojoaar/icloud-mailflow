@@ -157,6 +157,15 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
     if (t && t.id === 'rule-search') { filterRules(t.value); }
   });
 
+  document.body.addEventListener('htmx:beforeRequest', function(e){
+    var el = e.detail && e.detail.elt;
+    if (el && (el.tagName === 'BUTTON' || el.tagName === 'A')) el.setAttribute('aria-busy', 'true');
+  });
+  document.body.addEventListener('htmx:afterRequest', function(e){
+    var el = e.detail && e.detail.elt;
+    if (el) el.removeAttribute('aria-busy');
+  });
+
   document.body.addEventListener('htmx:afterRequest', function(e){
     var el = e.detail && e.detail.elt;
     if (!el) return;
