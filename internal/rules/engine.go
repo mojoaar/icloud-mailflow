@@ -12,35 +12,72 @@ import (
 )
 
 type msgExtras struct {
+	client  imap.Client
+	uid     uint32
 	body    string
+	bodyOK  bool
 	headers map[string]string
 }
 
-func scanNeeds(g db.ConditionGroup) (needsBody bool, needsHeaders []string) {
-	for _, c := range g.Conditions {
-		if c.Field == "body" {
-			needsBody = true
-		}
-		if strings.HasPrefix(c.Field, "header:") {
-			needsHeaders = append(needsHeaders, strings.TrimPrefix(c.Field, "header:"))
-		}
+func newMsgExtras(msg *imap.Message, client imap.Client) *msgExtras {
+	e := &msgExtras{client: client, headers: map[string]string{}}
+	if msg != nil {
+		e.uid = msg.UID
 	}
-	for _, sub := range g.Groups {
-		b, hs := scanNeeds(sub)
-		if b {
-			needsBody = true
+	return e
+}
+
+// ensureBody fetches the message body at most once.
+func (e *msgExtras) ensureBody() string {
+	if e == nil || e.bodyOK {
+		if e == nil {
+			return ""
 		}
-		needsHeaders = append(needsHeaders, hs...)
+		return e.body
 	}
-	return
+	e.bodyOK = true
+	if e.client == nil {
+		return ""
+	}
+	body, err := e.client.FetchMessageBody(e.uid)
+	if err != nil {
+		slog.Warn("failed to fetch body", "uid", e.uid, "error", err)
+		return ""
+	}
+	e.body = body
+	return e.body
+}
+
+// ensureHeader fetches a header at most once per name.
+func (e *msgExtras) ensureHeader(name string) string {
+	if e == nil {
+		return ""
+	}
+	if e.headers == nil {
+		e.headers = map[string]string{}
+	}
+	if v, ok := e.headers[name]; ok {
+		return v
+	}
+	if e.client == nil {
+		e.headers[name] = ""
+		return ""
+	}
+	v, err := e.client.FetchMessageHeader(e.uid, name)
+	if err != nil {
+		slog.Warn("failed to fetch header", "uid", e.uid, "header", name, "error", err)
+	}
+	e.headers[name] = v
+	return v
 }
 
 func Match(rules []db.Rule, msg *imap.Message, client imap.Client, loc *time.Location) (*db.Rule, map[string]string, error) {
+	extras := newMsgExtras(msg, client)
 	for i := range rules {
 		if !rules[i].Enabled {
 			continue
 		}
-		ok, captures, err := Evaluate(&rules[i], msg, client)
+		ok, captures, err := evaluateRule(&rules[i], msg, extras)
 		if err != nil {
 			return nil, nil, fmt.Errorf("rule %d (%s): %w", rules[i].ID, rules[i].Name, err)
 		}
@@ -83,35 +120,16 @@ func inScheduleAt(rule *db.Rule, now time.Time) bool {
 }
 
 func Evaluate(rule *db.Rule, msg *imap.Message, client imap.Client) (bool, map[string]string, error) {
+	return evaluateRule(rule, msg, newMsgExtras(msg, client))
+}
+
+// evaluateRule evaluates one rule against a message, reusing the caller's
+// per-message extras so body/header fetches are shared across rules.
+func evaluateRule(rule *db.Rule, msg *imap.Message, extras *msgExtras) (bool, map[string]string, error) {
 	if len(rule.Groups) == 0 {
 		return true, nil, nil
 	}
 	captures := make(map[string]string)
-	extras := &msgExtras{headers: map[string]string{}}
-	for _, group := range rule.Groups {
-		needsBody, needsHeaders := scanNeeds(group)
-		if needsBody && client != nil && extras.body == "" {
-			body, err := client.FetchMessageBody(msg.UID)
-			if err != nil {
-				slog.Warn("failed to fetch body", "uid", msg.UID, "error", err)
-			} else {
-				extras.body = body
-			}
-		}
-		if client != nil {
-			for _, h := range needsHeaders {
-				if _, ok := extras.headers[h]; ok {
-					continue
-				}
-				v, err := client.FetchMessageHeader(msg.UID, h)
-				if err != nil {
-					slog.Warn("failed to fetch header", "uid", msg.UID, "header", h, "error", err)
-				} else {
-					extras.headers[h] = v
-				}
-			}
-		}
-	}
 	for _, group := range rule.Groups {
 		ok, err := evalGroupWithExtras(group, msg, extras, captures)
 		if err != nil {
@@ -121,7 +139,7 @@ func Evaluate(rule *db.Rule, msg *imap.Message, client imap.Client) (bool, map[s
 			return false, nil, nil
 		}
 	}
-	return len(rule.Groups) > 0, captures, nil
+	return true, captures, nil
 }
 
 func evalGroupWithExtras(g db.ConditionGroup, msg *imap.Message, extras *msgExtras, captures map[string]string) (bool, error) {
@@ -256,13 +274,7 @@ func parseDays(v string) (int, error) {
 
 func getFieldValueWithExtras(field string, msg *imap.Message, extras *msgExtras) string {
 	if strings.HasPrefix(field, "header:") {
-		name := strings.TrimPrefix(field, "header:")
-		if extras != nil {
-			if v, ok := extras.headers[name]; ok {
-				return v
-			}
-		}
-		return ""
+		return extras.ensureHeader(strings.TrimPrefix(field, "header:"))
 	}
 	switch field {
 	case "from":
@@ -276,10 +288,7 @@ func getFieldValueWithExtras(field string, msg *imap.Message, extras *msgExtras)
 	case "content_type":
 		return strings.Join(msg.ContentTypes, ", ")
 	case "body":
-		if extras != nil {
-			return extras.body
-		}
-		return ""
+		return extras.ensureBody()
 	}
 	return ""
 }
@@ -324,31 +333,7 @@ func EvaluateWithResults(rule *db.Rule, msg *imap.Message, client imap.Client) (
 		return true, nil, nil, nil
 	}
 	captures := make(map[string]string)
-	extras := &msgExtras{headers: map[string]string{}}
-	for _, group := range rule.Groups {
-		needsBody, needsHeaders := scanNeeds(group)
-		if needsBody && client != nil && extras.body == "" {
-			body, err := client.FetchMessageBody(msg.UID)
-			if err != nil {
-				slog.Warn("failed to fetch body", "uid", msg.UID, "error", err)
-			} else {
-				extras.body = body
-			}
-		}
-		if client != nil {
-			for _, h := range needsHeaders {
-				if _, ok := extras.headers[h]; ok {
-					continue
-				}
-				v, err := client.FetchMessageHeader(msg.UID, h)
-				if err != nil {
-					slog.Warn("failed to fetch header", "uid", msg.UID, "header", h, "error", err)
-				} else {
-					extras.headers[h] = v
-				}
-			}
-		}
-	}
+	extras := newMsgExtras(msg, client)
 	allResults := make([]GroupResult, len(rule.Groups))
 	for i, group := range rule.Groups {
 		gr, err := evalGroupWithResults(group, msg, extras, captures)
@@ -360,7 +345,7 @@ func EvaluateWithResults(rule *db.Rule, msg *imap.Message, client imap.Client) (
 			return false, captures, allResults, nil
 		}
 	}
-	return len(rule.Groups) > 0, captures, allResults, nil
+	return true, captures, allResults, nil
 }
 
 func evalGroupWithResults(g db.ConditionGroup, msg *imap.Message, extras *msgExtras, captures map[string]string) (GroupResult, error) {

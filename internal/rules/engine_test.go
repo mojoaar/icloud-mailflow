@@ -682,3 +682,48 @@ func TestParseDaysRejectsNonPositive(t *testing.T) {
 		t.Errorf("parseDays(7 days) = %d, %v; want 7, nil", d, err)
 	}
 }
+
+type countingClient struct {
+	imap.Client
+	bodyCalls   int
+	headerCalls int
+}
+
+func (c *countingClient) FetchMessageBody(uid uint32) (string, error) {
+	c.bodyCalls++
+	return "hello", nil
+}
+
+func (c *countingClient) FetchMessageHeader(uid uint32, name string) (string, error) {
+	c.headerCalls++
+	return "hdr", nil
+}
+
+func TestMatchCachesBodyAndHeaders(t *testing.T) {
+	client := &countingClient{}
+	rules := []db.Rule{
+		{ID: 1, Name: "body", Enabled: true, Groups: []db.ConditionGroup{{Operator: "AND", Conditions: []db.Condition{
+			{Field: "body", Operator: "contains", Value: "zzz"},
+		}}}},
+		{ID: 2, Name: "headers", Enabled: true, Groups: []db.ConditionGroup{{Operator: "AND", Conditions: []db.Condition{
+			{Field: "header:X-A", Operator: "equals", Value: "hdr"},
+			{Field: "header:X-B", Operator: "equals", Value: "zzz"},
+		}}}},
+		{ID: 3, Name: "reuse", Enabled: true, Groups: []db.ConditionGroup{{Operator: "AND", Conditions: []db.Condition{
+			{Field: "header:X-A", Operator: "equals", Value: "zzz"},
+		}}}},
+	}
+	msg := &imap.Message{UID: 9, Subject: "s"}
+
+	if matched, _, err := Match(rules, msg, client, time.UTC); err != nil {
+		t.Fatalf("Match: %v", err)
+	} else if matched != nil {
+		t.Fatalf("expected no match, got %s", matched.Name)
+	}
+	if client.bodyCalls != 1 {
+		t.Errorf("body fetched %d times, want 1", client.bodyCalls)
+	}
+	if client.headerCalls != 2 {
+		t.Errorf("headers fetched %d times, want 2 (X-A once, X-B once)", client.headerCalls)
+	}
+}
