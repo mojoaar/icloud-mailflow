@@ -66,15 +66,97 @@ func (r *RulesRepo) List() ([]Rule, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	for i := range out {
-		if err := r.loadConditions(&out[i]); err != nil {
-			return nil, err
-		}
-		if err := r.loadActions(&out[i]); err != nil {
-			return nil, err
-		}
+	if err := r.loadAll(out); err != nil {
+		return nil, err
 	}
 	return out, nil
+}
+
+// loadAll hydrates groups/conditions/actions for every rule using a fixed number
+// of queries instead of per-rule lookups.
+func (r *RulesRepo) loadAll(rules []Rule) error {
+	if len(rules) == 0 {
+		return nil
+	}
+	groupsByRule, err := r.allConditionGroups()
+	if err != nil {
+		return err
+	}
+	condByGroup, err := r.allConditions()
+	if err != nil {
+		return err
+	}
+	actionsByRule, err := r.allActions()
+	if err != nil {
+		return err
+	}
+	for i := range rules {
+		groups := groupsByRule[rules[i].ID]
+		for j := range groups {
+			groups[j].Conditions = condByGroup[groups[j].ID]
+		}
+		rules[i].Groups = buildGroupTree(groups, nil)
+		rules[i].Actions = actionsByRule[rules[i].ID]
+	}
+	return nil
+}
+
+func (r *RulesRepo) allConditionGroups() (map[int64][]ConditionGroup, error) {
+	rows, err := r.DB.Query(`SELECT id, rule_id, parent_id, logic_operator FROM condition_groups ORDER BY rule_id ASC, id ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[int64][]ConditionGroup{}
+	for rows.Next() {
+		var g ConditionGroup
+		var parentID sql.NullInt64
+		if err := rows.Scan(&g.ID, &g.RuleID, &parentID, &g.Operator); err != nil {
+			return nil, err
+		}
+		if parentID.Valid {
+			g.ParentID = &parentID.Int64
+		}
+		out[g.RuleID] = append(out[g.RuleID], g)
+	}
+	return out, rows.Err()
+}
+
+func (r *RulesRepo) allConditions() (map[int64][]Condition, error) {
+	rows, err := r.DB.Query(`SELECT id, group_id, field, operator, value FROM conditions ORDER BY id ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[int64][]Condition{}
+	for rows.Next() {
+		var c Condition
+		if err := rows.Scan(&c.ID, &c.GroupID, &c.Field, &c.Operator, &c.Value); err != nil {
+			return nil, err
+		}
+		if c.Operator == "matches_regex" {
+			c.CompiledRegex, _ = regexp.Compile(c.Value)
+		}
+		out[c.GroupID] = append(out[c.GroupID], c)
+	}
+	return out, rows.Err()
+}
+
+func (r *RulesRepo) allActions() (map[int64][]Action, error) {
+	rows, err := r.DB.Query(`SELECT id, rule_id, type, value FROM actions ORDER BY rule_id ASC, id ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[int64][]Action{}
+	for rows.Next() {
+		var a Action
+		if err := rows.Scan(&a.ID, &a.RuleID, &a.Type, &a.Value); err != nil {
+			return nil, err
+		}
+		out[a.RuleID] = append(out[a.RuleID], a)
+	}
+	return out, rows.Err()
 }
 
 func (r *RulesRepo) Get(id int64) (*Rule, error) {

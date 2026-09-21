@@ -334,3 +334,51 @@ func TestReorderIgnoresInvalidIDs(t *testing.T) {
 		t.Errorf("priorities: r2=%d r1=%d, want 0 and 1", got2.Priority, got1.Priority)
 	}
 }
+
+func TestListHydratesMultipleRules(t *testing.T) {
+	d := NewTestDB(t)
+	repo := NewRulesRepo(d)
+	r1 := &Rule{
+		Name: "one", Enabled: true,
+		Groups: []ConditionGroup{{Operator: "AND", Conditions: []Condition{
+			{Field: "from", Operator: "contains", Value: "a"},
+			{Field: "subject", Operator: "equals", Value: "s"},
+		}}},
+		Actions: []Action{{Type: "move_to_folder", Value: "A"}, {Type: "mark_as_read"}},
+	}
+	r2 := &Rule{
+		Name: "two", Enabled: true,
+		Groups: []ConditionGroup{{Operator: "OR", Conditions: []Condition{
+			{Field: "body", Operator: "contains", Value: "b"},
+		}}},
+		Actions: []Action{{Type: "forward", Value: "x@y.com"}},
+	}
+	for _, r := range []*Rule{r1, r2} {
+		if err := repo.Create(r); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+	}
+
+	rules, err := repo.List()
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	byName := map[string]Rule{}
+	for _, r := range rules {
+		byName[r.Name] = r
+	}
+	one := byName["one"]
+	if len(one.Groups) != 1 || one.Groups[0].Operator != "AND" || len(one.Groups[0].Conditions) != 2 {
+		t.Errorf("rule one groups = %+v", one.Groups)
+	}
+	if len(one.Actions) != 2 || one.Actions[0].Type != "move_to_folder" || one.Actions[1].Type != "mark_as_read" {
+		t.Errorf("rule one actions = %+v", one.Actions)
+	}
+	two := byName["two"]
+	if len(two.Groups) != 1 || two.Groups[0].Operator != "OR" || len(two.Groups[0].Conditions) != 1 {
+		t.Errorf("rule two groups = %+v", two.Groups)
+	}
+	if len(two.Actions) != 1 || two.Actions[0].Type != "forward" {
+		t.Errorf("rule two actions = %+v", two.Actions)
+	}
+}
