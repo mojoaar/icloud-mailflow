@@ -96,3 +96,23 @@ func TestSessionsCleanup(t *testing.T) {
 		t.Error("expired token should be cleaned up")
 	}
 }
+
+func TestSessionsDeleteAllExcept(t *testing.T) {
+	d := NewTestDB(t)
+	repo := NewSessionsRepo(d)
+	if err := repo.Create("keep", time.Hour); err != nil {
+		t.Fatalf("Create keep: %v", err)
+	}
+	if err := repo.Create("drop", time.Hour); err != nil {
+		t.Fatalf("Create drop: %v", err)
+	}
+	if err := repo.DeleteAllExcept("keep"); err != nil {
+		t.Fatalf("DeleteAllExcept: %v", err)
+	}
+	if ok, _ := repo.Validate("keep"); !ok {
+		t.Error("keep session should remain valid")
+	}
+	if ok, _ := repo.Validate("drop"); ok {
+		t.Error("drop session should be deleted")
+	}
+}

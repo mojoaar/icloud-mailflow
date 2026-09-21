@@ -29,7 +29,7 @@ func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.Ha
 			return
 		}
 		ip := clientIP(r)
-		if !loginLimiter.allow(ip, 5, time.Minute) {
+		if loginLimiter.blocked(ip, 5, time.Minute) {
 			renderPage(w, r, "Login", "login", map[string]any{"Error": "Too many attempts. Wait a minute."})
 			return
 		}
@@ -37,6 +37,7 @@ func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.Ha
 		password := r.FormValue("password")
 		hash, _ := settingsRepo.Get("admin_password_hash")
 		if hash == "" || !crypto.CheckPassword(hash, password) {
+			loginLimiter.fail(ip, time.Minute)
 			renderPage(w, r, "Login", "login", map[string]string{"Error": "Invalid password"})
 			return
 		}

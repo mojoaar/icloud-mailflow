@@ -465,8 +465,8 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 				continue
 			}
 			if p.autoReplyRepo != nil {
-				ok, err := p.autoReplyRepo.ShouldReply(from)
-				if err == nil && !ok {
+				replied, err := p.autoReplyRepo.HasReplied(from)
+				if err == nil && replied {
 					logAction(effectiveUID, action, "skipped")
 					continue
 				}
@@ -490,6 +490,9 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 				slog.Error("auto_reply failed", "to", from, "error", err)
 				logAction(effectiveUID, action, "error")
 			} else {
+				if p.autoReplyRepo != nil {
+					p.autoReplyRepo.RecordReply(from)
+				}
 				logAction(effectiveUID, action, "success")
 			}
 		case "webhook":

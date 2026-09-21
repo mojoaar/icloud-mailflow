@@ -271,7 +271,7 @@ func settingsSaveIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 	}
 }
 
-func settingsSavePassword(settingsRepo *db.SettingsRepo) http.HandlerFunc {
+func settingsSavePassword(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			slog.Error("settings password parse form failed", "error", err)
@@ -288,6 +288,11 @@ func settingsSavePassword(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 				slog.Error("settings store admin hash failed", "error", err)
 				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Internal error. Try again."})
 				return
+			}
+			if c, err := r.Cookie(sessionCookie); err == nil {
+				if err := sessRepo.DeleteAllExcept(c.Value); err != nil {
+					slog.Error("settings invalidate sessions failed", "error", err)
+				}
 			}
 		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)

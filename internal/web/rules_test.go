@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	goimap "github.com/emersion/go-imap/v2"
@@ -577,7 +578,8 @@ func TestRulesApplyStatusHandlerNotFound(t *testing.T) {
 }
 
 func TestRulesApplyStatusHandlerErrorUsesToastError(t *testing.T) {
-	applyJobs.Store("err-job", &poller.ApplyStatus{Running: false, Error: "boom"})
+	applyJobs.Store("err-job", &applyJob{status: poller.ApplyStatus{Running: false, Error: "boom"}})
+	defer applyJobs.Delete("err-job")
 
 	h := rulesApplyStatusHandler()
 	req := httptest.NewRequest("GET", "/rules/apply/status?id=err-job", nil)
@@ -594,10 +596,11 @@ func TestRulesApplyStatusHandlerErrorUsesToastError(t *testing.T) {
 }
 
 func TestRulesApplyStatusHandlerDoneUsesToastSuccess(t *testing.T) {
-	applyJobs.Store("done-job", &poller.ApplyStatus{
+	applyJobs.Store("done-job", &applyJob{status: poller.ApplyStatus{
 		Running: false,
 		Result:  poller.ApplyResult{Processed: 10, Matched: 3, Actions: 4, Errors: 1},
-	})
+	}})
+	defer applyJobs.Delete("done-job")
 
 	h := rulesApplyStatusHandler()
 	req := httptest.NewRequest("GET", "/rules/apply/status?id=done-job", nil)
@@ -690,4 +693,33 @@ func TestRulesDeleteCatchAllBlocked(t *testing.T) {
 	if _, err := repo.Get(catchID); err != nil {
 		t.Error("catch-all should still exist after a blocked delete")
 	}
+}
+
+func TestApplyJobStatusConcurrent(t *testing.T) {
+	const jobID = "test-job-concurrent"
+	job := &applyJob{status: poller.ApplyStatus{Running: true, Folder: "INBOX"}}
+	applyJobs.Store(jobID, job)
+	defer applyJobs.Delete(jobID)
+
+	h := rulesApplyStatusHandler()
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 200; i++ {
+			job.mu.Lock()
+			job.status.Result.Matched = i
+			job.status.Running = i%2 == 0
+			job.mu.Unlock()
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 200; i++ {
+			req := httptest.NewRequest("GET", "/rules/apply/status?id="+jobID, nil)
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+		}
+	}()
+	wg.Wait()
 }

@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"html"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -311,6 +312,11 @@ func rulesTestHandler(repo *db.RulesRepo, imapClient imap.Client) http.HandlerFu
 	}
 }
 
+type applyJob struct {
+	mu     sync.Mutex
+	status poller.ApplyStatus
+}
+
 var applyJobs sync.Map
 
 func rulesApplyHandler(repo *db.RulesRepo, p *poller.Poller) http.HandlerFunc {
@@ -330,22 +336,24 @@ func rulesApplyHandler(repo *db.RulesRepo, p *poller.Poller) http.HandlerFunc {
 			limit = 50
 		}
 		jobID := fmt.Sprintf("%d", time.Now().UnixNano())
-		status := &poller.ApplyStatus{Running: true, Folder: folder}
-		applyJobs.Store(jobID, status)
+		job := &applyJob{status: poller.ApplyStatus{Running: true, Folder: folder}}
+		applyJobs.Store(jobID, job)
 		go func() {
 			result, err := p.ApplyToFolder(folder, limit)
+			job.mu.Lock()
 			if err != nil {
-				status.Error = err.Error()
+				job.status.Error = err.Error()
 			} else {
-				status.Result = *result
+				job.status.Result = *result
 			}
-			status.Running = false
-			applyJobs.Store(jobID, status)
+			job.status.Running = false
+			job.mu.Unlock()
+			time.AfterFunc(10*time.Minute, func() { applyJobs.Delete(jobID) })
 		}()
 		w.Header().Set("Content-Type", "text/html")
 		fmt.Fprintf(w, `<div hx-get="/rules/apply/status?id=%s" hx-trigger="every 2s" hx-swap="outerHTML">
 			<p>Applying rules to <strong>%s</strong>... <span class="spinner"></span></p>
-		</div>`, jobID, folder)
+		</div>`, jobID, html.EscapeString(folder))
 	}
 }
 
@@ -357,21 +365,23 @@ func rulesApplyStatusHandler() http.HandlerFunc {
 			http.Error(w, "job not found", http.StatusNotFound)
 			return
 		}
-		status := val.(*poller.ApplyStatus)
+		job := val.(*applyJob)
+		job.mu.Lock()
+		status := job.status
+		job.mu.Unlock()
+
+		w.Header().Set("Content-Type", "text/html")
 		if status.Running {
-			w.Header().Set("Content-Type", "text/html")
 			fmt.Fprintf(w, `<div hx-get="/rules/apply/status?id=%s" hx-trigger="every 2s" hx-swap="outerHTML">
 				<p>Processing... (%d matched so far)</p>
 				<span class="spinner"></span>
-			</div>`, jobID, status.Result.Matched)
+			</div>`, html.EscapeString(jobID), status.Result.Matched)
 			return
 		}
 		if status.Error != "" {
-			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprintf(w, `<div class="toast toast-error">Error: %s</div>`, status.Error)
+			fmt.Fprintf(w, `<div class="toast toast-error">Error: %s</div>`, html.EscapeString(status.Error))
 			return
 		}
-		w.Header().Set("Content-Type", "text/html")
 		fmt.Fprintf(w, `<div class="toast toast-success">
 			Done: %d processed, %d matched, %d actions, %d errors
 		</div>`, status.Result.Processed, status.Result.Matched, status.Result.Actions, status.Result.Errors)

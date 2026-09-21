@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -30,7 +31,9 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
+	if os.Getenv("TRUST_PROXY") == "true" {
+		r.Use(middleware.RealIP)
+	}
 	r.Use(securityHeaders)
 	r.Use(middleware.Timeout(30 * time.Second))
 
@@ -115,7 +118,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Get("/settings", settingsPage(settingsRepo, foldersRepo, cfg, imapClient, version, contactsRepo))
 	r.Post("/settings/imap", settingsSaveIMAP(cfg, settingsRepo))
 	r.Post("/settings/imap/test", settingsTestIMAP(cfg, settingsRepo))
-	r.Post("/settings/password", settingsSavePassword(settingsRepo))
+	r.Post("/settings/password", settingsSavePassword(settingsRepo, sessRepo))
 	r.Post("/settings/poll", settingsSavePoll(cfg, settingsRepo))
 	r.Post("/settings/carddav-import", carddavImportHandler(settingsRepo, cfg, contactsRepo))
 	r.Post("/settings/poll/toggle", settingsTogglePolling(settingsRepo, p))
@@ -214,6 +217,30 @@ func (rl *rateLimiter) allow(ip string, max int, window time.Duration) bool {
 	}
 	e.count++
 	return e.count <= max
+}
+
+// blocked reports whether ip has exhausted its allowance, without consuming any.
+func (rl *rateLimiter) blocked(ip string, max int, window time.Duration) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	e, ok := rl.entries[ip]
+	if !ok || time.Now().After(e.resetAt) {
+		return false
+	}
+	return e.count >= max
+}
+
+// fail records a failed attempt for ip.
+func (rl *rateLimiter) fail(ip string, window time.Duration) {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	now := time.Now()
+	e, ok := rl.entries[ip]
+	if !ok || now.After(e.resetAt) {
+		rl.entries[ip] = &rateEntry{count: 1, resetAt: now.Add(window)}
+		return
+	}
+	e.count++
 }
 
 var loginLimiter = newRateLimiter()

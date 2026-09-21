@@ -310,6 +310,9 @@ func (r *RulesRepo) EnsureCatchAll() error {
 		if _, err := tx.Exec(`INSERT INTO actions (rule_id, type, value) VALUES ((SELECT id FROM rules WHERE name = ?), 'move_to_folder', 'INBOX')`, "_catch_all"); err != nil {
 			return err
 		}
+		if _, err := tx.Exec(`UPDATE rules SET priority = 999 WHERE name = ?`, "_catch_all"); err != nil {
+			return err
+		}
 		return tx.Commit()
 	}
 	var maxPri sql.NullInt64

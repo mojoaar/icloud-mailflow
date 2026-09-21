@@ -132,3 +132,23 @@ func TestCount(t *testing.T) {
 		t.Errorf("count = %d, want 2", count)
 	}
 }
+
+func TestContactsSearchEscapesWildcards(t *testing.T) {
+	d := NewTestDB(t)
+	repo := NewContactsRepo(d)
+	if err := repo.Upsert("axb@example.com", ""); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+	if err := repo.Upsert("a_b@example.com", ""); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+	got, err := repo.Search("a_b")
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	for _, c := range got {
+		if c.Email == "axb@example.com" {
+			t.Errorf("LIKE wildcard '_' should not match %q", c.Email)
+		}
+	}
+}

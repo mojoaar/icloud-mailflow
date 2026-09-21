@@ -40,3 +40,10 @@ func (r *SessionsRepo) Cleanup() error {
 	_, err := r.DB.Exec(`DELETE FROM sessions WHERE expires_at < ?`, time.Now().UTC().Format(time.RFC3339))
 	return err
 }
+
+// DeleteAllExcept removes every session except the given token (e.g. after a
+// password change, to log out other devices).
+func (r *SessionsRepo) DeleteAllExcept(token string) error {
+	_, err := r.DB.Exec(`DELETE FROM sessions WHERE token != ?`, token)
+	return err
+}

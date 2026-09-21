@@ -1,6 +1,9 @@
 package db
 
-import "database/sql"
+import (
+	"database/sql"
+	"strings"
+)
 
 type Contact struct {
 	Email   string `json:"email"`
@@ -25,11 +28,19 @@ func (r *ContactsRepo) Upsert(email, name string) error {
 	return err
 }
 
+func escapeLike(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `%`, `\%`)
+	s = strings.ReplaceAll(s, `_`, `\_`)
+	return s
+}
+
 func (r *ContactsRepo) Search(q string) ([]Contact, error) {
+	pattern := "%" + escapeLike(q) + "%"
 	rows, err := r.DB.Query(
 		`SELECT email, name, first_at, last_at, count FROM contacts
-		WHERE email LIKE ? OR name LIKE ? ORDER BY count DESC LIMIT 20`,
-		"%"+q+"%", "%"+q+"%",
+		WHERE email LIKE ? ESCAPE '\' OR name LIKE ? ESCAPE '\' ORDER BY count DESC LIMIT 20`,
+		pattern, pattern,
 	)
 	if err != nil {
 		return nil, err

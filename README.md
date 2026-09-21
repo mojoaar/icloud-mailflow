@@ -128,6 +128,8 @@ environment:
 
 Useful for troubleshooting — shows rule matching, condition evaluation, and poller state.
 
+If you run Mailflow **behind a reverse proxy**, set `TRUST_PROXY=true` so rate limiting and logs use the forwarded client IP. Leave it unset when exposing Mailflow directly — otherwise `X-Forwarded-For` can be spoofed to bypass the login rate limit.
+
 To build locally instead:
 ```bash
 docker build -t icloud-mailflow .
