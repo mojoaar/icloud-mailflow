@@ -99,7 +99,10 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithDescription("Get a single rule by ID with its conditions and actions"),
 		mcp.WithNumber("id", mcp.Required(), mcp.Description("Rule ID")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		id := int64(req.GetArguments()["id"].(float64))
+		id, err := requiredIntArg(req.GetArguments(), "id")
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 		rule, err := rulesRepo.Get(id)
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
@@ -118,12 +121,25 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithString("schedule_end", mcp.Description("End time HH:MM (empty = no end bound)")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
-		name := args["name"].(string)
+		name, err := requiredStringArg(args, "name")
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		condsJSON, err := requiredStringArg(args, "conditions_json")
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		actsJSON, err := requiredStringArg(args, "actions_json")
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 		priority := 1
 		if v, ok := args["priority"]; ok {
-			priority = int(v.(float64))
+			if f, ok := v.(float64); ok {
+				priority = int(f)
+			}
 		}
-		rule, err := parseRuleInput(name, priority, args["conditions_json"].(string), args["actions_json"].(string))
+		rule, err := parseRuleInput(name, priority, condsJSON, actsJSON)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid input: %v", err)), nil
 		}
@@ -155,7 +171,10 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithString("schedule_end", mcp.Description("End time HH:MM (empty = no end bound)")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
-		id := int64(args["id"].(float64))
+		id, err := requiredIntArg(args, "id")
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 
 		existing, err := rulesRepo.Get(id)
 		if err != nil {
@@ -210,7 +229,10 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithDescription("Delete a rule by ID"),
 		mcp.WithNumber("id", mcp.Required(), mcp.Description("Rule ID")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		id := int64(req.GetArguments()["id"].(float64))
+		id, err := requiredIntArg(req.GetArguments(), "id")
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 		if err := rulesRepo.Delete(id); err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
@@ -443,7 +465,10 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithDescription("Search collected email contacts by name or email"),
 		mcp.WithString("q", mcp.Required(), mcp.Description("Search query (matches name or email)")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		q := req.GetArguments()["q"].(string)
+		q, err := requiredStringArg(req.GetArguments(), "q")
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 		contacts, err := contactsRepo.Search(q)
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
@@ -465,7 +490,10 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithDescription("Enable a rule by ID"),
 		mcp.WithNumber("rule_id", mcp.Required(), mcp.Description("Rule ID")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		id := int64(req.GetArguments()["rule_id"].(float64))
+		id, err := requiredIntArg(req.GetArguments(), "rule_id")
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 		rule, err := rulesRepo.Get(id)
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
@@ -481,7 +509,10 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithDescription("Disable a rule by ID"),
 		mcp.WithNumber("rule_id", mcp.Required(), mcp.Description("Rule ID")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		id := int64(req.GetArguments()["rule_id"].(float64))
+		id, err := requiredIntArg(req.GetArguments(), "rule_id")
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 		rule, err := rulesRepo.Get(id)
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
@@ -534,7 +565,10 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithDescription("Import rules from JSON array"),
 		mcp.WithString("rules", mcp.Required(), mcp.Description("JSON array of rule objects in the same format as backup_rules output")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		rulesJSON := req.GetArguments()["rules"].(string)
+		rulesJSON, err := requiredStringArg(req.GetArguments(), "rules")
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 		var input []struct {
 			Name        string `json:"name"`
 			Description string `json:"description,omitempty"`
@@ -888,4 +922,28 @@ func parseRuleInput(name string, priority int, condsJSON, actsJSON string) (*db.
 	}
 
 	return rule, nil
+}
+
+func requiredIntArg(args map[string]any, key string) (int64, error) {
+	v, ok := args[key]
+	if !ok {
+		return 0, fmt.Errorf("%s is required", key)
+	}
+	f, ok := v.(float64)
+	if !ok {
+		return 0, fmt.Errorf("%s must be a number", key)
+	}
+	return int64(f), nil
+}
+
+func requiredStringArg(args map[string]any, key string) (string, error) {
+	v, ok := args[key]
+	if !ok {
+		return "", fmt.Errorf("%s is required", key)
+	}
+	s, ok := v.(string)
+	if !ok {
+		return "", fmt.Errorf("%s must be a string", key)
+	}
+	return s, nil
 }
