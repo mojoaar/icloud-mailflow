@@ -1,6 +1,7 @@
 package poller
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"sync"
@@ -1338,5 +1339,65 @@ func TestTryTickBusy(t *testing.T) {
 	started, err = p.TryTick()
 	if err != nil || !started {
 		t.Errorf("idle: started=%v err=%v, want true, nil", started, err)
+	}
+}
+
+func TestPollerAlertsOnUnhealthyAndRecovery(t *testing.T) {
+	rulesRepo, _ := openPollerTestDB(t)
+	settingsRepo := db.NewSettingsRepo(rulesRepo.DB)
+	settingsRepo.Set("alerts_enabled", "true")
+	settingsRepo.Set("alert_webhook_url", "http://example.com/alert")
+
+	var mu sync.Mutex
+	var events []string
+	p := NewPoller(&trackedMock{}, rulesRepo, nil, nil, settingsRepo, nil, nil, &config.Config{}, 10, 60, "INBOX", "", nil)
+	p.sendAlert = func(url string, payload []byte, secret string) error {
+		var m map[string]any
+		_ = json.Unmarshal(payload, &m)
+		mu.Lock()
+		if e, ok := m["event"].(string); ok {
+			events = append(events, e)
+		}
+		mu.Unlock()
+		return nil
+	}
+
+	for i := 0; i < 4; i++ {
+		p.setLastError(errors.New("boom"))
+	}
+	time.Sleep(60 * time.Millisecond)
+	mu.Lock()
+	if len(events) != 1 || events[0] != "poller_unhealthy" {
+		t.Errorf("unhealthy alerts = %v, want [poller_unhealthy]", events)
+	}
+	mu.Unlock()
+
+	p.clearLastError()
+	time.Sleep(60 * time.Millisecond)
+	mu.Lock()
+	if len(events) != 2 || events[1] != "poller_recovered" {
+		t.Errorf("alerts = %v, want unhealthy then recovered", events)
+	}
+	mu.Unlock()
+}
+
+func TestPollerAlertsDisabled(t *testing.T) {
+	rulesRepo, _ := openPollerTestDB(t)
+	settingsRepo := db.NewSettingsRepo(rulesRepo.DB)
+	settingsRepo.Set("alerts_enabled", "false")
+	settingsRepo.Set("alert_webhook_url", "http://example.com/alert")
+
+	var calls int32
+	p := NewPoller(&trackedMock{}, rulesRepo, nil, nil, settingsRepo, nil, nil, &config.Config{}, 10, 60, "INBOX", "", nil)
+	p.sendAlert = func(url string, payload []byte, secret string) error {
+		atomic.AddInt32(&calls, 1)
+		return nil
+	}
+	for i := 0; i < 4; i++ {
+		p.setLastError(errors.New("boom"))
+	}
+	time.Sleep(60 * time.Millisecond)
+	if got := atomic.LoadInt32(&calls); got != 0 {
+		t.Errorf("alerts disabled but sendAlert called %d times", got)
 	}
 }

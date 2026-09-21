@@ -94,6 +94,26 @@
 </div>
 
 <div class="card">
+    <h2>Alerts</h2>
+    <p style="color:var(--muted);margin-bottom:12px">POST a JSON notification when the poller goes unhealthy, recovers, or a scheduled backup fails. Uses the webhook secret above.</p>
+    <form method="POST" action="/settings/alerts"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        {{if .AlertError}}<p style="color:var(--red);font-size:0.8rem;margin:-4px 0 8px">Invalid alert webhook URL — not saved</p>{{end}}
+        <div class="form-group">
+            <label><input type="checkbox" name="alerts_enabled" value="true" {{if .AlertsEnabled}}checked{{end}}> Enable alerts</label>
+        </div>
+        <div class="form-group">
+            <label>Alert webhook URL</label>
+            <input type="text" name="alert_webhook_url" value="{{.AlertWebhookURL}}" placeholder="https://ntfy.sh/your-topic" style="width:100%">
+        </div>
+        <div class="flex-row">
+            <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save</button>
+            <button type="button" class="btn" hx-post="/settings/alerts/test" hx-target="#alert-toast" hx-swap="innerHTML">Send test alert</button>
+        </div>
+        <div id="alert-toast" class="mt-1"></div>
+    </form>
+</div>
+
+<div class="card">
     <h2>Rules</h2>
     <p style="color:var(--muted);margin-bottom:12px">Export or import your rule configurations.</p>
     <div class="flex-between">

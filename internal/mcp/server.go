@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	neturl "net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -686,6 +687,8 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithString("backup_frequency", mcp.Description("daily, weekly, or monthly")),
 		mcp.WithString("backup_recipient", mcp.Description("Email address for backup recipient")),
 		mcp.WithString("mcp_enabled", mcp.Description("Set to 'true' or 'false'")),
+		mcp.WithString("alerts_enabled", mcp.Description("Set to 'true' or 'false'")),
+		mcp.WithString("alert_webhook_url", mcp.Description("Webhook URL for failure alerts (http(s))")),
 		mcp.WithString("contacts_collection_enabled", mcp.Description("Set to 'true' or 'false'")),
 		mcp.WithString("font_mono", mcp.Description("Set to 'true' or 'false'")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -697,7 +700,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 			"source_folder": true, "poll_interval": true, "poll_batch": true, "log_keep": true,
 			"timezone": true, "backup_enabled": true, "backup_frequency": true,
 			"backup_recipient": true, "mcp_enabled": true, "contacts_collection_enabled": true,
-			"font_mono": true,
+			"font_mono": true, "alerts_enabled": true, "alert_webhook_url": true,
 		}
 		validBool := map[string]bool{"true": true, "false": true}
 		validFreq := map[string]bool{"daily": true, "weekly": true, "monthly": true}
@@ -719,10 +722,18 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 					errors = append(errors, fmt.Sprintf("%s: unknown timezone %q", k, str))
 					continue
 				}
-			case "backup_enabled", "mcp_enabled", "contacts_collection_enabled", "font_mono":
+			case "backup_enabled", "mcp_enabled", "contacts_collection_enabled", "font_mono", "alerts_enabled":
 				if !validBool[str] {
 					errors = append(errors, k+": must be 'true' or 'false'")
 					continue
+				}
+			case "alert_webhook_url":
+				if str != "" {
+					u, err := neturl.Parse(str)
+					if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+						errors = append(errors, k+": must be an http(s) URL")
+						continue
+					}
 				}
 			case "backup_frequency":
 				if !validFreq[str] {

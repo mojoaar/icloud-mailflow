@@ -130,6 +130,8 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/settings/timezone", settingsSaveTimezone(settingsRepo))
 	r.Post("/settings/font", settingsSaveFont(settingsRepo))
 	r.Post("/settings/webhook", settingsSaveWebhook(settingsRepo))
+	r.Post("/settings/alerts", settingsSaveAlerts(settingsRepo))
+	r.Post("/settings/alerts/test", settingsTestAlert(p))
 	r.Post("/settings/backup/save", settingsSaveBackup(settingsRepo))
 	r.Post("/settings/backup/now", settingsBackupNow(p))
 	r.Post("/settings/mcp/toggle", settingsMcpToggle(settingsRepo))

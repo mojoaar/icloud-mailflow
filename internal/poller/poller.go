@@ -53,6 +53,8 @@ type Poller struct {
 	autoReplyRepo       *db.AutoReplyRepo
 	sendMail            func(to, from, password, subject, body string, attachments ...smtp.Attachment) error
 	sendWebhook         func(url string, payload []byte, secret string) error
+	sendAlert           func(url string, payload []byte, secret string) error
+	alertedUnhealthy    bool
 }
 
 func (p *Poller) SetAutoReplyRepo(r *db.AutoReplyRepo) { p.autoReplyRepo = r }
@@ -715,6 +717,7 @@ func (p *Poller) checkBackup() {
 
 	if err := p.BackupNow(); err != nil {
 		slog.Error("backup failed", "error", err)
+		p.sendAlertNow("backup_failed", err.Error())
 	}
 }
 
@@ -796,7 +799,14 @@ func (p *Poller) setLastError(err error) {
 	p.mu.Lock()
 	p.consecutiveFailures++
 	cf := p.consecutiveFailures
+	shouldAlert := cf >= alertFailureThreshold && !p.alertedUnhealthy
+	if shouldAlert {
+		p.alertedUnhealthy = true
+	}
 	p.mu.Unlock()
+	if shouldAlert {
+		p.sendAlertNow("poller_unhealthy", err.Error())
+	}
 	if cf > 2 && p.running.Load() && p.imapConnect != nil {
 		go p.reconnect()
 	}
@@ -805,9 +815,82 @@ func (p *Poller) setLastError(err error) {
 func (p *Poller) clearLastError() {
 	p.lastError.Store("")
 	p.mu.Lock()
+	wasAlerted := p.alertedUnhealthy
+	p.alertedUnhealthy = false
 	p.consecutiveFailures = 0
 	p.backoff = 0
 	p.mu.Unlock()
+	if wasAlerted {
+		p.sendAlertNow("poller_recovered", "polling recovered")
+	}
+}
+
+const alertFailureThreshold = 3
+
+func (p *Poller) alertPayload(event, message string) []byte {
+	severity := "info"
+	if event == "poller_unhealthy" || event == "backup_failed" {
+		severity = "error"
+	}
+	p.mu.Lock()
+	cf := p.consecutiveFailures
+	p.mu.Unlock()
+	lastErr := ""
+	if v := p.lastError.Load(); v != nil {
+		lastErr = v.(string)
+	}
+	payload, _ := json.Marshal(map[string]any{
+		"event":                event,
+		"severity":             severity,
+		"message":              message,
+		"at":                   time.Now().Format(time.RFC3339),
+		"consecutive_failures": cf,
+		"last_error":           lastErr,
+	})
+	return payload
+}
+
+func (p *Poller) deliverAlert(url, event, message string) error {
+	secret := ""
+	if p.settingsRepo != nil {
+		secret, _ = p.settingsRepo.Get("webhook_secret")
+	}
+	send := p.sendAlert
+	if send == nil {
+		send = defaultSendWebhook
+	}
+	return send(url, p.alertPayload(event, message), secret)
+}
+
+// sendAlertNow fires an alert asynchronously if alerting is enabled.
+func (p *Poller) sendAlertNow(event, message string) {
+	if p.settingsRepo == nil {
+		return
+	}
+	if enabled, _ := p.settingsRepo.Get("alerts_enabled"); enabled != "true" {
+		return
+	}
+	url, _ := p.settingsRepo.Get("alert_webhook_url")
+	if url == "" {
+		return
+	}
+	go func() {
+		if err := p.deliverAlert(url, event, message); err != nil {
+			slog.Warn("alert send failed", "event", event, "error", err)
+		}
+	}()
+}
+
+// SendTestAlert delivers a test alert synchronously.
+func (p *Poller) SendTestAlert() error {
+	if p.settingsRepo == nil {
+		return fmt.Errorf("alerting not configured")
+	}
+	url, _ := p.settingsRepo.Get("alert_webhook_url")
+	if url == "" {
+		return fmt.Errorf("no alert webhook URL configured")
+	}
+	return p.deliverAlert(url, "test", "Mailflow test alert")
 }
 
 func (p *Poller) syncFolders() {

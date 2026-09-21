@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	neturl "net/url"
 	"runtime"
 	"strconv"
 	"strings"
@@ -134,6 +135,8 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		mcpAPIKey, _ := settingsRepo.Get("mcp_api_key")
 		contactsCollEnabled, _ := settingsRepo.Get("contacts_collection_enabled")
 		webhookSecret, _ := settingsRepo.Get("webhook_secret")
+		alertsEnabled, _ := settingsRepo.Get("alerts_enabled")
+		alertWebhookURL, _ := settingsRepo.Get("alert_webhook_url")
 		protocol := "http"
 		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
 			protocol = "https"
@@ -161,6 +164,9 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 			"Memory":                    getMemoryMB(),
 			"Goroutines":                runtime.NumGoroutine(),
 			"WebhookSecret":             webhookSecret,
+			"AlertsEnabled":             alertsEnabled == "true",
+			"AlertWebhookURL":           alertWebhookURL,
+			"AlertError":                r.URL.Query().Get("error") == "alert",
 			"BackupEnabled":             backupEnabled == "true",
 			"BackupFrequency":           backupFrequency,
 			"BackupRecipient":           backupRecipient,
@@ -550,6 +556,41 @@ func settingsSaveWebhook(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 		r.ParseForm()
 		settingsRepo.Set("webhook_secret", r.FormValue("webhook_secret"))
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	}
+}
+
+func settingsSaveAlerts(settingsRepo *db.SettingsRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		webhookURL := strings.TrimSpace(r.FormValue("alert_webhook_url"))
+		if webhookURL != "" {
+			u, err := neturl.Parse(webhookURL)
+			if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+				http.Redirect(w, r, "/settings?error=alert", http.StatusSeeOther)
+				return
+			}
+		}
+		if err := settingsRepo.Set("alerts_enabled", r.FormValue("alerts_enabled")); err != nil {
+			slog.Error("settings store alerts_enabled failed", "error", err)
+		}
+		if err := settingsRepo.Set("alert_webhook_url", webhookURL); err != nil {
+			slog.Error("settings store alert_webhook_url failed", "error", err)
+		}
+		http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	}
+}
+
+func settingsTestAlert(p *poller.Poller) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if p == nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Poller not available"})
+			return
+		}
+		if err := p.SendTestAlert(); err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Test alert failed: " + err.Error()})
+			return
+		}
+		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Test alert sent"})
 	}
 }
 
