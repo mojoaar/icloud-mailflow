@@ -95,16 +95,27 @@ func Migrate(d *sql.DB) error {
 	for _, col := range cols {
 		var count int
 		if err := d.QueryRow("SELECT COUNT(*) FROM pragma_table_info('rules') WHERE name=?", col).Scan(&count); err == nil && count == 0 {
-			d.Exec("ALTER TABLE rules ADD COLUMN " + col + " TEXT NOT NULL DEFAULT ''")
+			if _, err := d.Exec("ALTER TABLE rules ADD COLUMN " + col + " TEXT NOT NULL DEFAULT ''"); err != nil {
+				slog.Warn("migration add column failed", "column", col, "error", err)
+			}
 		}
 	}
-	d.Exec(`INSERT OR IGNORE INTO stats (category, key, value) VALUES ('__cpu_flush_v2', 'done', 0)`)
+	if err := backfillStats(d); err != nil {
+		return err
+	}
+	if _, err := d.Exec(`INSERT OR IGNORE INTO stats (category, key, value) VALUES ('__cpu_flush_v2', 'done', 0)`); err != nil {
+		return err
+	}
 	var done int
 	if err := d.QueryRow("SELECT value FROM stats WHERE category='__cpu_flush_v2' AND key='done'").Scan(&done); err == nil && done == 0 {
-		d.Exec("DELETE FROM stats WHERE category='cpu'")
-		d.Exec("UPDATE stats SET value=1 WHERE category='__cpu_flush_v2' AND key='done'")
+		if _, err := d.Exec("DELETE FROM stats WHERE category='cpu'"); err != nil {
+			return err
+		}
+		if _, err := d.Exec("UPDATE stats SET value=1 WHERE category='__cpu_flush_v2' AND key='done'"); err != nil {
+			return err
+		}
 	}
-	return backfillStats(d)
+	return nil
 }
 
 func backfillStats(d *sql.DB) error {

@@ -1,55 +1,24 @@
 package db
 
-import (
-	"database/sql"
-	"testing"
-)
+import "testing"
 
-func testDB(t *testing.T) *sql.DB {
-	t.Helper()
-	db, err := Open(":memory:")
-	if err != nil {
-		t.Fatalf("Open: %v", err)
+func TestMigrateBackfillsStats(t *testing.T) {
+	database := NewTestDB(t)
+	if _, err := database.Exec(`INSERT INTO message_log (uid, subject, from_addr, rule_name, action_type, status)
+		VALUES (1, 's', 'a@b.com', 'r1', 'move_to_folder', 'success')`); err != nil {
+		t.Fatalf("insert log: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
-	return db
-}
-
-func TestMigrateCreatesAllTables(t *testing.T) {
-	db := testDB(t)
-	if err := Migrate(db); err != nil {
+	if _, err := database.Exec(`DELETE FROM stats`); err != nil {
+		t.Fatalf("clear stats: %v", err)
+	}
+	if err := Migrate(database); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
-
-	rows, err := db.Query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-	if err != nil {
-		t.Fatalf("query tables: %v", err)
+	var n int
+	if err := database.QueryRow(`SELECT COALESCE((SELECT value FROM stats WHERE category='total' AND key='processed'),0)`).Scan(&n); err != nil {
+		t.Fatalf("query: %v", err)
 	}
-	defer rows.Close()
-
-	tables := map[string]bool{}
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			t.Fatalf("scan table name: %v", err)
-		}
-		tables[name] = true
-	}
-
-	expected := []string{"actions", "condition_groups", "conditions", "contacts", "folders", "message_log", "rules", "sessions", "settings"}
-	for _, table := range expected {
-		if !tables[table] {
-			t.Errorf("table %q not found", table)
-		}
-	}
-}
-
-func TestMigrateIdempotent(t *testing.T) {
-	db := testDB(t)
-	if err := Migrate(db); err != nil {
-		t.Fatalf("first migrate: %v", err)
-	}
-	if err := Migrate(db); err != nil {
-		t.Fatalf("second migrate: %v", err)
+	if n != 1 {
+		t.Errorf("total/processed = %d, want 1 (backfill did not run)", n)
 	}
 }

@@ -64,3 +64,18 @@ func TestFoldersSyncReplacesAll(t *testing.T) {
 		t.Errorf("Name = %q, want New", folders[0].Name)
 	}
 }
+
+func TestFoldersSyncDedupes(t *testing.T) {
+	d := NewTestDB(t)
+	repo := NewFoldersRepo(d)
+	if err := repo.Sync([]Folder{{Name: "A", Path: "A"}, {Name: "A", Path: "A"}}); err != nil {
+		t.Fatalf("Sync: %v", err)
+	}
+	list, err := repo.List()
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(list) != 1 {
+		t.Errorf("len = %d, want 1", len(list))
+	}
+}

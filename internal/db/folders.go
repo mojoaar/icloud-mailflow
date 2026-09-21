@@ -42,7 +42,12 @@ func (r *FoldersRepo) Sync(folders []Folder) error {
 	if _, err := tx.Exec(`DELETE FROM folders`); err != nil {
 		return err
 	}
+	seen := map[string]bool{}
 	for _, f := range folders {
+		if f.Path == "" || seen[f.Path] {
+			continue
+		}
+		seen[f.Path] = true
 		_, err := tx.Exec(
 			`INSERT INTO folders (name, path, flags, synced_at) VALUES (?, ?, ?, datetime('now'))`,
 			f.Name, f.Path, f.Flags,
