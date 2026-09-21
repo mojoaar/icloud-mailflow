@@ -67,4 +67,7 @@ func collect(repo *db.StatsRepo, prevUser, prevSys *int64) {
 	repo.PruneStats("memory", cutoff)
 	repo.PruneStats("goroutines", cutoff)
 	repo.PruneStats("cpu", cutoff)
+
+	// Retain the auto-reply throttle log for 7 days.
+	db.NewAutoReplyRepo(repo.DB).Prune(time.Now().AddDate(0, 0, -7))
 }

@@ -1,6 +1,9 @@
 package db
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
 type AutoReplyRepo struct{ DB *sql.DB }
 
@@ -41,5 +44,11 @@ func (r *AutoReplyRepo) RecordReply(recipient string) error {
 		`INSERT OR IGNORE INTO auto_reply_log (recipient, reply_date) VALUES (?, date('now'))`,
 		recipient,
 	)
+	return err
+}
+
+// Prune deletes throttle rows older than the given date.
+func (r *AutoReplyRepo) Prune(olderThan time.Time) error {
+	_, err := r.DB.Exec(`DELETE FROM auto_reply_log WHERE reply_date < ?`, olderThan.Format("2006-01-02"))
 	return err
 }
