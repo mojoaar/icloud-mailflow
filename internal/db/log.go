@@ -61,6 +61,23 @@ func (r *LogRepo) DeleteAll() error {
 	return err
 }
 
+func (r *LogRepo) DeleteByIDs(ids []int64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	placeholders := make([]string, len(ids))
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	res, err := r.DB.Exec(`DELETE FROM message_log WHERE id IN (`+strings.Join(placeholders, ",")+`)`, args...)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
 func (r *LogRepo) ListFiltered(limit, offset int, search, rule, status string) ([]LogEntry, int, error) {
 	var wheres []string
 	var args []any

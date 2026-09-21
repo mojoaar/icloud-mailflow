@@ -98,11 +98,13 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 
 	r.Get("/activity", activityHandler(logRepo, rulesRepo, settingsRepo))
 	r.Post("/activity/delete", activityDeleteHandler(logRepo))
+	r.Post("/activity/delete-selected", activityDeleteSelectedHandler(logRepo))
 	r.Post("/activity/rerun", activityRerunHandler(p))
 	r.Get("/docs", docsStandaloneHandler(settingsRepo))
 	r.Get("/health", healthHandler(d, p, imapClient, statsRepo, contactsRepo, rulesRepo, sessRepo))
 	r.Get("/metrics", metrics.PromHandler().ServeHTTP)
 	r.Get("/stats", statsHandler(statsRepo, settingsRepo, p))
+	r.Get("/stats/export.csv", statsExportHandler(statsRepo))
 
 	r.Get("/rules", rulesListHandler(rulesRepo, foldersRepo))
 	r.Get("/rules/new", rulesNewHandler(foldersRepo, contactsRepo, settingsRepo))

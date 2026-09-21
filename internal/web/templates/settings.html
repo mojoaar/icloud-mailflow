@@ -1,8 +1,22 @@
 {{define "settings"}}
 <h1>Settings</h1>
 
+<div class="section-nav">
+    <a href="#s-imap">IMAP</a>
+    <a href="#s-password">Password</a>
+    <a href="#s-polling">Polling</a>
+    <a href="#s-webhooks">Webhooks</a>
+    <a href="#s-alerts">Alerts</a>
+    <a href="#s-rules">Rules</a>
+    <a href="#s-contacts">Contacts</a>
+    <a href="#s-backup">Backup</a>
+    <a href="#s-mcp">MCP</a>
+    <a href="#s-regional">Regional</a>
+    <a href="#s-server">Server</a>
+</div>
+
 <div class="card">
-    <h2>IMAP Connection</h2>
+    <h2 id="s-imap">IMAP Connection</h2>
     <form method="POST" action="/settings/imap"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="settings-email">Email</label>
@@ -25,7 +39,7 @@
 </div>
 
 <div class="card">
-    <h2>Admin Password</h2>
+    <h2 id="s-password">Admin Password</h2>
     <form method="POST" action="/settings/password"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="settings-password">New Password</label>
@@ -36,7 +50,7 @@
 </div>
 
 <div class="card">
-    <h2>Polling</h2>
+    <h2 id="s-polling">Polling</h2>
     {{if .PollError}}<p class="error-hint">Invalid polling settings — not saved</p>{{end}}
     <form method="POST" action="/settings/poll"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
@@ -79,7 +93,7 @@
 </div>
 
 <div class="card">
-    <h2>Webhooks</h2>
+    <h2 id="s-webhooks">Webhooks</h2>
     <p class="hint">Shared secret for authenticating outgoing webhook requests.</p>
     <form method="POST" action="/settings/webhook"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
@@ -94,7 +108,7 @@
 </div>
 
 <div class="card">
-    <h2>Alerts</h2>
+    <h2 id="s-alerts">Alerts</h2>
     <p class="hint">POST a JSON notification when the poller goes unhealthy, recovers, or a scheduled backup fails. Uses the webhook secret above.</p>
     <form method="POST" action="/settings/alerts"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         {{if .AlertError}}<p class="error-hint">Invalid alert webhook URL — not saved</p>{{end}}
@@ -114,7 +128,7 @@
 </div>
 
 <div class="card">
-    <h2>Rules</h2>
+    <h2 id="s-rules">Rules</h2>
     <p class="hint">Export or import your rule configurations.</p>
     <div class="flex-between">
         <a href="/settings/rules/export" class="btn" download><i data-lucide="download" data-size="14"></i> Export</a>
@@ -128,7 +142,7 @@
 </div>
 
 <div class="card">
-    <h2>Contacts</h2>
+    <h2 id="s-contacts">Contacts</h2>
     <p class="hint">Import from iCloud or manage collected contacts.</p>
     <div class="flex-row">
         <button class="btn btn-primary" hx-post="/settings/carddav-import"
@@ -149,7 +163,7 @@
 </div>
 
 <div class="card">
-    <h2>Backup</h2>
+    <h2 id="s-backup">Backup</h2>
     <p class="hint">Periodically email your rules as a JSON attachment. Create a rule to file backup emails into a folder.</p>
     <form method="POST" action="/settings/backup/save"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
@@ -182,7 +196,7 @@
 </div>
 
 <div class="card">
-    <h2>MCP Access</h2>
+    <h2 id="s-mcp">MCP Access</h2>
     <p class="hint">Enable Model Context Protocol access so AI agents (Claude Code, OpenCode, Codex) can manage your rules and check mailflow status.</p>
     <div class="row mb-3">
         <form method="POST" action="/settings/mcp/toggle" class="m-0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
@@ -261,7 +275,7 @@
 </div>
 
 <div class="card">
-    <h2>Regional</h2>
+    <h2 id="s-regional">Regional</h2>
     <form method="POST" action="/settings/timezone"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="tz-input">Timezone</label>
@@ -317,7 +331,7 @@ function setThemeFamily(fam){
 </script>
 
 <div class="card">
-    <h2>Server</h2>
+    <h2 id="s-server">Server</h2>
     <table>
         <tr><td>Listen Address</td><td>{{.ListenAddr}}</td></tr>
         <tr><td>Contacts</td><td>{{.Contacts}}</td></tr>

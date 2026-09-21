@@ -1,6 +1,8 @@
 package web
 
 import (
+	"encoding/csv"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -88,6 +90,56 @@ func statsHandler(repo *db.StatsRepo, settingsRepo *db.SettingsRepo, p *poller.P
 			"Poller":         pollerInfo,
 		}
 		renderPage(w, r, "Stats", "stats", data)
+	}
+}
+
+func statsExportHandler(repo *db.StatsRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		days := statsRange(r.URL.Query().Get("days"))
+
+		total, _ := repo.TotalProcessed()
+		rules, _ := repo.RuleHits()
+		senders, _ := repo.TopSenders(100)
+		actions, _ := repo.ActionsBreakdown()
+		errors, _ := repo.ErrorBreakdown()
+		folders, _ := repo.FolderDistribution()
+		daily, _ := repo.DailyVolume(days)
+		weeks := days / 7
+		if weeks < 8 {
+			weeks = 8
+		}
+		weekly, _ := repo.WeeklyVolume(weeks)
+
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"mailflow-stats-%s.csv\"", time.Now().Format("2006-01-02")))
+		cw := csv.NewWriter(w)
+		defer cw.Flush()
+		write := func(category, name string, count int) {
+			_ = cw.Write([]string{category, name, strconv.Itoa(count)})
+		}
+		_ = cw.Write([]string{"category", "name", "count"})
+		write("total", "processed", total)
+		for _, h := range rules {
+			write("rule_hit", h.Name, h.Count)
+		}
+		for _, s := range senders {
+			write("sender", s.Email, s.Count)
+		}
+		for _, a := range actions {
+			write("action", a.Type, a.Count)
+		}
+		for _, e := range errors {
+			write("status", e.Status, e.Count)
+		}
+		for _, f := range folders {
+			write("folder", f.Folder, f.Count)
+		}
+		for _, d := range daily {
+			write("daily", d.Date, d.Count)
+		}
+		for _, d := range weekly {
+			write("weekly", d.Date, d.Count)
+		}
 	}
 }
 

@@ -8,6 +8,10 @@
 </button>
 <span id="activity-refresh-spinner" class="htmx-indicator spinner-cell"><span class="spinner"></span></span>
 {{if .Entries}}
+<button class="btn btn-danger" hx-post="/activity/delete-selected" hx-include=".activity-select:checked" hx-target="#activity-content" hx-swap="outerHTML"
+    hx-confirm="Delete the selected activity entries?">
+    <i data-lucide="trash-2" data-size="14"></i> Delete Selected
+</button>
 <button class="btn btn-danger" hx-post="/activity/delete" hx-target="#activity-content" hx-swap="outerHTML"
     hx-confirm="Clear all activity logs? Stats are stored separately and won't be affected.">
     <i data-lucide="trash-2" data-size="14"></i> Clear Logs
@@ -20,7 +24,7 @@
 {{end}}
 
 {{define "activity_content"}}
-<div id="activity-content">
+<div id="activity-content" class="loading-target">
 <div class="row row-wrap mb-2">
     <div class="search-wrapper flex-1">
         <input type="search" name="q" id="activity-search" value="{{.Search}}" placeholder="Search..."
@@ -54,7 +58,7 @@
 </div>
 {{if not .Entries}}
 <div class="card">
-    <p class="muted">No activity yet. Messages will appear here when rules process mail.</p>
+    <p class="empty-state">No activity yet. Messages will appear here when rules process mail.</p>
 </div>
 {{else}}
 <div class="card">
@@ -67,9 +71,11 @@
             <col>
             <col>
             <col>
+            <col>
         </colgroup>
         <thead>
             <tr>
+                <th class="nowrap"><input type="checkbox" id="activity-select-all" aria-label="Select all entries"></th>
                 <th>Time</th>
                 <th>Subject</th>
                 <th>From</th>
@@ -82,6 +88,7 @@
         <tbody>
         {{range .Entries}}
         <tr>
+            <td><input type="checkbox" class="activity-select" name="id" value="{{.ID}}" aria-label="Select entry"></td>
             <td class="nowrap text-sm muted">{{.CreatedAt}}</td>
             <td>{{.Subject}}</td>
             <td class="cell-truncate">{{.FromAddr}}</td>

@@ -51,6 +51,7 @@
         <a href="#api-backup">Backup</a>
         <a href="#api-contacts">Contacts &amp; Folders</a>
         <a href="#api-activity">Activity</a>
+        <a href="#api-stats">Stats</a>
         <a href="#api-health">Health</a>
         <a href="#api-metrics">Metrics</a>
         <a href="#api-apply">Bulk Apply</a>
@@ -189,7 +190,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <h2 id="stats">Stats Dashboard</h2>
 <p>Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, daily/weekly volume, messages by folder, and runtime metrics charts (Memory and CPU %). A range selector (7/30/90 days) scopes the daily and weekly volume, and a Poller card shows the last run time, duration, health, and consecutive failures. Charts are interactive (Chart.js) with a per-section List/Chart toggle, and they recolor live when the theme changes. Daily/weekly buckets and chart time axes follow the configured timezone. Status totals (success/error/skipped) are shown under the all-time processed count. Stats are stored independently from the activity log — clearing logs preserves all statistics.</p>
-<p>The range is also addressable directly: <code>/stats?days=7</code>, <code>/stats?days=30</code>, or <code>/stats?days=90</code>.</p>
+<p>The range is also addressable directly: <code>/stats?days=7</code>, <code>/stats?days=30</code>, or <code>/stats?days=90</code>. Use <a href="/stats/export.csv">Export CSV</a> on the page (or <code>/stats/export.csv?days=30</code>) to download the numbers as <code>category,name,count</code> rows.</p>
 
 <h2 id="themes">Themes &amp; Appearance</h2>
 <p>Mailflow ships nine colour themes, each with a dark and light variant: <strong>Mailflow</strong> (default), <strong>Ayu</strong>, <strong>Catppuccin</strong>, <strong>Cyberpunk</strong>, <strong>Dracula</strong>, <strong>Gruvbox</strong>, <strong>Nord</strong>, <strong>One Dark</strong>, and <strong>Tokyo Night</strong>.</p>
@@ -484,6 +485,20 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <h4><span class="method-badge method-post">POST</span> POST /activity/delete</h4>
     <p class="desc">Clear all activity logs.</p>
     <pre><code class="language-bash">curl -X POST http://{{.Host}}/activity/delete -b cookies.txt</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /activity/delete-selected</h4>
+    <p class="desc">Delete specific activity log entries by id. Accepts repeated <code>id</code> form fields.</p>
+    <pre><code class="language-bash">curl -X POST http://{{.Host}}/activity/delete-selected -b cookies.txt -d 'id=1&amp;id=2'</code></pre>
+</div>
+
+<h3 class="api-group" id="api-stats">Stats</h3>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-get">GET</span> GET /stats/export.csv</h4>
+    <p class="desc">Download statistics as CSV (<code>category,name,count</code> rows: total, rule hits, senders, actions, status, folders, daily, weekly). Honors the <code>days</code> range (7/30/90).</p>
+    <pre><code class="language-bash">curl -O -J http://{{.Host}}/stats/export.csv?days=30 -b cookies.txt</code></pre>
 </div>
 
 <h3 class="api-group" id="api-mcp">MCP Server</h3>

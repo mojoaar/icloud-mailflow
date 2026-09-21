@@ -7,9 +7,14 @@
     {{range .DaysOptions}}<a class="toggle-btn {{if eq . $.Days}}active{{end}} no-underline" href="/stats?days={{.}}">{{.}}d</a>{{end}}
 </div>
 </div>
+<div class="row">
 <a href="/stats?days={{.Days}}" class="btn">
     <i data-lucide="refresh-cw" data-size="14"></i> Refresh
 </a>
+<a href="/stats/export.csv?days={{.Days}}" class="btn">
+    <i data-lucide="download" data-size="14"></i> Export CSV
+</a>
+</div>
 </div>
 
 <div class="card center-pad">
@@ -52,7 +57,7 @@
         <div class="bar-fill" style="width:{{if $.MaxRuleHit}}{{percent .Count $.MaxRuleHit}}{{else}}0{{end}}%"></div>
     </div>
 </div>
-{{else}}<p class="muted">No data yet</p>{{end}}
+{{else}}<p class="empty-state">No data yet</p>{{end}}
 </div>
 
 <div class="card flex-1">
@@ -60,7 +65,7 @@
 <table class="table-auto">
 {{range .Senders}}
 <tr><td>{{.Email}}</td><td class="muted text-right">{{.Count}}</td></tr>
-{{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
+{{else}}<tr><td colspan="2" class="empty-state">No data yet</td></tr>
 {{end}}
 </table>
 </div>
@@ -79,7 +84,7 @@
 <div class="list-line">
     <span>{{.Type}}</span><span class="muted">{{.Count}}</span>
 </div>
-{{else}}<p class="muted">No data yet</p>{{end}}
+{{else}}<p class="empty-state">No data yet</p>{{end}}
 </div>
 <div id="actions-chart" class="chart-view hidden">
     <canvas id="actions-canvas" class="chart-canvas"></canvas>
@@ -97,7 +102,7 @@
 <table>
 {{range .Daily}}
 <tr><td>{{.Date}}</td><td class="muted text-right">{{.Count}}</td></tr>
-{{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
+{{else}}<tr><td colspan="2" class="empty-state">No data yet</td></tr>
 {{end}}
 </table>
 </div>
@@ -125,7 +130,7 @@
         <div class="bar-fill" style="width:{{if $.MaxFolderCount}}{{percent .Count $.MaxFolderCount}}{{else}}0{{end}}%"></div>
     </div>
 </div>
-{{else}}<p class="muted">No data yet</p>{{end}}
+{{else}}<p class="empty-state">No data yet</p>{{end}}
 </div>
 <div id="folders-chart" class="chart-view hidden">
     <canvas id="folders-canvas" class="chart-canvas"></canvas>
@@ -143,7 +148,7 @@
 <table>
 {{range .Weekly}}
 <tr><td>{{.Date}}</td><td class="muted text-right">{{.Count}}</td></tr>
-{{else}}<tr><td colspan="2" class="muted">No data yet</td></tr>
+{{else}}<tr><td colspan="2" class="empty-state">No data yet</td></tr>
 {{end}}
 </table>
 </div>
@@ -160,13 +165,13 @@
 <div class="metric-card">
     <h3 class="chart-title">Memory (MB)</h3>
     <div id="metrics-mem-chart">
-        {{if .MetricsMem}}<canvas id="metrics-mem-canvas" class="chart-canvas"></canvas>{{else}}<p class="muted empty-state-lg">No data yet</p>{{end}}
+        {{if .MetricsMem}}<canvas id="metrics-mem-canvas" class="chart-canvas"></canvas>{{else}}<p class="empty-state-lg">No data yet</p>{{end}}
     </div>
 </div>
 <div class="metric-card">
     <h3 class="chart-title">CPU %</h3>
     <div id="metrics-cpu-chart">
-        {{if .MetricsCPU}}<canvas id="metrics-cpu-canvas" class="chart-canvas"></canvas>{{else}}<p class="muted empty-state-lg">No data yet</p>{{end}}
+        {{if .MetricsCPU}}<canvas id="metrics-cpu-canvas" class="chart-canvas"></canvas>{{else}}<p class="empty-state-lg">No data yet</p>{{end}}
     </div>
 </div>
 </div>

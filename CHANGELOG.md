@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Run rules" on an activity row to dry-run the current rules against that message
 - Metrics: `mailflow_rules_total`, `mailflow_contacts_total`, `mailflow_db_size_bytes`, `mailflow_build_info`; `/health` reports DB size, build info, and the poller's last error
 - Build commit injectable via `-ldflags -X main.commit=…`
+- Activity log bulk selection and delete (`POST /activity/delete-selected`) alongside the existing clear-all
+- Stats CSV export (`GET /stats/export.csv?days=…`, `category,name,count` rows)
+- Settings in-page section navigation (sticky anchor chips), a loading indicator for htmx-swapped regions, a print stylesheet (hides chrome, forces list view over charts), and consistent empty states across Activity, Rules, Stats, and Contacts
 
 ### Changed
 - MCP `run_poll` reports "poll already in progress" instead of a false success

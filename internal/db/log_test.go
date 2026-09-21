@@ -85,6 +85,42 @@ func TestLogRepo_ListFiltered(t *testing.T) {
 	})
 }
 
+func TestLogRepo_DeleteByIDs(t *testing.T) {
+	d := NewTestDB(t)
+	repo := NewLogRepo(d)
+	for i := 0; i < 3; i++ {
+		if err := repo.Insert(&LogEntry{UID: int64(i + 1), Subject: "s"}); err != nil {
+			t.Fatalf("Insert: %v", err)
+		}
+	}
+	entries, err := repo.ListRecent(10)
+	if err != nil {
+		t.Fatalf("ListRecent: %v", err)
+	}
+	if len(entries) != 3 {
+		t.Fatalf("setup: got %d entries, want 3", len(entries))
+	}
+
+	n, err := repo.DeleteByIDs([]int64{entries[0].ID, entries[2].ID})
+	if err != nil {
+		t.Fatalf("DeleteByIDs: %v", err)
+	}
+	if n != 2 {
+		t.Errorf("deleted = %d, want 2", n)
+	}
+	left, err := repo.ListRecent(10)
+	if err != nil {
+		t.Fatalf("ListRecent: %v", err)
+	}
+	if len(left) != 1 || left[0].ID != entries[1].ID {
+		t.Errorf("remaining = %+v, want only id %d", left, entries[1].ID)
+	}
+
+	if n, err := repo.DeleteByIDs(nil); err != nil || n != 0 {
+		t.Errorf("DeleteByIDs(nil) = (%d, %v), want (0, nil)", n, err)
+	}
+}
+
 func TestLogEntryFolderRoundTrip(t *testing.T) {
 	d := NewTestDB(t)
 	repo := NewLogRepo(d)

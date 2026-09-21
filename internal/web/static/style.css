@@ -908,3 +908,28 @@ button[aria-busy="true"]::after,
 .poller-stats { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 12px; font-size: var(--text-lg); }
 .list-line { display: flex; justify-content: space-between; font-size: var(--text-md); padding: 4px 0; border-bottom: 1px solid var(--border); }
 .result-box-sm { margin-top: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 4px; }
+
+/* Loading overlay for swapped regions */
+.loading-target { position: relative; }
+.is-loading { opacity: 0.6; }
+.is-loading::after {
+    content: ""; position: absolute; top: 8px; right: 8px; width: 16px; height: 16px;
+    border: 2px solid var(--muted); border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+/* Settings in-page section nav */
+.section-nav { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0; margin-bottom: 8px; background: var(--bg); }
+.section-nav a { font-size: var(--text-sm); padding: 4px 10px; border: 1px solid var(--border); border-radius: 20px; color: var(--muted); text-decoration: none; }
+.section-nav a:hover { color: var(--text); border-color: var(--accent); }
+h2[id] { scroll-margin-top: 64px; }
+
+@media print {
+    nav, footer, .btn, .chart-toggle, .toast, .skip-link, .section-nav, .search-wrapper, .htmx-indicator { display: none !important; }
+    main { max-width: none; padding: 0; }
+    .card { break-inside: avoid; border-color: #ccc; }
+    body { background: #fff; color: #000; }
+    table { font-size: 11pt; }
+    .chart-view { display: none !important; }
+    .chart-list { display: block !important; }
+}

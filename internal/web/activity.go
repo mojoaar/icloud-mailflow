@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"sort"
@@ -111,5 +112,31 @@ func activityDeleteHandler(repo *db.LogRepo) http.HandlerFunc {
 		}
 		w.Header().Set("HX-Refresh", "true")
 		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Activity log cleared"})
+	}
+}
+
+func activityDeleteSelectedHandler(repo *db.LogRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Invalid request"})
+			return
+		}
+		var ids []int64
+		for _, v := range r.Form["id"] {
+			if id, err := strconv.ParseInt(v, 10, 64); err == nil {
+				ids = append(ids, id)
+			}
+		}
+		if len(ids) == 0 {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "No entries selected"})
+			return
+		}
+		n, err := repo.DeleteByIDs(ids)
+		if err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Failed to delete activity entries"})
+			return
+		}
+		w.Header().Set("HX-Refresh", "true")
+		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": fmt.Sprintf("Deleted %d entries", n)})
 	}
 }
