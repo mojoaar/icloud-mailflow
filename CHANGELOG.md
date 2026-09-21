@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `Content-Security-Policy` is now strict: `script-src 'self' 'nonce-…'` with no `unsafe-inline`/`unsafe-eval`; inline event handlers were replaced with delegated listeners and inline scripts carry a per-request nonce
 - HTMX, Lucide and Chart.js are self-hosted under `/static` instead of loaded from CDNs (no third-party script origins); the keyboard-modal and Docs styles moved from inline `<style>` blocks into `style.css`
+- Performance: `RulesRepo.List` loads rules with four fixed queries instead of per-rule lookups; the message body/headers are fetched once per message and shared across rules; folder sync diffs by path (stable IDs) instead of rewriting the table; file-backed databases allow concurrent readers (WAL); the catch-all rule is no longer rewritten on every rule change
+- The auto-reply throttle log is pruned after 7 days
+
+### Fixed
+- The CSRF token is now stable across page renders, so submissions from other open tabs keep validating
 
 ## [0.12.1] - 2026-09-21
 
