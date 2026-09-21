@@ -16,6 +16,7 @@ type LogEntry struct {
 	ActionType  string `json:"action_type"`
 	ActionValue string `json:"action_value"`
 	Status      string `json:"status"`
+	Folder      string `json:"folder"`
 }
 
 type LogRepo struct{ DB *sql.DB }
@@ -26,17 +27,17 @@ func NewLogRepo(d *sql.DB) *LogRepo {
 
 func (r *LogRepo) Insert(entry *LogEntry) error {
 	_, err := r.DB.Exec(
-		`INSERT INTO message_log (uid, subject, from_addr, rule_name, action_type, action_value, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO message_log (uid, subject, from_addr, rule_name, action_type, action_value, status, folder)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		entry.UID, entry.Subject, entry.FromAddr, entry.RuleName,
-		entry.ActionType, entry.ActionValue, entry.Status,
+		entry.ActionType, entry.ActionValue, entry.Status, entry.Folder,
 	)
 	return err
 }
 
 func (r *LogRepo) ListRecent(limit int) ([]LogEntry, error) {
 	rows, err := r.DB.Query(
-		`SELECT id, created_at, uid, subject, from_addr, rule_name, action_type, action_value, status
+		`SELECT id, created_at, uid, subject, from_addr, rule_name, action_type, action_value, status, folder
 		FROM message_log ORDER BY id DESC LIMIT ?`, limit,
 	)
 	if err != nil {
@@ -47,7 +48,7 @@ func (r *LogRepo) ListRecent(limit int) ([]LogEntry, error) {
 	for rows.Next() {
 		var e LogEntry
 		if err := rows.Scan(&e.ID, &e.CreatedAt, &e.UID, &e.Subject, &e.FromAddr,
-			&e.RuleName, &e.ActionType, &e.ActionValue, &e.Status); err != nil {
+			&e.RuleName, &e.ActionType, &e.ActionValue, &e.Status, &e.Folder); err != nil {
 			return nil, err
 		}
 		out = append(out, e)
@@ -91,7 +92,7 @@ func (r *LogRepo) ListFiltered(limit, offset int, search, rule, status string) (
 		return nil, 0, err
 	}
 
-	query := fmt.Sprintf("SELECT id, created_at, uid, subject, from_addr, rule_name, action_type, action_value, status FROM message_log %s ORDER BY id DESC LIMIT ? OFFSET ?", where)
+	query := fmt.Sprintf("SELECT id, created_at, uid, subject, from_addr, rule_name, action_type, action_value, status, folder FROM message_log %s ORDER BY id DESC LIMIT ? OFFSET ?", where)
 	args = append(args, limit, offset)
 	rows, err := r.DB.Query(query, args...)
 	if err != nil {
@@ -102,7 +103,7 @@ func (r *LogRepo) ListFiltered(limit, offset int, search, rule, status string) (
 	for rows.Next() {
 		var e LogEntry
 		if err := rows.Scan(&e.ID, &e.CreatedAt, &e.UID, &e.Subject, &e.FromAddr,
-			&e.RuleName, &e.ActionType, &e.ActionValue, &e.Status); err != nil {
+			&e.RuleName, &e.ActionType, &e.ActionValue, &e.Status, &e.Folder); err != nil {
 			return nil, 0, err
 		}
 		out = append(out, e)

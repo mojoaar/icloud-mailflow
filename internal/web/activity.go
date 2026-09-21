@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
+	"github.com/mojoaar/icloud-mailflow/internal/poller"
 )
 
 func activityHandler(repo *db.LogRepo, rulesRepo *db.RulesRepo, settingsRepo *db.SettingsRepo) http.HandlerFunc {
@@ -76,6 +77,29 @@ func activityHandler(repo *db.LogRepo, rulesRepo *db.RulesRepo, settingsRepo *db
 			return
 		}
 		renderPage(w, r, "Activity", "activity", data)
+	}
+}
+
+func activityRerunHandler(p *poller.Poller) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		uid, _ := strconv.Atoi(r.FormValue("uid"))
+		folder := r.FormValue("folder")
+		if p == nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "IMAP not configured"})
+			return
+		}
+		msg, matched, captures, results, err := p.EvaluateMessage(folder, uint32(uid))
+		if err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Message no longer available"})
+			return
+		}
+		renderPartial(w, "rules_test_result", map[string]any{
+			"Matched":  matched != nil,
+			"Captures": captures,
+			"Results":  results,
+			"Rule":     matched,
+			"Message":  msg,
+		})
 	}
 }
 

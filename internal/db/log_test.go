@@ -14,7 +14,8 @@ func TestLogRepo_ListFiltered(t *testing.T) {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		created_at TEXT DEFAULT (datetime('now')),
 		uid INTEGER, subject TEXT, from_addr TEXT,
-		rule_name TEXT, action_type TEXT, action_value TEXT, status TEXT
+		rule_name TEXT, action_type TEXT, action_value TEXT, status TEXT,
+		folder TEXT NOT NULL DEFAULT ''
 	)`)
 	repo := &LogRepo{DB: db}
 
@@ -82,4 +83,19 @@ func TestLogRepo_ListFiltered(t *testing.T) {
 			t.Errorf("total = %d, want 3", total)
 		}
 	})
+}
+
+func TestLogEntryFolderRoundTrip(t *testing.T) {
+	d := NewTestDB(t)
+	repo := NewLogRepo(d)
+	if err := repo.Insert(&LogEntry{UID: 1, Subject: "s", Folder: "Archive", Status: "success"}); err != nil {
+		t.Fatalf("Insert: %v", err)
+	}
+	entries, err := repo.ListRecent(1)
+	if err != nil {
+		t.Fatalf("ListRecent: %v", err)
+	}
+	if len(entries) != 1 || entries[0].Folder != "Archive" {
+		t.Errorf("folder = %+v, want Archive", entries)
+	}
 }

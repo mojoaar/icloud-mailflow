@@ -1401,3 +1401,35 @@ func TestPollerAlertsDisabled(t *testing.T) {
 		t.Errorf("alerts disabled but sendAlert called %d times", got)
 	}
 }
+
+func TestEvaluateMessage(t *testing.T) {
+	rulesRepo, contactsRepo := openPollerTestDB(t)
+	rule := &db.Rule{
+		Name: "m", Enabled: true,
+		Groups: []db.ConditionGroup{
+			{Operator: "AND", Conditions: []db.Condition{
+				{Field: "subject", Operator: "contains", Value: "match"},
+			}},
+		},
+		Actions: []db.Action{{Type: "mark_as_read"}},
+	}
+	if err := rulesRepo.Create(rule); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	mock := &trackedMock{messages: map[uint32]*imap.Message{5: {UID: 5, Subject: "match me"}}}
+	p := NewPoller(mock, rulesRepo, contacts.NewCollector(contactsRepo, mock), nil, nil, nil, nil, nil, 10, 60, "INBOX", "", nil)
+
+	msg, matched, _, results, err := p.EvaluateMessage("INBOX", 5)
+	if err != nil {
+		t.Fatalf("EvaluateMessage: %v", err)
+	}
+	if msg == nil {
+		t.Error("expected the fetched message")
+	}
+	if matched == nil || matched.Name != "m" {
+		t.Errorf("matched = %v, want rule m", matched)
+	}
+	if len(results) == 0 {
+		t.Error("expected condition results")
+	}
+}

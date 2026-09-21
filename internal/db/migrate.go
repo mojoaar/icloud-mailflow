@@ -100,6 +100,12 @@ func Migrate(d *sql.DB) error {
 			}
 		}
 	}
+	var hasFolder int
+	if err := d.QueryRow("SELECT COUNT(*) FROM pragma_table_info('message_log') WHERE name='folder'").Scan(&hasFolder); err == nil && hasFolder == 0 {
+		if _, err := d.Exec("ALTER TABLE message_log ADD COLUMN folder TEXT NOT NULL DEFAULT ''"); err != nil {
+			slog.Warn("migration add message_log.folder failed", "error", err)
+		}
+	}
 	if err := backfillStats(d); err != nil {
 		return err
 	}

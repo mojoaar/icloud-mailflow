@@ -66,6 +66,7 @@
             <col style="width:130px">
             <col style="width:150px">
             <col style="width:80px">
+            <col style="width:110px">
         </colgroup>
         <thead>
             <tr>
@@ -75,6 +76,7 @@
                 <th>Rule</th>
                 <th>Action</th>
                 <th>Status</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -86,10 +88,18 @@
             <td>{{.RuleName}}</td>
             <td>{{.ActionType}}{{if .ActionValue}} → {{.ActionValue}}{{end}}</td>
             <td>{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else if eq .Status "skipped"}}<span class="badge">skipped</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>
+            <td>
+                <form hx-post="/activity/rerun" hx-target="#rerun-result" hx-swap="innerHTML" style="margin:0">
+                    <input type="hidden" name="uid" value="{{.UID}}">
+                    <input type="hidden" name="folder" value="{{.Folder}}">
+                    <button type="submit" class="btn" style="font-size:0.75rem">Run rules</button>
+                </form>
+            </td>
         </tr>
         {{end}}
         </tbody>
     </table>
+    <div id="rerun-result"></div>
     {{if gt .TotalPages 1}}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
         <span class="muted">Page {{.Page}} of {{.TotalPages}} ({{.TotalEntries}} entries)</span>

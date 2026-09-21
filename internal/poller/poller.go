@@ -327,6 +327,44 @@ func (p *Poller) ApplyToFolder(folder string, limit int) (*ApplyResult, error) {
 	return result, nil
 }
 
+// EvaluateMessage fetches a message and dry-runs the current rules against it,
+// returning the matched rule with per-condition results.
+func (p *Poller) EvaluateMessage(folder string, uid uint32) (*imap.Message, *db.Rule, map[string]string, []rules.GroupResult, error) {
+	client := p.client()
+	if client == nil {
+		return nil, nil, nil, nil, fmt.Errorf("imap client not available")
+	}
+	unlock := imap.LockSession(client)
+	defer unlock()
+
+	if folder == "" {
+		folder = p.source
+	}
+	if err := client.SelectMailbox(folder); err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("select %s: %w", folder, err)
+	}
+	msg, err := client.FetchMessage(uid)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	ruleList, err := p.rulesRepo.List()
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	matched, _, err := rules.Match(ruleList, msg, client, p.timeLocation())
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	if matched == nil {
+		return msg, nil, nil, nil, nil
+	}
+	_, captures, results, err := rules.EvaluateWithResults(matched, msg, client)
+	if err != nil {
+		return msg, nil, nil, nil, err
+	}
+	return msg, matched, captures, results, nil
+}
+
 func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, captures map[string]string) {
 	client := p.client()
 	from := ""
@@ -338,6 +376,8 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 		subject = msg.Subject
 	}
 
+	effectiveUID := uid
+	destFolder := ""
 	messageStatsDone := false
 
 	logAction := func(actionUID uint32, action db.Action, status string) {
@@ -346,6 +386,10 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 			metrics.ErrorsTotal.Inc()
 		}
 		if p.logRepo != nil {
+			folder := p.source
+			if destFolder != "" {
+				folder = destFolder
+			}
 			p.logRepo.Insert(&db.LogEntry{
 				UID:         int64(actionUID),
 				Subject:     subject,
@@ -354,6 +398,7 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 				ActionType:  action.Type,
 				ActionValue: action.Value,
 				Status:      status,
+				Folder:      folder,
 			})
 		}
 		if p.statsRepo != nil {
@@ -376,8 +421,8 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 		}
 	}
 
-	effectiveUID := uid
-	destFolder := ""
+	effectiveUID = uid
+	destFolder = ""
 
 actions:
 	for _, action := range rule.Actions {
