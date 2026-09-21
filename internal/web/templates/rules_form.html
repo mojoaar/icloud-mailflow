@@ -63,7 +63,7 @@
         {{range $gi, $group := .Rule.Groups}}
         {{range $ci, $cond := $group.Conditions}}
         <div class="condition-row" style="display:flex;gap:8px;margin-bottom:8px">
-            <select name="cond_field" onchange="onFieldChange(this)">
+            <select name="cond_field">
                 {{range $.Fields}}
                 <option value="{{.value}}" {{if or (eq $cond.Field .value) (and (eq .value "header") (hasPrefix $cond.Field "header:"))}}selected{{end}}>{{.label}}</option>
                 {{end}}
@@ -85,18 +85,18 @@
                 <option value="after" {{if eq $cond.Operator "after"}}selected{{end}}>after (date)</option>
             </select>
             <input type="text" name="cond_value" value="{{$cond.Value}}" placeholder="value" list="contact-list" style="flex:1">
-            <button type="button" class="btn" style="padding:2px 6px;font-size:0.75rem" onclick="this.closest('.condition-row').remove()">×</button>
+            <button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>
         </div>
         {{end}}
         {{end}}
     </div>
-    <button type="button" class="btn mt-1" onclick="addCondition()">+ Add Condition</button>
+    <button type="button" class="btn mt-1" id="add-condition">+ Add Condition</button>
 
     <h2 class="mt-3">Actions</h2>
     <div class="card" id="actions">
         {{range .Rule.Actions}}
         <div class="action-row" style="display:flex;gap:8px;margin-bottom:8px">
-            <select name="action_type" style="width:160px" onchange="updateActionInput(this)">
+            <select name="action_type" style="width:160px">
                 <option value="move_to_folder" {{if eq .Type "move_to_folder"}}selected{{end}}>Move to Folder</option>
                 <option value="mark_as_read" {{if eq .Type "mark_as_read"}}selected{{end}}>Mark as Read</option>
                 <option value="mark_as_unread" {{if eq .Type "mark_as_unread"}}selected{{end}}>Mark as Unread</option>
@@ -124,7 +124,7 @@
             {{else}}
             <input type="text" name="action_value" value="{{.Value}}" placeholder="Value (optional)" style="display:none">
             {{end}}
-            <button type="button" class="btn" style="padding:2px 6px;font-size:0.75rem" onclick="this.closest('.action-row').remove()">×</button>
+            <button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>
         </div>
         {{end}}
     </div>
@@ -134,7 +134,7 @@
     <datalist id="contact-list">
         {{range .Contacts}}<option value="{{.Email}}">{{if .Name}}{{.Name}} ({{.Email}}){{end}}</option>{{end}}
     </datalist>
-    <button type="button" class="btn mt-1" onclick="addAction()">+ Add Action</button>
+    <button type="button" class="btn mt-1" id="add-action">+ Add Action</button>
 
 </form>
 
@@ -168,20 +168,20 @@ function addCondition() {
     var div = document.createElement('div');
     div.className = 'condition-row';
     div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
-    div.innerHTML = '<select name="cond_field" onchange="onFieldChange(this)">{{range .Fields}}<option value="{{.value}}">{{.label}}</option>{{end}}</select>' +
+    div.innerHTML = '<select name="cond_field">{{range .Fields}}<option value="{{.value}}">{{.label}}</option>{{end}}</select>' +
         '<input type="text" name="cond_header_name" placeholder="Header name" style="width:120px;display:none">' +
         '<select name="cond_op" style="width:140px"><option value="contains">contains</option><option value="not_contains">doesn\'t contain</option><option value="equals">equals</option><option value="not_equals">doesn\'t equal</option><option value="starts_with">starts with</option><option value="ends_with">ends with</option><option value="matches_regex">matches regex</option><option value="exists">exists</option><option value="not_exists">doesn\'t exist</option><option value="older_than">older than (days)</option><option value="newer_than">newer than (days)</option><option value="before">before (date)</option><option value="after">after (date)</option></select>' +
         '<input type="text" name="cond_value" placeholder="value" list="contact-list" style="flex:1">' +
-        '<button type="button" class="btn" style="padding:2px 6px;font-size:0.75rem" onclick="this.closest(\'.condition-row\').remove()">×</button>';
+        '<button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>';
     document.getElementById('conditions').appendChild(div);
 }
 function addAction() {
     var div = document.createElement('div');
     div.className = 'action-row';
     div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
-    div.innerHTML = '<select name="action_type" style="width:160px" onchange="updateActionInput(this)"><option value="move_to_folder">Move to Folder</option><option value="mark_as_read">Mark as Read</option><option value="mark_as_unread">Mark as Unread</option><option value="set_flag">Set Flag</option><option value="auto_reply">Auto Reply</option><option value="forward">Forward</option><option value="delete">Delete</option><option value="remove_flag">Remove Flag</option><option value="webhook">Post Webhook</option></select>' +
+    div.innerHTML = '<select name="action_type" style="width:160px"><option value="move_to_folder">Move to Folder</option><option value="mark_as_read">Mark as Read</option><option value="mark_as_unread">Mark as Unread</option><option value="set_flag">Set Flag</option><option value="auto_reply">Auto Reply</option><option value="forward">Forward</option><option value="delete">Delete</option><option value="remove_flag">Remove Flag</option><option value="webhook">Post Webhook</option></select>' +
         '<input type="text" name="action_value" placeholder="Folder name" list="folder-list" style="flex:1">' +
-        '<button type="button" class="btn" style="padding:2px 6px;font-size:0.75rem" onclick="this.closest(\'.action-row\').remove()">×</button>';
+        '<button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>';
     document.getElementById('actions').appendChild(div);
 }
 function updateActionInput(select) {

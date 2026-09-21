@@ -2,9 +2,8 @@
 <div class="flex-between" style="margin-bottom:16px">
 <h1 style="margin:0">Activity Log</h1>
 <div class="flex-row">
-<button class="btn" hx-get="/activity" hx-include="[name='q'],[name='rule'],[name='status'],[name='per_page']" hx-target="#activity-content" hx-swap="outerHTML"
-    hx-indicator="#activity-refresh-spinner"
-    hx-on::after-request="if(event.detail.successful)htmx.trigger(document.body,'showToast',{type:'success',message:'Activity refreshed'})">
+<button class="btn" id="activity-refresh" hx-get="/activity" hx-include="[name='q'],[name='rule'],[name='status'],[name='per_page']" hx-target="#activity-content" hx-swap="outerHTML"
+    hx-indicator="#activity-refresh-spinner">
     <i data-lucide="refresh-cw" data-size="14"></i> Refresh
 </button>
 <span id="activity-refresh-spinner" class="htmx-indicator" style="align-self:center;color:var(--muted)"><span class="spinner"></span></span>
@@ -27,9 +26,8 @@
         <input type="search" name="q" id="activity-search" value="{{.Search}}" placeholder="Search..."
             hx-get="/activity" hx-trigger="keyup changed delay:300ms"
             hx-target="#activity-content" hx-swap="outerHTML" hx-indicator="#activity-spinner"
-            hx-include="[name='rule'],[name='status'],[name='per_page']" style="width:100%;max-width:none"
-            oninput="var b=this.parentNode.querySelector('.search-clear');if(b)b.classList.toggle('visible',this.value.length>0)">
-        <button class="search-clear" onclick="var i=document.getElementById('activity-search');i.value='';htmx.trigger(i,'keyup');i.focus()" aria-label="Clear search">&#10005;</button>
+            hx-include="[name='rule'],[name='status'],[name='per_page']" style="width:100%;max-width:none">
+        <button class="search-clear" id="activity-search-clear" aria-label="Clear search">&#10005;</button>
     </div>
     <script>var i=document.getElementById('activity-search');if(i&&i.value)i.dispatchEvent(new Event('input'))</script>
     <select name="rule" hx-get="/activity" hx-trigger="change"

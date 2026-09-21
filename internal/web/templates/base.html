@@ -15,17 +15,6 @@
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/mobile.css">
     {{if .MonoFont}}<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">{{end}}
-    <style>
-#kb-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;padding:16px}
-#kb-modal-overlay.open{display:flex}
-#kb-modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:400px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.5)}
-#kb-modal h2{font-size:1.1rem;margin:0 0 16px 0;display:flex;justify-content:space-between;align-items:center}
-#kb-modal h2 button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;padding:0 4px;line-height:1;border-radius:var(--radius)}
-#kb-modal h2 button:hover{color:var(--text);background:var(--bg)}
-#kb-modal .kb-list{display:grid;grid-template-columns:auto 1fr;gap:10px 20px;align-items:center}
-#kb-modal .kb-key{display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.78rem;font-family:'JetBrains Mono','SF Mono','Fira Code',monospace;color:var(--text);line-height:1.4}
-#kb-modal .kb-desc{color:var(--muted);font-size:0.85rem}
-    </style>
 </head>
 <body{{if .MonoFont}} style="font-family:'JetBrains Mono',monospace"{{end}}>
     <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -38,7 +27,7 @@
             <a href="/rules"><i data-lucide="git-branch" class="nav-icon" aria-hidden="true"></i> Rules</a>
             <a href="/settings"><i data-lucide="settings" class="nav-icon" aria-hidden="true"></i> Settings</a>
             <form method="POST" action="/logout" style="display:inline;margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}"><button type="submit" class="nav-btn"><i data-lucide="log-out" class="nav-icon" aria-hidden="true"></i> Logout</button></form>
-            <a href="#" style="font-size:0.85rem;padding:0" onclick="toggleTheme(this);return false" aria-label="Toggle dark/light mode">
+            <a href="#" id="theme-toggle" style="font-size:0.85rem;padding:0" aria-label="Toggle dark/light mode">
                 <span class="theme-icon" aria-hidden="true"><i data-lucide="moon" class="nav-icon"></i></span>
             </a>
         </div>
@@ -66,10 +55,10 @@ document.body.addEventListener('htmx:sendError',function(){var t=document.create
 document.body.addEventListener('showToast',function(e){var t=document.createElement('div');t.className='toast toast-'+e.detail.type;t.textContent=e.detail.message;t.onclick=function(){t.remove()};document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},5000)});
 (function(){var seq='',to=null,nav={d:'/dashboard',a:'/activity',r:'/rules',s:'/stats',t:'/settings'};document.addEventListener('keydown',function(e){if(e.ctrlKey||e.altKey||e.metaKey)return;var t=e.target;if(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable)return;if(e.key==='?'){e.preventDefault();var o=document.getElementById('kb-modal-overlay');if(o)o.classList.add('open');seq='';return}if(e.key==='Escape'){var o=document.getElementById('kb-modal-overlay');if(o&&o.classList.contains('open')){o.classList.remove('open');e.preventDefault()}seq='';if(to){clearTimeout(to);to=null}return}if(e.key==='g'){seq='g';if(to)clearTimeout(to);to=setTimeout(function(){seq='';to=null},1500);return}if(seq==='g'&&nav[e.key]){e.preventDefault();if(to){clearTimeout(to);to=null}window.location.href=nav[e.key];seq='';return}seq=''})})();
 </script>
-<div id="kb-modal-overlay" onclick="if(event.target===this)this.classList.remove('open')" role="dialog" aria-modal="true" aria-labelledby="kb-modal-title">
+<div id="kb-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="kb-modal-title">
     <div id="kb-modal">
         <h2 id="kb-modal-title">Keyboard Shortcuts
-            <button onclick="document.getElementById('kb-modal-overlay').classList.remove('open')" aria-label="Close">&times;</button>
+            <button id="kb-close" aria-label="Close">&times;</button>
         </h2>
         <div class="kb-list">
             <span><span class="kb-key">?</span></span>
@@ -89,5 +78,75 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
         </div>
     </div>
 </div>
+<script>
+(function(){
+  var d = document;
+  var themeLinkEl = d.getElementById('theme-toggle');
+  if (themeLinkEl) themeLinkEl.addEventListener('click', function(e){ e.preventDefault(); toggleTheme(this); });
+  var kb = d.getElementById('kb-modal-overlay');
+  var kbClose = d.getElementById('kb-close');
+  if (kb) kb.addEventListener('click', function(e){ if (e.target === kb) kb.classList.remove('open'); });
+  if (kbClose) kbClose.addEventListener('click', function(){ if (kb) kb.classList.remove('open'); });
+
+  d.addEventListener('change', function(e){
+    var t = e.target;
+    if (!t) return;
+    if (t.classList && t.classList.contains('auto-submit') && t.form) { t.form.submit(); return; }
+    if (t.name === 'cond_field' && window.onFieldChange) { window.onFieldChange(t); return; }
+    if (t.name === 'action_type' && window.updateActionInput) { window.updateActionInput(t); return; }
+    if (t.id === 'theme-family' && window.setThemeFamily) { window.setThemeFamily(t.value); return; }
+  });
+
+  d.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var rm = t.closest('.remove-row');
+    if (rm) { var row = rm.closest('.condition-row, .action-row'); if (row) row.remove(); return; }
+    var toast = t.closest('.toast');
+    if (toast) { toast.remove(); return; }
+    var vt = t.closest('[data-view-toggle]');
+    if (vt && window.toggleView) { window.toggleView(vt.getAttribute('data-view-toggle'), vt.getAttribute('data-view')); return; }
+    if (t.closest('#apply-toggle')) { var f = d.getElementById('apply-form'); if (f) f.style.display = (f.style.display === 'none' || !f.style.display) ? 'flex' : 'none'; return; }
+    if (t.closest('#rule-search-clear')) { var ri = d.getElementById('rule-search'); if (ri) { ri.value = ''; ri.dispatchEvent(new Event('input')); ri.focus(); } return; }
+    if (t.closest('#activity-search-clear')) { var ai = d.getElementById('activity-search'); if (ai) { ai.value = ''; if (window.htmx) htmx.trigger(ai, 'keyup'); ai.focus(); } return; }
+    if (t.closest('#gen-webhook-secret')) {
+      var form = t.closest('form');
+      if (form && form.webhook_secret) {
+        var arr = new Uint8Array(32);
+        crypto.getRandomValues(arr);
+        form.webhook_secret.value = Array.from(arr, function(b){ return b.toString(16).padStart(2, '0'); }).join('');
+      }
+      return;
+    }
+    var cp = t.closest('[data-copy]');
+    if (cp) { if (navigator.clipboard) navigator.clipboard.writeText(cp.getAttribute('data-copy')); return; }
+    var sn = t.closest('[data-snippet]');
+    if (sn) {
+      d.querySelectorAll('.mcp-config-snippet').forEach(function(el){ el.style.display = 'none'; });
+      var target = d.getElementById(sn.getAttribute('data-snippet'));
+      if (target) target.style.display = 'block';
+      return;
+    }
+    if (t.closest('#add-condition') && window.addCondition) { window.addCondition(); return; }
+    if (t.closest('#add-action') && window.addAction) { window.addAction(); return; }
+    if (t.closest('#seed-contacts')) { var st = d.getElementById('seed-toast'); if (st) st.innerHTML = '<div class="toast">Scanning folders...</div>'; return; }
+  });
+
+  d.addEventListener('input', function(e){
+    var t = e.target;
+    if (t && t.id === 'activity-search') {
+      var b = t.parentNode && t.parentNode.querySelector('.search-clear');
+      if (b) b.classList.toggle('visible', t.value.length > 0);
+    }
+  });
+
+  document.body.addEventListener('htmx:afterRequest', function(e){
+    var el = e.detail && e.detail.elt;
+    if (!el) return;
+    if (el.id === 'activity-refresh' && e.detail.successful) { if (window.htmx) htmx.trigger(document.body, 'showToast', {type: 'success', message: 'Activity refreshed'}); }
+    if (el.id === 'seed-contacts' && e.detail.failed) { var st = d.getElementById('seed-toast'); if (st) st.innerHTML = '<div class="toast toast-error">Contact seeding failed</div>'; }
+  });
+})();
+</script>
 </body>
 </html>

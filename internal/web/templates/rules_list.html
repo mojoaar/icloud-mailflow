@@ -4,7 +4,7 @@
 <h1 style="margin:0">Rules</h1>
 <div style="display:flex;gap:8px">
     <a href="/rules/new" class="btn btn-primary"><i data-lucide="plus" data-size="14"></i> New Rule</a>
-    <button class="btn" onclick="var f=document.getElementById('apply-form');if(f.style.display==='none'){f.style.display='flex'}else{f.style.display='none'}">Apply to Folder</button>
+    <button class="btn" id="apply-toggle">Apply to Folder</button>
 </div>
 </div>
 
@@ -12,7 +12,7 @@
 <div style="margin-top:12px;margin-bottom:8px">
     <div class="search-wrapper">
         <input type="text" id="rule-search" placeholder="Search rules by name, description, or condition value..." style="width:100%" autocomplete="off" aria-label="Search rules"{{if .Search}} value="{{.Search}}"{{end}}>
-        <button class="search-clear" id="rule-search-clear" onclick="var i=document.getElementById('rule-search');i.value='';i.dispatchEvent(new Event('input'));i.focus()" aria-label="Clear search">&#10005;</button>
+        <button class="search-clear" id="rule-search-clear" aria-label="Clear search">&#10005;</button>
     </div>
     <div id="rule-search-count" class="muted" style="font-size:0.8rem;margin-top:4px" aria-live="polite"></div>
 </div>

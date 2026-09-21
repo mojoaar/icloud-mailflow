@@ -88,7 +88,7 @@
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
             <button type="submit" class="btn btn-primary"><i data-lucide="save" data-size="14"></i> Save</button>
-            <button type="button" class="btn" onclick="var a=new Uint8Array(32);crypto.getRandomValues(a);this.form.webhook_secret.value=Array.from(a,b=>b.toString(16).padStart(2,'0')).join('')"><i data-lucide="key" data-size="14"></i> Generate</button>
+            <button type="button" class="btn" id="gen-webhook-secret"><i data-lucide="key" data-size="14"></i> Generate</button>
         </div>
     </form>
 </div>
@@ -134,13 +134,13 @@
     <form method="POST" action="/settings/backup/save"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label>
-                <input type="checkbox" name="backup_enabled" value="true" {{if .BackupEnabled}}checked{{end}} onchange="this.form.submit()">
+                <input type="checkbox" name="backup_enabled" value="true" class="auto-submit" {{if .BackupEnabled}}checked{{end}}>
                 Enable scheduled backup
             </label>
         </div>
         <div class="form-group">
             <label>Frequency</label>
-            <select name="backup_frequency" style="width:100%" onchange="this.form.submit()">
+            <select name="backup_frequency" class="auto-submit" style="width:100%">
                 <option value="weekly" {{if eq .BackupFrequency "weekly"}}selected{{end}}>Weekly</option>
                 <option value="daily" {{if eq .BackupFrequency "daily"}}selected{{end}}>Daily</option>
                 <option value="monthly" {{if eq .BackupFrequency "monthly"}}selected{{end}}>Monthly</option>
@@ -148,7 +148,7 @@
         </div>
         <div class="form-group">
             <label>Recipient (defaults to your iCloud email)</label>
-            <input type="email" name="backup_recipient" value="{{.BackupRecipient}}" placeholder="{{.IMAPEmail}}" style="width:100%" onchange="this.form.submit()">
+            <input type="email" name="backup_recipient" value="{{.BackupRecipient}}" placeholder="{{.IMAPEmail}}" class="auto-submit" style="width:100%">
         </div>
     </form>
     <div class="flex-row">
@@ -179,7 +179,7 @@
         <label>API Key</label>
         <div style="display:flex;gap:8px;align-items:center">
             <code style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-size:0.8rem;word-break:break-all;flex:1">{{.MCPAPIKey}}</code>
-            <button type="button" class="btn" onclick="navigator.clipboard.writeText('{{.MCPAPIKey}}')" style="white-space:nowrap"><i data-lucide="clipboard" data-size="14"></i> Copy</button>
+            <button type="button" class="btn" data-copy="{{.MCPAPIKey}}" style="white-space:nowrap"><i data-lucide="clipboard" data-size="14"></i> Copy</button>
             <form method="POST" action="/settings/mcp/regenerate" style="margin:0"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <button type="submit" class="btn" style="white-space:nowrap"><i data-lucide="refresh-cw" data-size="14"></i> Regenerate</button>
             </form>
@@ -192,9 +192,9 @@
     <div class="form-group" style="margin-top:16px">
         <label style="margin-bottom:8px">Platform Config</label>
         <div style="display:flex;gap:4px;margin-bottom:8px">
-            <button type="button" class="btn" role="tab" aria-selected="true" aria-controls="mcp-opencode" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-opencode').style.display='block'">OpenCode</button>
-            <button type="button" class="btn" role="tab" aria-selected="false" aria-controls="mcp-claude" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-claude').style.display='block'">Claude Code</button>
-            <button type="button" class="btn" role="tab" aria-selected="false" aria-controls="mcp-codex" onclick="document.querySelectorAll('.mcp-config-snippet').forEach(e=>e.style.display='none');document.getElementById('mcp-codex').style.display='block'">Codex</button>
+            <button type="button" class="btn" role="tab" aria-selected="true" aria-controls="mcp-opencode" data-snippet="mcp-opencode">OpenCode</button>
+            <button type="button" class="btn" role="tab" aria-selected="false" aria-controls="mcp-claude" data-snippet="mcp-claude">Claude Code</button>
+            <button type="button" class="btn" role="tab" aria-selected="false" aria-controls="mcp-codex" data-snippet="mcp-codex">Codex</button>
         </div>
         <div id="mcp-opencode" class="mcp-config-snippet" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
             <pre style="margin:0;font-size:0.8rem"><code>{
@@ -245,7 +245,7 @@
     <form method="POST" action="/settings/timezone"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label for="tz-input">Timezone</label>
-            <input type="text" id="tz-input" name="timezone" list="tz-list" value="{{.Timezone}}" placeholder="e.g. Europe/Copenhagen" autocomplete="off" style="width:100%" onchange="this.form.submit()">
+            <input type="text" id="tz-input" name="timezone" list="tz-list" value="{{.Timezone}}" placeholder="e.g. Europe/Copenhagen" autocomplete="off" class="auto-submit" style="width:100%">
             <datalist id="tz-list">{{range .Timezones}}<option value="{{.}}">{{end}}</datalist>
             {{if .TZError}}<p style="color:var(--red);font-size:0.8rem;margin-top:4px">Unknown timezone — not saved</p>{{end}}
         </div>
@@ -253,7 +253,7 @@
     <form method="POST" action="/settings/font" style="margin-top:12px"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
             <label>Font</label>
-            <select name="font" style="width:100%" onchange="this.form.submit()">
+            <select name="font" class="auto-submit" style="width:100%">
                 <option value="default" {{if not .MonoFont}}selected{{end}}>System Default</option>
                 <option value="mono" {{if .MonoFont}}selected{{end}}>JetBrains Mono</option>
             </select>
@@ -261,7 +261,7 @@
     </form>
     <div class="form-group" style="margin-top:12px">
         <label for="theme-family">Theme</label>
-        <select id="theme-family" style="width:100%" onchange="setThemeFamily(this.value)">
+        <select id="theme-family" style="width:100%">
             <option value="mailflow">Mailflow</option>
             <option value="ayu">Ayu</option>
             <option value="catppuccin">Catppuccin</option>
