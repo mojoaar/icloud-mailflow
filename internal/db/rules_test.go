@@ -382,3 +382,36 @@ func TestListHydratesMultipleRules(t *testing.T) {
 		t.Errorf("rule two actions = %+v", two.Actions)
 	}
 }
+
+func TestEnsureCatchAllIdempotent(t *testing.T) {
+	d := NewTestDB(t)
+	repo := NewRulesRepo(d)
+	if err := repo.EnsureCatchAll(); err != nil {
+		t.Fatalf("EnsureCatchAll: %v", err)
+	}
+	rules, _ := repo.List()
+	var id int64
+	for _, r := range rules {
+		if r.Name == "_catch_all" {
+			id = r.ID
+		}
+	}
+	if id == 0 {
+		t.Fatal("catch-all not created")
+	}
+	first, _ := repo.Get(id)
+	if len(first.Actions) != 1 {
+		t.Fatalf("actions = %d, want 1", len(first.Actions))
+	}
+
+	if err := repo.EnsureCatchAll(); err != nil {
+		t.Fatalf("EnsureCatchAll 2: %v", err)
+	}
+	second, _ := repo.Get(id)
+	if len(second.Actions) != 1 {
+		t.Errorf("actions = %d, want 1 after second call", len(second.Actions))
+	}
+	if second.Actions[0].ID != first.Actions[0].ID {
+		t.Error("catch-all action row was churned")
+	}
+}
