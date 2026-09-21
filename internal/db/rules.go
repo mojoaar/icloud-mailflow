@@ -386,11 +386,14 @@ func (r *RulesRepo) EnsureCatchAll() error {
 		if _, err := tx.Exec(`DELETE FROM condition_groups WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all"); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`DELETE FROM actions WHERE rule_id = (SELECT id FROM rules WHERE name = ?)`, "_catch_all"); err != nil {
+		var actionCount int
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM actions WHERE rule_id = (SELECT id FROM rules WHERE name = ?) AND type = 'move_to_folder'`, "_catch_all").Scan(&actionCount); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`INSERT INTO actions (rule_id, type, value) VALUES ((SELECT id FROM rules WHERE name = ?), 'move_to_folder', 'INBOX')`, "_catch_all"); err != nil {
-			return err
+		if actionCount == 0 {
+			if _, err := tx.Exec(`INSERT INTO actions (rule_id, type, value) VALUES ((SELECT id FROM rules WHERE name = ?), 'move_to_folder', 'INBOX')`, "_catch_all"); err != nil {
+				return err
+			}
 		}
 		if _, err := tx.Exec(`UPDATE rules SET priority = 999 WHERE name = ?`, "_catch_all"); err != nil {
 			return err
