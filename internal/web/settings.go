@@ -447,16 +447,40 @@ func rulesImportHandler(repo *db.RulesRepo) http.HandlerFunc {
 			return
 		}
 
-		imported, err := repo.Import(data)
+		preview, err := repo.PreviewImport(data)
 		if err != nil {
 			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Invalid rules file"})
 			return
 		}
-		if imported == 0 {
-			renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "No rules to import"})
+		renderPartial(w, "rules_import_preview", map[string]any{
+			"Preview":   preview,
+			"RulesData": string(data),
+		})
+	}
+}
+
+func rulesImportConfirmHandler(repo *db.RulesRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		data := r.FormValue("rules_data")
+		if data == "" {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "No rules to import"})
 			return
 		}
-		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": fmt.Sprintf("Imported %d rules", imported)})
+		report, err := repo.ImportWithReport([]byte(data), db.ImportOptions{})
+		if err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Import failed"})
+			return
+		}
+		if report.Imported == 0 {
+			renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "No new rules to import"})
+			return
+		}
+		msg := fmt.Sprintf("Imported %d rules", report.Imported)
+		if report.Skipped > 0 {
+			msg += fmt.Sprintf(", skipped %d duplicate(s)", report.Skipped)
+		}
+		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": msg})
 	}
 }
 

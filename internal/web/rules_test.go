@@ -252,6 +252,18 @@ func TestRulesImportHandler(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", rec.Code)
 	}
+	if preview := rec.Body.String(); !strings.Contains(preview, "Imported Rule") {
+		t.Fatalf("preview should list the rule, got %q", preview)
+	}
+
+	form := url.Values{"rules_data": {jsonBody}}
+	req2 := httptest.NewRequest("POST", "/settings/rules/import/confirm", strings.NewReader(form.Encode()))
+	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec2 := httptest.NewRecorder()
+	rulesImportConfirmHandler(repo).ServeHTTP(rec2, req2)
+	if rec2.Code != http.StatusOK {
+		t.Fatalf("confirm status = %d, want 200", rec2.Code)
+	}
 
 	rules, _ := repo.List()
 	found := false

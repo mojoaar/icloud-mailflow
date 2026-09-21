@@ -3,6 +3,7 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type RuleConditionExport struct {
@@ -105,49 +106,185 @@ func MarshalExport(rules []RuleExport) ([]byte, error) {
 	return json.MarshalIndent(RulesExport{Rules: rules}, "", "  ")
 }
 
-// Import creates rules from the canonical envelope or a bare JSON array. A
-// missing "enabled" key defaults to true.
-func (r *RulesRepo) Import(data []byte) (int, error) {
+// ImportOptions controls duplicate handling during import.
+type ImportOptions struct {
+	// OnDuplicate is "skip" (default), "rename", or "error".
+	OnDuplicate string
+}
+
+// RuleError describes a validation problem with one rule.
+type RuleError struct {
+	Index   int    `json:"index"`
+	Name    string `json:"name"`
+	Message string `json:"message"`
+}
+
+// ImportReport summarises an import.
+type ImportReport struct {
+	Imported int         `json:"imported"`
+	Skipped  int         `json:"skipped"`
+	Warnings []string    `json:"warnings,omitempty"`
+	Errors   []RuleError `json:"errors,omitempty"`
+}
+
+// ImportPreview is a non-destructive parse + validation of an import file.
+type ImportPreview struct {
+	Rules     []RuleExport `json:"rules"`
+	Duplicate []bool       `json:"duplicate"`
+	Report    ImportReport `json:"report"`
+}
+
+func parseRulesExport(data []byte) ([]RuleExport, error) {
 	var wrapped rulesImport
 	var inputs []ruleImport
 	if err := json.Unmarshal(data, &wrapped); err == nil && wrapped.Rules != nil {
 		inputs = wrapped.Rules
 	} else if err := json.Unmarshal(data, &inputs); err != nil {
-		return 0, fmt.Errorf("parse rules: %w", err)
+		return nil, fmt.Errorf("parse rules: %w", err)
+	}
+	out := make([]RuleExport, 0, len(inputs))
+	for _, in := range inputs {
+		out = append(out, in.toExport())
+	}
+	return out, nil
+}
+
+func (r *RulesRepo) existingNames() (map[string]bool, error) {
+	rules, err := r.List()
+	if err != nil {
+		return nil, err
+	}
+	names := make(map[string]bool, len(rules))
+	for _, rule := range rules {
+		names[strings.ToLower(strings.TrimSpace(rule.Name))] = true
+	}
+	return names, nil
+}
+
+// PreviewImport parses and validates a file without importing anything.
+func (r *RulesRepo) PreviewImport(data []byte) (ImportPreview, error) {
+	rules, err := parseRulesExport(data)
+	if err != nil {
+		return ImportPreview{}, err
+	}
+	existing, err := r.existingNames()
+	if err != nil {
+		return ImportPreview{}, err
 	}
 
-	imported := 0
-	for _, in := range inputs {
-		re := in.toExport()
-		rule := &Rule{
-			Name:          re.Name,
-			Description:   re.Description,
-			Priority:      re.Priority,
-			Enabled:       re.Enabled,
-			ScheduleDays:  re.ScheduleDays,
-			ScheduleStart: re.ScheduleStart,
-			ScheduleEnd:   re.ScheduleEnd,
+	preview := ImportPreview{Rules: rules, Duplicate: make([]bool, len(rules))}
+	seen := map[string]bool{}
+	for i, re := range rules {
+		for _, m := range ValidateRuleExport(re) {
+			preview.Report.Errors = append(preview.Report.Errors, RuleError{Index: i, Name: re.Name, Message: m})
 		}
-		if len(re.Conditions) > 0 {
-			op := re.Operator
-			if op != "AND" && op != "OR" {
-				op = "OR"
-			}
-			g := ConditionGroup{Operator: op}
-			for _, c := range re.Conditions {
-				g.Conditions = append(g.Conditions, Condition{
-					Field: c.Field, Operator: c.Operator, Value: c.Value,
-				})
-			}
-			rule.Groups = []ConditionGroup{g}
-		}
-		for _, a := range re.Actions {
-			rule.Actions = append(rule.Actions, Action{Type: a.Type, Value: a.Value})
-		}
-		if err := r.Create(rule); err != nil {
-			return imported, err
-		}
-		imported++
+		n := strings.ToLower(strings.TrimSpace(re.Name))
+		preview.Duplicate[i] = existing[n] || seen[n]
+		seen[n] = true
 	}
-	return imported, nil
+	return preview, nil
+}
+
+// ImportWithReport validates the whole file (rejecting it if any rule is
+// invalid) and imports the rest, applying the duplicate policy.
+func (r *RulesRepo) ImportWithReport(data []byte, opts ImportOptions) (ImportReport, error) {
+	report := ImportReport{}
+	rules, err := parseRulesExport(data)
+	if err != nil {
+		return report, err
+	}
+
+	for i, re := range rules {
+		for _, m := range ValidateRuleExport(re) {
+			report.Errors = append(report.Errors, RuleError{Index: i, Name: re.Name, Message: m})
+		}
+	}
+	if len(report.Errors) > 0 {
+		msgs := make([]string, 0, len(report.Errors))
+		for _, e := range report.Errors {
+			msgs = append(msgs, fmt.Sprintf("%s: %s", e.Name, e.Message))
+		}
+		return report, fmt.Errorf("import rejected: %s", strings.Join(msgs, "; "))
+	}
+
+	existing, err := r.existingNames()
+	if err != nil {
+		return report, err
+	}
+	policy := opts.OnDuplicate
+	if policy == "" {
+		policy = "skip"
+	}
+
+	seen := map[string]bool{}
+	for i, re := range rules {
+		name := strings.TrimSpace(re.Name)
+		key := strings.ToLower(name)
+		dup := existing[key] || seen[key]
+		if dup {
+			switch policy {
+			case "error":
+				report.Errors = append(report.Errors, RuleError{Index: i, Name: name, Message: "duplicate rule name"})
+				continue
+			case "rename":
+				base := name
+				for n := 2; existing[strings.ToLower(name)] || seen[strings.ToLower(name)]; n++ {
+					name = fmt.Sprintf("%s (%d)", base, n)
+				}
+				key = strings.ToLower(name)
+			default: // skip
+				report.Skipped++
+				report.Warnings = append(report.Warnings, fmt.Sprintf("skipped duplicate rule %q", name))
+				continue
+			}
+		}
+		if err := r.Create(ruleExportToRule(re, name)); err != nil {
+			return report, err
+		}
+		seen[key] = true
+		report.Imported++
+	}
+	if policy == "error" && len(report.Errors) > 0 {
+		return report, fmt.Errorf("import rejected: %d duplicate name(s)", len(report.Errors))
+	}
+	return report, nil
+}
+
+func ruleExportToRule(re RuleExport, name string) *Rule {
+	rule := &Rule{
+		Name:          name,
+		Description:   re.Description,
+		Priority:      re.Priority,
+		Enabled:       re.Enabled,
+		ScheduleDays:  re.ScheduleDays,
+		ScheduleStart: re.ScheduleStart,
+		ScheduleEnd:   re.ScheduleEnd,
+	}
+	if len(re.Conditions) > 0 {
+		op := re.Operator
+		if op != "AND" && op != "OR" {
+			op = "OR"
+		}
+		g := ConditionGroup{Operator: op}
+		for _, c := range re.Conditions {
+			g.Conditions = append(g.Conditions, Condition{
+				Field: c.Field, Operator: c.Operator, Value: c.Value,
+			})
+		}
+		rule.Groups = []ConditionGroup{g}
+	}
+	for _, a := range re.Actions {
+		rule.Actions = append(rule.Actions, Action{Type: a.Type, Value: a.Value})
+	}
+	return rule
+}
+
+// Import creates rules from the canonical envelope or a bare JSON array. A
+// missing "enabled" key defaults to true.
+func (r *RulesRepo) Import(data []byte) (int, error) {
+	report, err := r.ImportWithReport(data, ImportOptions{})
+	if err != nil {
+		return report.Imported, err
+	}
+	return report.Imported, nil
 }

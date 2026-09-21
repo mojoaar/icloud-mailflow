@@ -143,6 +143,9 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid input: %v", err)), nil
 		}
+		if msgs := db.ValidateRule(rule); len(msgs) > 0 {
+			return mcp.NewToolResultError("invalid rule: " + strings.Join(msgs, "; ")), nil
+		}
 		if v, ok := args["schedule_days"]; ok {
 			rule.ScheduleDays = v.(string)
 		}
@@ -526,18 +529,27 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 	})
 
 	s.AddTool(mcp.NewTool("import_rules",
-		mcp.WithDescription("Import rules from JSON array"),
-		mcp.WithString("rules", mcp.Required(), mcp.Description("JSON array of rule objects in the same format as backup_rules output")),
+		mcp.WithDescription("Validate and import rules from a JSON array or the backup envelope. Invalid files are rejected; duplicate names are skipped."),
+		mcp.WithString("rules", mcp.Required(), mcp.Description("JSON array of rule objects, or {\"rules\":[...]}, in the backup_rules format")),
+		mcp.WithBoolean("dry_run", mcp.Description("Validate and preview without importing (default false)")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		rulesJSON, err := requiredStringArg(req.GetArguments(), "rules")
+		args := req.GetArguments()
+		rulesJSON, err := requiredStringArg(args, "rules")
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		imported, err := rulesRepo.Import([]byte(rulesJSON))
+		if v, ok := args["dry_run"].(bool); ok && v {
+			preview, err := rulesRepo.PreviewImport([]byte(rulesJSON))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			return resultJSON(preview)
+		}
+		report, err := rulesRepo.ImportWithReport([]byte(rulesJSON), db.ImportOptions{})
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		return resultJSON(map[string]int{"imported": imported})
+		return resultJSON(report)
 	})
 
 	s.AddTool(mcp.NewTool("clear_activity",
