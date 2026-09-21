@@ -40,25 +40,53 @@ var daysRe = regexp.MustCompile(`^(\d+) days$`)
 // empty slice means the rule is valid.
 func ValidateRuleExport(re RuleExport) []string {
 	var errs []string
+	var total int
 	if strings.TrimSpace(re.Name) == "" {
 		errs = append(errs, "name is required")
 	}
 	if re.Operator != "" && !validGroupOperators[re.Operator] {
 		errs = append(errs, fmt.Sprintf("unknown group operator %q", re.Operator))
 	}
-	if len(re.Conditions) == 0 {
-		errs = append(errs, "rule has no conditions")
+	if len(re.Groups) > 0 {
+		for _, g := range re.Groups {
+			validateGroupExport(g, 1, &total, &errs)
+		}
+	} else {
+		for i, c := range re.Conditions {
+			errs = append(errs, validateCondition(i, c)...)
+		}
+		total = len(re.Conditions)
+	}
+	if total == 0 {
+		// No conditions is valid: the rule matches every message (optionally
+		// limited by its schedule), like the built-in catch-all.
+	} else if total > 50 {
+		errs = append(errs, "too many conditions (max 50)")
 	}
 	if msg := validateSchedule(re); msg != "" {
 		errs = append(errs, msg)
-	}
-	for i, c := range re.Conditions {
-		errs = append(errs, validateCondition(i, c)...)
 	}
 	for i, a := range re.Actions {
 		errs = append(errs, validateAction(i, a)...)
 	}
 	return errs
+}
+
+func validateGroupExport(g RuleGroupExport, depth int, total *int, errs *[]string) {
+	if depth > 5 {
+		*errs = append(*errs, "group nesting too deep (max 5)")
+		return
+	}
+	if g.Operator != "" && !validGroupOperators[g.Operator] {
+		*errs = append(*errs, fmt.Sprintf("unknown group operator %q", g.Operator))
+	}
+	for i, c := range g.Conditions {
+		*total += 1
+		*errs = append(*errs, validateCondition(i, c)...)
+	}
+	for _, sub := range g.Groups {
+		validateGroupExport(sub, depth+1, total, errs)
+	}
 }
 
 func validateCondition(i int, c RuleConditionExport) []string {

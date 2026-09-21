@@ -735,3 +735,31 @@ func TestApplyJobStatusConcurrent(t *testing.T) {
 	}()
 	wg.Wait()
 }
+
+func TestParseConditionsNested(t *testing.T) {
+	form := url.Values{
+		"group_id":     {"g0", "g0-1"},
+		"group_parent": {"", "g0"},
+		"group_op":     {"AND", "OR"},
+		"cond_field":   {"has_attachment", "from"},
+		"cond_op":      {"exists", "contains"},
+		"cond_value":   {"", "@x"},
+		"cond_group":   {"g0", "g0-1"},
+	}
+	req := httptest.NewRequest("POST", "/rules", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rule := &db.Rule{}
+	if err := parseConditions(req, rule); err != nil {
+		t.Fatalf("parseConditions: %v", err)
+	}
+	if len(rule.Groups) != 1 {
+		t.Fatalf("root groups = %d, want 1", len(rule.Groups))
+	}
+	root := rule.Groups[0]
+	if root.Operator != "AND" || len(root.Conditions) != 1 {
+		t.Errorf("root = %+v", root)
+	}
+	if len(root.Groups) != 1 || root.Groups[0].Operator != "OR" || len(root.Groups[0].Conditions) != 1 {
+		t.Errorf("nested = %+v", root.Groups)
+	}
+}

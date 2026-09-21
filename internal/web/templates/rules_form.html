@@ -51,46 +51,14 @@
     </div>
 
     <h2>Conditions</h2>
-    <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
-        <span style="font-size:0.85rem;color:var(--muted)">Match</span>
-        <select name="cond_operator" style="width:90px">
-            <option value="AND" {{if ne .CondOperator "OR"}}selected{{end}}>ALL</option>
-            <option value="OR" {{if eq .CondOperator "OR"}}selected{{end}}>ANY</option>
-        </select>
-        <span style="font-size:0.85rem;color:var(--muted)">conditions</span>
-    </div>
     <div class="card" id="conditions">
-        {{range $gi, $group := .Rule.Groups}}
-        {{range $ci, $cond := $group.Conditions}}
-        <div class="condition-row" style="display:flex;gap:8px;margin-bottom:8px">
-            <select name="cond_field">
-                {{range $.Fields}}
-                <option value="{{.value}}" {{if or (eq $cond.Field .value) (and (eq .value "header") (hasPrefix $cond.Field "header:"))}}selected{{end}}>{{.label}}</option>
-                {{end}}
-            </select>
-            <input type="text" name="cond_header_name" placeholder="Header name" style="width:120px;{{if not (hasPrefix $cond.Field "header:")}}display:none{{end}}" value="{{if hasPrefix $cond.Field "header:"}}{{trimPrefix $cond.Field "header:"}}{{end}}">
-            <select name="cond_op" style="width:140px">
-                <option value="contains" {{if eq $cond.Operator "contains"}}selected{{end}}>contains</option>
-                <option value="not_contains" {{if eq $cond.Operator "not_contains"}}selected{{end}}>doesn't contain</option>
-                <option value="equals" {{if eq $cond.Operator "equals"}}selected{{end}}>equals</option>
-                <option value="not_equals" {{if eq $cond.Operator "not_equals"}}selected{{end}}>doesn't equal</option>
-                <option value="starts_with" {{if eq $cond.Operator "starts_with"}}selected{{end}}>starts with</option>
-                <option value="ends_with" {{if eq $cond.Operator "ends_with"}}selected{{end}}>ends with</option>
-                <option value="matches_regex" {{if eq $cond.Operator "matches_regex"}}selected{{end}}>matches regex</option>
-                <option value="exists" {{if eq $cond.Operator "exists"}}selected{{end}}>exists</option>
-                <option value="not_exists" {{if eq $cond.Operator "not_exists"}}selected{{end}}>doesn't exist</option>
-                <option value="older_than" {{if eq $cond.Operator "older_than"}}selected{{end}}>older than (days)</option>
-                <option value="newer_than" {{if eq $cond.Operator "newer_than"}}selected{{end}}>newer than (days)</option>
-                <option value="before" {{if eq $cond.Operator "before"}}selected{{end}}>before (date)</option>
-                <option value="after" {{if eq $cond.Operator "after"}}selected{{end}}>after (date)</option>
-            </select>
-            <input type="text" name="cond_value" value="{{$cond.Value}}" placeholder="value" list="contact-list" style="flex:1">
-            <button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>
-        </div>
-        {{end}}
+        {{$groups := groupViews .Rule.Groups}}
+        {{if $groups}}
+            {{range $groups}}{{template "condition_group" .}}{{end}}
+        {{else}}
+            {{template "condition_group" (rootGroupView)}}
         {{end}}
     </div>
-    <button type="button" class="btn mt-1" id="add-condition">+ Add Condition</button>
 
     <h2 class="mt-3">Actions</h2>
     <div class="card" id="actions">
@@ -136,6 +104,57 @@
     </datalist>
     <button type="button" class="btn mt-1" id="add-action">+ Add Action</button>
 
+    <template id="cond-row-tpl">
+        <div class="condition-row" style="display:flex;gap:8px;margin-bottom:8px">
+            <input type="hidden" name="cond_group" value="">
+            <select name="cond_field">
+                <option value="from">From</option>
+                <option value="to">To</option>
+                <option value="cc">CC</option>
+                <option value="subject">Subject</option>
+                <option value="body">Body</option>
+                <option value="has_attachment">Has Attachment</option>
+                <option value="content_type">Content Type</option>
+                <option value="header">Header:</option>
+            </select>
+            <input type="text" name="cond_header_name" placeholder="Header name" style="width:120px;display:none" value="">
+            <select name="cond_op" style="width:140px">
+                <option value="contains">contains</option>
+                <option value="not_contains">doesn't contain</option>
+                <option value="equals">equals</option>
+                <option value="not_equals">doesn't equal</option>
+                <option value="starts_with">starts with</option>
+                <option value="ends_with">ends with</option>
+                <option value="matches_regex">matches regex</option>
+                <option value="exists">exists</option>
+                <option value="not_exists">doesn't exist</option>
+                <option value="older_than">older than (days)</option>
+                <option value="newer_than">newer than (days)</option>
+                <option value="before">before (date)</option>
+                <option value="after">after (date)</option>
+            </select>
+            <input type="text" name="cond_value" placeholder="value" list="contact-list" style="flex:1" value="">
+            <button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>
+        </div>
+    </template>
+    <template id="group-tpl">
+        <div class="group-block" data-group="" style="border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:8px">
+            <input type="hidden" name="group_id" value="">
+            <input type="hidden" name="group_parent" value="">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+                <select name="group_op" style="width:90px"><option value="AND">ALL</option><option value="OR" selected>ANY</option></select>
+                <span class="muted" style="font-size:0.8rem">of these</span>
+                <button type="button" class="btn remove-group" data-group="" style="font-size:0.75rem">Remove group</button>
+            </div>
+            <div class="group-conds"></div>
+            <div class="group-children"></div>
+            <div style="display:flex;gap:8px">
+                <button type="button" class="btn" data-add-condition="" style="font-size:0.75rem">+ Condition</button>
+                <button type="button" class="btn" data-add-group="" style="font-size:0.75rem">+ Group</button>
+            </div>
+        </div>
+    </template>
+
 </form>
 
 {{if .Rule.ID}}
@@ -164,16 +183,32 @@
 </div>
 
 <script nonce="{{.Nonce}}">
-function addCondition() {
-    var div = document.createElement('div');
-    div.className = 'condition-row';
-    div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
-    div.innerHTML = '<select name="cond_field">{{range .Fields}}<option value="{{.value}}">{{.label}}</option>{{end}}</select>' +
-        '<input type="text" name="cond_header_name" placeholder="Header name" style="width:120px;display:none">' +
-        '<select name="cond_op" style="width:140px"><option value="contains">contains</option><option value="not_contains">doesn\'t contain</option><option value="equals">equals</option><option value="not_equals">doesn\'t equal</option><option value="starts_with">starts with</option><option value="ends_with">ends with</option><option value="matches_regex">matches regex</option><option value="exists">exists</option><option value="not_exists">doesn\'t exist</option><option value="older_than">older than (days)</option><option value="newer_than">newer than (days)</option><option value="before">before (date)</option><option value="after">after (date)</option></select>' +
-        '<input type="text" name="cond_value" placeholder="value" list="contact-list" style="flex:1">' +
-        '<button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>';
-    document.getElementById('conditions').appendChild(div);
+var groupSeq = 0;
+function newGroupPath(parent) {
+    groupSeq++;
+    return (parent ? parent + '-' : 'g') + Date.now().toString(36) + groupSeq;
+}
+function addCondition(path) {
+    var block = document.querySelector('.group-block[data-group="' + path + '"]');
+    if (!block) return;
+    var tpl = document.getElementById('cond-row-tpl');
+    var row = tpl.content.firstElementChild.cloneNode(true);
+    row.querySelector('input[name="cond_group"]').value = path;
+    block.querySelector('.group-conds').appendChild(row);
+}
+function addGroup(path) {
+    var block = document.querySelector('.group-block[data-group="' + path + '"]');
+    if (!block) return;
+    var tpl = document.getElementById('group-tpl');
+    var g = tpl.content.firstElementChild.cloneNode(true);
+    var np = newGroupPath(path);
+    g.setAttribute('data-group', np);
+    g.querySelector('input[name="group_id"]').value = np;
+    g.querySelector('input[name="group_parent"]').value = path;
+    g.querySelector('.remove-group').setAttribute('data-group', np);
+    g.querySelector('[data-add-condition]').setAttribute('data-add-condition', np);
+    g.querySelector('[data-add-group]').setAttribute('data-add-group', np);
+    block.querySelector('.group-children').appendChild(g);
 }
 function addAction() {
     var div = document.createElement('div');
@@ -214,4 +249,63 @@ function onFieldChange(select) {
     if (hi) hi.style.display = select.value === 'header' ? '' : 'none';
 }
 </script>
+{{end}}
+
+{{define "condition_row"}}
+<div class="condition-row" style="display:flex;gap:8px;margin-bottom:8px">
+    <input type="hidden" name="cond_group" value="{{.Group}}">
+    <select name="cond_field">
+        <option value="from" {{if eq .Field "from"}}selected{{end}}>From</option>
+        <option value="to" {{if eq .Field "to"}}selected{{end}}>To</option>
+        <option value="cc" {{if eq .Field "cc"}}selected{{end}}>CC</option>
+        <option value="subject" {{if eq .Field "subject"}}selected{{end}}>Subject</option>
+        <option value="body" {{if eq .Field "body"}}selected{{end}}>Body</option>
+        <option value="has_attachment" {{if eq .Field "has_attachment"}}selected{{end}}>Has Attachment</option>
+        <option value="content_type" {{if eq .Field "content_type"}}selected{{end}}>Content Type</option>
+        <option value="header" {{if eq .Field "header"}}selected{{end}}>Header:</option>
+    </select>
+    <input type="text" name="cond_header_name" placeholder="Header name" style="width:120px;{{if ne .Field "header"}}display:none{{end}}" value="{{.HeaderName}}">
+    <select name="cond_op" style="width:140px">
+        <option value="contains" {{if eq .Operator "contains"}}selected{{end}}>contains</option>
+        <option value="not_contains" {{if eq .Operator "not_contains"}}selected{{end}}>doesn't contain</option>
+        <option value="equals" {{if eq .Operator "equals"}}selected{{end}}>equals</option>
+        <option value="not_equals" {{if eq .Operator "not_equals"}}selected{{end}}>doesn't equal</option>
+        <option value="starts_with" {{if eq .Operator "starts_with"}}selected{{end}}>starts with</option>
+        <option value="ends_with" {{if eq .Operator "ends_with"}}selected{{end}}>ends with</option>
+        <option value="matches_regex" {{if eq .Operator "matches_regex"}}selected{{end}}>matches regex</option>
+        <option value="exists" {{if eq .Operator "exists"}}selected{{end}}>exists</option>
+        <option value="not_exists" {{if eq .Operator "not_exists"}}selected{{end}}>doesn't exist</option>
+        <option value="older_than" {{if eq .Operator "older_than"}}selected{{end}}>older than (days)</option>
+        <option value="newer_than" {{if eq .Operator "newer_than"}}selected{{end}}>newer than (days)</option>
+        <option value="before" {{if eq .Operator "before"}}selected{{end}}>before (date)</option>
+        <option value="after" {{if eq .Operator "after"}}selected{{end}}>after (date)</option>
+    </select>
+    <input type="text" name="cond_value" value="{{.Value}}" placeholder="value" list="contact-list" style="flex:1">
+    <button type="button" class="btn remove-row" style="padding:2px 6px;font-size:0.75rem">×</button>
+</div>
+{{end}}
+
+{{define "condition_group"}}
+<div class="group-block" data-group="{{.Path}}" style="border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:8px">
+    <input type="hidden" name="group_id" value="{{.Path}}">
+    <input type="hidden" name="group_parent" value="{{.Parent}}">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <select name="group_op" style="width:90px">
+            <option value="AND" {{if eq .Operator "AND"}}selected{{end}}>ALL</option>
+            <option value="OR" {{if eq .Operator "OR"}}selected{{end}}>ANY</option>
+        </select>
+        <span class="muted" style="font-size:0.8rem">of these</span>
+        {{if .Parent}}<button type="button" class="btn remove-group" data-group="{{.Path}}" style="font-size:0.75rem">Remove group</button>{{end}}
+    </div>
+    <div class="group-conds">
+        {{range .Conditions}}{{template "condition_row" .}}{{end}}
+    </div>
+    <div class="group-children">
+        {{range .Children}}{{template "condition_group" .}}{{end}}
+    </div>
+    <div style="display:flex;gap:8px">
+        <button type="button" class="btn" data-add-condition="{{.Path}}" style="font-size:0.75rem">+ Condition</button>
+        <button type="button" class="btn" data-add-group="{{.Path}}" style="font-size:0.75rem">+ Group</button>
+    </div>
+</div>
 {{end}}

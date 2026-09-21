@@ -17,6 +17,13 @@ type RuleActionExport struct {
 	Value string `json:"value"`
 }
 
+// RuleGroupExport is a recursive AND/OR group.
+type RuleGroupExport struct {
+	Operator   string                `json:"operator"`
+	Conditions []RuleConditionExport `json:"conditions,omitempty"`
+	Groups     []RuleGroupExport     `json:"groups,omitempty"`
+}
+
 // RuleExport is the canonical, portable representation of a rule used by the
 // web export/import, the scheduled backup email, and the MCP tools.
 type RuleExport struct {
@@ -29,6 +36,7 @@ type RuleExport struct {
 	ScheduleStart string                `json:"schedule_start,omitempty"`
 	ScheduleEnd   string                `json:"schedule_end,omitempty"`
 	Conditions    []RuleConditionExport `json:"conditions,omitempty"`
+	Groups        []RuleGroupExport     `json:"groups,omitempty"`
 	Actions       []RuleActionExport    `json:"actions,omitempty"`
 }
 
@@ -85,20 +93,46 @@ func ruleToExport(rule Rule) RuleExport {
 		ScheduleStart: rule.ScheduleStart,
 		ScheduleEnd:   rule.ScheduleEnd,
 	}
-	if len(rule.Groups) > 0 {
+	if len(rule.Groups) == 1 && len(rule.Groups[0].Groups) == 0 {
 		re.Operator = rule.Groups[0].Operator
-	}
-	for _, g := range rule.Groups {
-		for _, c := range g.Conditions {
-			re.Conditions = append(re.Conditions, RuleConditionExport{
-				Field: c.Field, Operator: c.Operator, Value: c.Value,
-			})
+		for _, c := range rule.Groups[0].Conditions {
+			re.Conditions = append(re.Conditions, RuleConditionExport{Field: c.Field, Operator: c.Operator, Value: c.Value})
+		}
+	} else {
+		for _, g := range rule.Groups {
+			re.Groups = append(re.Groups, groupToExport(g))
 		}
 	}
 	for _, a := range rule.Actions {
 		re.Actions = append(re.Actions, RuleActionExport{Type: a.Type, Value: a.Value})
 	}
 	return re
+}
+
+func groupToExport(g ConditionGroup) RuleGroupExport {
+	ge := RuleGroupExport{Operator: g.Operator}
+	for _, c := range g.Conditions {
+		ge.Conditions = append(ge.Conditions, RuleConditionExport{Field: c.Field, Operator: c.Operator, Value: c.Value})
+	}
+	for _, sub := range g.Groups {
+		ge.Groups = append(ge.Groups, groupToExport(sub))
+	}
+	return ge
+}
+
+func groupToRule(g RuleGroupExport) ConditionGroup {
+	op := g.Operator
+	if op != "AND" && op != "OR" {
+		op = "OR"
+	}
+	out := ConditionGroup{Operator: op}
+	for _, c := range g.Conditions {
+		out.Conditions = append(out.Conditions, Condition{Field: c.Field, Operator: c.Operator, Value: c.Value})
+	}
+	for _, sub := range g.Groups {
+		out.Groups = append(out.Groups, groupToRule(sub))
+	}
+	return out
 }
 
 // MarshalExport renders rules as the canonical {"rules":[...]} envelope.
@@ -272,6 +306,10 @@ func ruleExportToRule(re RuleExport, name string) *Rule {
 			})
 		}
 		rule.Groups = []ConditionGroup{g}
+	} else if len(re.Groups) > 0 {
+		for _, g := range re.Groups {
+			rule.Groups = append(rule.Groups, groupToRule(g))
+		}
 	}
 	for _, a := range re.Actions {
 		rule.Actions = append(rule.Actions, Action{Type: a.Type, Value: a.Value})

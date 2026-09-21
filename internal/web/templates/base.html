@@ -127,8 +127,13 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
       if (target) target.style.display = 'block';
       return;
     }
-    if (t.closest('#add-condition') && window.addCondition) { window.addCondition(); return; }
     if (t.closest('#add-action') && window.addAction) { window.addAction(); return; }
+    var ac = t.closest('[data-add-condition]');
+    if (ac && window.addCondition) { window.addCondition(ac.getAttribute('data-add-condition')); return; }
+    var ag = t.closest('[data-add-group]');
+    if (ag && window.addGroup) { window.addGroup(ag.getAttribute('data-add-group')); return; }
+    var rg = t.closest('.remove-group');
+    if (rg) { var gb = rg.closest('.group-block'); if (gb) gb.remove(); return; }
     if (t.closest('#seed-contacts')) { var st = d.getElementById('seed-toast'); if (st) st.innerHTML = '<div class="toast">Scanning folders...</div>'; return; }
   });
 

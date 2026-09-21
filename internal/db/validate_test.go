@@ -28,7 +28,6 @@ func TestValidateRuleExport(t *testing.T) {
 		mut  func(*RuleExport)
 	}{
 		{"no name", func(r *RuleExport) { r.Name = "" }},
-		{"no conditions", func(r *RuleExport) { r.Conditions = nil }},
 		{"bad field", func(r *RuleExport) { r.Conditions[0].Field = "nope" }},
 		{"bad operator", func(r *RuleExport) { r.Conditions[0].Operator = "nope" }},
 		{"bad regex", func(r *RuleExport) { r.Conditions[0].Operator = "matches_regex"; r.Conditions[0].Value = "(" }},
@@ -101,12 +100,58 @@ func TestPreviewImportFlagsDuplicatesAndErrors(t *testing.T) {
 		t.Errorf("unexpected errors: %v", preview.Report.Errors)
 	}
 
-	bad, _ := MarshalExport([]RuleExport{{Name: "broken", Conditions: nil}})
+	bad, _ := MarshalExport([]RuleExport{{Name: "broken", Conditions: []RuleConditionExport{{Field: "from", Operator: "nope", Value: "x"}}}})
 	pbad, err := repo.PreviewImport(bad)
 	if err != nil {
 		t.Fatalf("PreviewImport bad: %v", err)
 	}
 	if len(pbad.Report.Errors) == 0 {
-		t.Error("expected validation errors for a rule with no conditions")
+		t.Error("expected validation errors for a rule with an unknown operator")
+	}
+}
+
+func TestNestedGroupRoundTrip(t *testing.T) {
+	src := NewRulesRepo(NewTestDB(t))
+	rule := &Rule{
+		Name: "nested", Enabled: true,
+		Groups: []ConditionGroup{
+			{Operator: "AND", Conditions: []Condition{{Field: "has_attachment", Operator: "exists"}}, Groups: []ConditionGroup{
+				{Operator: "OR", Conditions: []Condition{
+					{Field: "from", Operator: "contains", Value: "@a"},
+					{Field: "subject", Operator: "contains", Value: "inv"},
+				}},
+			}},
+		},
+		Actions: []Action{{Type: "move_to_folder", Value: "A"}},
+	}
+	if err := src.Create(rule); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	exported, err := src.Export()
+	if err != nil {
+		t.Fatalf("Export: %v", err)
+	}
+	data, err := MarshalExport(exported)
+	if err != nil {
+		t.Fatalf("MarshalExport: %v", err)
+	}
+
+	dst := NewRulesRepo(NewTestDB(t))
+	if _, err := dst.ImportWithReport(data, ImportOptions{}); err != nil {
+		t.Fatalf("Import: %v", err)
+	}
+	rules, err := dst.List()
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(rules) != 1 {
+		t.Fatalf("rules = %d, want 1", len(rules))
+	}
+	g := rules[0].Groups
+	if len(g) != 1 || g[0].Operator != "AND" || len(g[0].Conditions) != 1 {
+		t.Fatalf("root group = %+v", g)
+	}
+	if len(g[0].Groups) != 1 || g[0].Groups[0].Operator != "OR" || len(g[0].Groups[0].Conditions) != 2 {
+		t.Errorf("nested group not preserved: %+v", g[0].Groups)
 	}
 }

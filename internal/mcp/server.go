@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	neturl "net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -144,9 +143,6 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid input: %v", err)), nil
 		}
-		if msgs := db.ValidateRule(rule); len(msgs) > 0 {
-			return mcp.NewToolResultError("invalid rule: " + strings.Join(msgs, "; ")), nil
-		}
 		if v, ok := args["schedule_days"]; ok {
 			rule.ScheduleDays = v.(string)
 		}
@@ -221,6 +217,9 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 			for _, a := range actions {
 				existing.Actions = append(existing.Actions, db.Action{Type: a.Type, Value: a.Value})
 			}
+		}
+		if msgs := db.ValidateRule(existing); len(msgs) > 0 {
+			return mcp.NewToolResultError("invalid rule: " + strings.Join(msgs, "; ")), nil
 		}
 		if err := rulesRepo.Update(existing); err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
@@ -813,6 +812,12 @@ type conditionInput struct {
 	Value    string `json:"value"`
 }
 
+type groupInput struct {
+	Operator   string           `json:"operator"`
+	Conditions []conditionInput `json:"conditions"`
+	Groups     []groupInput     `json:"groups"`
+}
+
 type actionInput struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
@@ -822,6 +827,7 @@ func parseRuleInput(name string, priority int, condsJSON, actsJSON string) (*db.
 	var input struct {
 		Operator   string           `json:"operator"`
 		Conditions []conditionInput `json:"conditions"`
+		Groups     []groupInput     `json:"groups"`
 	}
 	if err := json.Unmarshal([]byte(condsJSON), &input); err != nil {
 		return nil, fmt.Errorf("conditions JSON: %w", err)
@@ -834,11 +840,7 @@ func parseRuleInput(name string, priority int, condsJSON, actsJSON string) (*db.
 		}
 	}
 
-	op := input.Operator
-	if op == "" {
-		op = "OR"
-	}
-	op = strings.ToUpper(op)
+	op := strings.ToUpper(input.Operator)
 	if op != "AND" && op != "OR" {
 		op = "OR"
 	}
@@ -849,14 +851,13 @@ func parseRuleInput(name string, priority int, condsJSON, actsJSON string) (*db.
 		Enabled:  true,
 	}
 
-	if len(input.Conditions) > 0 {
+	if len(input.Groups) > 0 {
+		for _, g := range input.Groups {
+			rule.Groups = append(rule.Groups, groupInputToRule(g))
+		}
+	} else if len(input.Conditions) > 0 {
 		g := db.ConditionGroup{Operator: op}
 		for _, c := range input.Conditions {
-			if c.Operator == "matches_regex" {
-				if _, err := regexp.Compile(c.Value); err != nil {
-					return nil, fmt.Errorf("invalid regex %q: %w", c.Value, err)
-				}
-			}
 			g.Conditions = append(g.Conditions, db.Condition{
 				Field: c.Field, Operator: c.Operator, Value: c.Value,
 			})
@@ -868,7 +869,25 @@ func parseRuleInput(name string, priority int, condsJSON, actsJSON string) (*db.
 		rule.Actions = append(rule.Actions, db.Action{Type: a.Type, Value: a.Value})
 	}
 
+	if msgs := db.ValidateRule(rule); len(msgs) > 0 {
+		return nil, fmt.Errorf("invalid rule: %s", strings.Join(msgs, "; "))
+	}
 	return rule, nil
+}
+
+func groupInputToRule(g groupInput) db.ConditionGroup {
+	op := strings.ToUpper(g.Operator)
+	if op != "AND" && op != "OR" {
+		op = "OR"
+	}
+	cg := db.ConditionGroup{Operator: op}
+	for _, c := range g.Conditions {
+		cg.Conditions = append(cg.Conditions, db.Condition{Field: c.Field, Operator: c.Operator, Value: c.Value})
+	}
+	for _, sub := range g.Groups {
+		cg.Groups = append(cg.Groups, groupInputToRule(sub))
+	}
+	return cg
 }
 
 func requiredIntArg(args map[string]any, key string) (int64, error) {

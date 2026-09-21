@@ -42,10 +42,13 @@ var templateFuncs = template.FuncMap{
 		}
 		return val * 100 / max
 	},
-	"subtract":   func(a, b int) int { return a - b },
-	"add":        func(a, b int) int { return a + b },
-	"hasPrefix":  strings.HasPrefix,
-	"trimPrefix": strings.TrimPrefix,
+	"subtract":        func(a, b int) int { return a - b },
+	"add":             func(a, b int) int { return a + b },
+	"hasPrefix":       strings.HasPrefix,
+	"trimPrefix":      strings.TrimPrefix,
+	"groupViews":      buildGroupViews,
+	"rootGroupView":   rootGroupView,
+	"totalConditions": totalConditions,
 	"formatCPU": func(v int) string {
 		pct := float64(v) / 10000.0
 		return fmt.Sprintf("%.1f%%", pct)

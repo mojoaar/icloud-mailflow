@@ -219,6 +219,61 @@ func rulesReorderMoveHandler(repo *db.RulesRepo, foldersRepo *db.FoldersRepo) ht
 	}
 }
 
+type conditionView struct {
+	Group      string
+	Field      string
+	Operator   string
+	Value      string
+	HeaderName string
+}
+
+type groupView struct {
+	Path       string
+	Parent     string
+	Operator   string
+	Conditions []conditionView
+	Children   []groupView
+}
+
+func buildGroupViews(groups []db.ConditionGroup) []groupView {
+	out := make([]groupView, 0, len(groups))
+	for i, g := range groups {
+		out = append(out, buildGroupView(g, fmt.Sprintf("g%d", i), ""))
+	}
+	return out
+}
+
+func buildGroupView(g db.ConditionGroup, path, parent string) groupView {
+	v := groupView{Path: path, Parent: parent, Operator: g.Operator}
+	if v.Operator != "AND" && v.Operator != "OR" {
+		v.Operator = "OR"
+	}
+	for _, c := range g.Conditions {
+		field, header := c.Field, ""
+		if strings.HasPrefix(field, "header:") {
+			header = strings.TrimPrefix(field, "header:")
+			field = "header"
+		}
+		v.Conditions = append(v.Conditions, conditionView{
+			Group: path, Field: field, Operator: c.Operator, Value: c.Value, HeaderName: header,
+		})
+	}
+	for i, sub := range g.Groups {
+		v.Children = append(v.Children, buildGroupView(sub, fmt.Sprintf("%s.%d", path, i), path))
+	}
+	return v
+}
+
+func rootGroupView() groupView { return groupView{Path: "g0", Operator: "OR"} }
+
+func totalConditions(groups []db.ConditionGroup) int {
+	n := 0
+	for _, g := range groups {
+		n += len(g.Conditions) + totalConditions(g.Groups)
+	}
+	return n
+}
+
 func conditionFields() []map[string]string {
 	return []map[string]string{
 		{"value": "from", "label": "From"},
@@ -238,6 +293,84 @@ func parseConditions(r *http.Request, rule *db.Rule) error {
 	fields := r.Form["cond_field"]
 	ops := r.Form["cond_op"]
 	vals := r.Form["cond_value"]
+	headerNames := r.Form["cond_header_name"]
+
+	// New tree format: groups are submitted as parallel group_id/group_parent/
+	// group_op arrays, and each condition names its group via cond_group.
+	if groupIDs := r.Form["group_id"]; len(groupIDs) > 0 {
+		groupParents := r.Form["group_parent"]
+		groupOps := r.Form["group_op"]
+		condGroups := r.Form["cond_group"]
+
+		type gnode struct {
+			parent     string
+			operator   string
+			conditions []db.Condition
+			children   []string
+		}
+		nodes := map[string]*gnode{}
+		order := make([]string, 0, len(groupIDs))
+		for i, id := range groupIDs {
+			parent := ""
+			if i < len(groupParents) {
+				parent = groupParents[i]
+			}
+			op := "OR"
+			if i < len(groupOps) && groupOps[i] != "" {
+				op = groupOps[i]
+			}
+			nodes[id] = &gnode{parent: parent, operator: op}
+			order = append(order, id)
+		}
+		for i := range fields {
+			if i >= len(ops) || i >= len(vals) {
+				continue
+			}
+			field := fields[i]
+			if field == "header" && i < len(headerNames) && headerNames[i] != "" {
+				field = "header:" + headerNames[i]
+			}
+			if ops[i] == "matches_regex" {
+				if _, err := regexp.Compile(vals[i]); err != nil {
+					return fmt.Errorf("invalid regex %q: %w", vals[i], err)
+				}
+			}
+			gid := ""
+			if i < len(condGroups) {
+				gid = condGroups[i]
+			}
+			if n := nodes[gid]; n != nil {
+				n.conditions = append(n.conditions, db.Condition{Field: field, Operator: ops[i], Value: vals[i]})
+			}
+		}
+		for _, id := range order {
+			if p := nodes[id].parent; p != "" {
+				if pn := nodes[p]; pn != nil {
+					pn.children = append(pn.children, id)
+				}
+			}
+		}
+		var build func(id string) db.ConditionGroup
+		build = func(id string) db.ConditionGroup {
+			n := nodes[id]
+			cg := db.ConditionGroup{Operator: n.operator, Conditions: n.conditions}
+			for _, cid := range n.children {
+				cg.Groups = append(cg.Groups, build(cid))
+			}
+			return cg
+		}
+		for _, id := range order {
+			if nodes[id].parent == "" {
+				rule.Groups = append(rule.Groups, build(id))
+			}
+		}
+		if len(rule.Groups) == 0 {
+			rule.Groups = []db.ConditionGroup{{Operator: "OR"}}
+		}
+		return nil
+	}
+
+	// Legacy flat format: a single group.
 	if len(fields) == 0 {
 		return nil
 	}
@@ -246,7 +379,6 @@ func parseConditions(r *http.Request, rule *db.Rule) error {
 		operator = "OR"
 	}
 	group := db.ConditionGroup{Operator: operator}
-	headerNames := r.Form["cond_header_name"]
 	for i := range fields {
 		if i < len(ops) && i < len(vals) {
 			field := fields[i]
