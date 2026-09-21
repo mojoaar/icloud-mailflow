@@ -228,3 +228,15 @@ func TestHasAttachmentMultiPartImageInline(t *testing.T) {
 		t.Error("only inline parts should not count as attachments")
 	}
 }
+
+func TestDestinationUID(t *testing.T) {
+	if uid, ok := destinationUID(goimap.UIDSetNum(goimap.UID(7))); !ok || uid != 7 {
+		t.Errorf("destinationUID = %d, %v; want 7, true", uid, ok)
+	}
+	if _, ok := destinationUID(nil); ok {
+		t.Error("nil set should not resolve")
+	}
+	if _, ok := destinationUID(goimap.UIDSet{}); ok {
+		t.Error("empty set should not resolve")
+	}
+}

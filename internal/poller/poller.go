@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"mime"
@@ -362,6 +363,7 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 	effectiveUID := uid
 	destFolder := ""
 
+actions:
 	for _, action := range rule.Actions {
 		switch action.Type {
 		case "move_to_folder":
@@ -373,6 +375,10 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 			if err != nil {
 				slog.Error("move failed", "uid", effectiveUID, "dest", action.Value, "error", err)
 				logAction(effectiveUID, action, "error")
+				if errors.Is(err, imap.ErrDestUIDUnknown) {
+					slog.Warn("stopping remaining actions: destination UID unknown", "uid", effectiveUID, "rule", rule.Name)
+					break actions
+				}
 			} else {
 				logAction(effectiveUID, action, "success")
 				effectiveUID = newUID
@@ -432,6 +438,10 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 				newUID, err := client.MoveMessage(effectiveUID, trash)
 				if err != nil {
 					logAction(effectiveUID, action, "error")
+					if errors.Is(err, imap.ErrDestUIDUnknown) {
+						slog.Warn("stopping remaining actions: destination UID unknown", "uid", effectiveUID, "rule", rule.Name)
+						break actions
+					}
 				} else {
 					logAction(effectiveUID, action, "success")
 					effectiveUID = newUID

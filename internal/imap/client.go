@@ -2,6 +2,7 @@ package imap
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -190,19 +191,30 @@ func (c *IMAPClient) FetchMessages(uids []goimap.UID) ([]*Message, error) {
 	return msgs, nil
 }
 
+// ErrDestUIDUnknown is returned when a MOVE succeeds but the server does not
+// report the destination UID (no UIDPLUS), so follow-up actions cannot address
+// the message safely.
+var ErrDestUIDUnknown = errors.New("imap: server did not report the destination UID")
+
+func destinationUID(dest goimap.NumSet) (uint32, bool) {
+	if uidSet, ok := dest.(goimap.UIDSet); ok && len(uidSet) > 0 {
+		return uint32(uidSet[0].Start), true
+	}
+	return 0, false
+}
+
 func (c *IMAPClient) MoveMessage(uid uint32, dest string) (uint32, error) {
 	seqSet := goimap.UIDSetNum(goimap.UID(uid))
 	data, err := c.client.Move(seqSet, dest).Wait()
 	if err != nil {
 		return uid, fmt.Errorf("move uid %d to %s: %w", uid, dest, err)
 	}
-	if uidSet, ok := data.DestUIDs.(goimap.UIDSet); ok && len(uidSet) > 0 {
-		newUID := uint32(uidSet[0].Start)
-		slog.Debug("imap move", "srcUID", uid, "dest", dest, "newUID", newUID)
-		return newUID, nil
+	newUID, ok := destinationUID(data.DestUIDs)
+	if !ok {
+		return uid, fmt.Errorf("move uid %d to %s: %w", uid, dest, ErrDestUIDUnknown)
 	}
-	slog.Debug("imap move", "srcUID", uid, "dest", dest)
-	return uid, nil
+	slog.Debug("imap move", "srcUID", uid, "dest", dest, "newUID", newUID)
+	return newUID, nil
 }
 
 func (c *IMAPClient) SelectMailbox(name string) error {

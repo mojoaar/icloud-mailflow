@@ -32,6 +32,7 @@ type trackedMock struct {
 	messageBodies    map[uint32]string
 	messageHeaders   map[uint32]map[string]string
 	folders          []imap.Folder
+	moveErr          error
 }
 
 type moveCall struct {
@@ -93,7 +94,11 @@ func (m *trackedMock) FetchMessages(uids []goimap.UID) ([]*imap.Message, error) 
 func (m *trackedMock) MoveMessage(uid uint32, dest string) (uint32, error) {
 	m.mu.Lock()
 	m.moveCalls = append(m.moveCalls, moveCall{UID: uid, Dest: dest})
+	err := m.moveErr
 	m.mu.Unlock()
+	if err != nil {
+		return uid, err
+	}
 	return uid + 100, nil
 }
 
@@ -1216,4 +1221,45 @@ func TestConcurrentProcessStatusApply(t *testing.T) {
 		}
 	}()
 	wg.Wait()
+}
+
+func TestMoveUnknownDestUIDStopsActions(t *testing.T) {
+	rulesRepo, contactsRepo := openPollerTestDB(t)
+	rule := &db.Rule{
+		Name:    "move-then-webhook",
+		Enabled: true,
+		Groups: []db.ConditionGroup{
+			{Operator: "AND", Conditions: []db.Condition{
+				{Field: "subject", Operator: "contains", Value: "match"},
+			}},
+		},
+		Actions: []db.Action{
+			{Type: "move_to_folder", Value: "Archive"},
+			{Type: "webhook", Value: "http://example.com/hook"},
+		},
+	}
+	if err := rulesRepo.Create(rule); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	mock := &trackedMock{
+		searchUIDs: []goimap.UID{1},
+		messages:   map[uint32]*imap.Message{1: {UID: 1, Subject: "match me"}},
+		moveErr:    imap.ErrDestUIDUnknown,
+	}
+	collector := contacts.NewCollector(contactsRepo, mock)
+	p := NewPoller(mock, rulesRepo, collector, nil, nil, nil, nil, nil, 10, 60, "INBOX", "", nil)
+
+	var webhooks int32
+	p.sendWebhook = func(url string, payload []byte, secret string) error {
+		atomic.AddInt32(&webhooks, 1)
+		return nil
+	}
+
+	if err := p.process(); err != nil {
+		t.Fatalf("process: %v", err)
+	}
+	if got := atomic.LoadInt32(&webhooks); got != 0 {
+		t.Errorf("webhook executed %d times, want 0 (actions must stop after unknown dest UID)", got)
+	}
 }
