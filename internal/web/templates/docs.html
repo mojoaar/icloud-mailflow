@@ -140,6 +140,9 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 <h3>Scheduling</h3>
 <p>Each rule can be limited to specific days and times using <code>schedule_days</code> (comma-separated <code>mon,tue,wed,thu,fri,sat,sun</code>), <code>schedule_start</code> and <code>schedule_end</code> (<code>HH:MM</code>, in your configured timezone). Leave all blank to always run. A scheduled rule that doesn't match the current time is skipped — the message stays unseen and is re-checked on the next tick.</p>
 
+<h3>Nested Groups</h3>
+<p>Conditions can be nested into AND/OR groups — for example <code>(from contains @a.com OR subject starts_with "Invoice") AND has_attachment</code>. Each group has its own ALL/ANY operator; use <strong>+ Group</strong> to nest and <strong>Remove group</strong> to delete. Nested groups round-trip through export, backup, and MCP.</p>
+
 <h3>Regex Capture</h3>
 <p>A <code>matches_regex</code> condition with named capture groups (e.g. <code>(?P&lt;order&gt;\d+)</code>) exposes each group as <code>[capture:order]</code> in <code>auto_reply</code> templates; the full match is available as <code>[capture:0]</code>.</p>
 
@@ -178,6 +181,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 <ul>
     <li>Shows timestamp, subject, sender, rule, action, and status</li>
     <li>Timezone-adjustable in Settings → Regional</li>
+    <li><strong>Run rules</strong> on any row re-evaluates the current rules against that message (dry-run, no actions)</li>
     <li>Clear logs with "Clear Logs" button</li>
     <li>Auto-cleaned on startup (default 1000 entries, configurable in Settings)</li>
 </ul>
@@ -218,7 +222,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td><code>seed_contacts</code></td><td>Scan IMAP folders for contacts</td></tr>
     <tr><td><code>enable_rule</code></td><td>Enable a rule by ID</td></tr>
     <tr><td><code>disable_rule</code></td><td>Disable a rule by ID</td></tr>
-    <tr><td><code>import_rules</code></td><td>Import rules from JSON array</td></tr>
+    <tr><td><code>import_rules</code></td><td>Validate and import rules (JSON array or <code>{"rules":[...]}</code>); invalid files are rejected and duplicates skipped; <code>dry_run</code> previews first</td></tr>
     <tr><td><code>clear_activity</code></td><td>Clear all activity logs</td></tr>
     <tr><td><code>get_poller_status</code></td><td>Get poller running state, last tick, errors, health</td></tr>
     <tr><td><code>health</code></td><td>Get system health, uptime, DB/IMAP/poller state, and stats</td></tr>
@@ -235,6 +239,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td>Admin Password</td><td>Change password (leave blank to keep current)</td></tr>
     <tr><td>Polling</td><td>Source folder, poll interval, messages per poll, log retention, enable/disable, refresh folders</td></tr>
     <tr><td>Webhooks</td><td>Shared secret for authenticating outgoing webhook requests (with a Generate button)</td></tr>
+    <tr><td>Alerts</td><td>Enable failure alerts and a webhook URL; notifies when the poller goes unhealthy/recovers or a scheduled backup fails (with a Send test alert button)</td></tr>
     <tr><td>Rules</td><td>Export/import rules as JSON (includes schedules, priority, and enabled state; the scheduled-backup attachment uses the same format)</td></tr>
     <tr><td>Backup</td><td>Scheduled rules backup via email — enabled toggle, frequency, recipient, Backup Now button</td></tr>
     <tr><td>Contacts</td><td>Import from iCloud, enable/disable auto-collection, wipe all contacts</td></tr>
@@ -522,7 +527,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <div class="endpoint">
     <h4><span class="method-badge method-get">GET</span> GET /health</h4>
-    <p class="desc">System health endpoint. Public — no authentication required. Unauthenticated callers receive only <code>status</code> (<code>ok</code> or <code>degraded</code>) so version and internal details are not disclosed. When called with a valid session cookie it returns the full payload: version, uptime, DB connectivity, IMAP state, poller info, and summary stats.</p>
+    <p class="desc">System health endpoint. Public — no authentication required. Unauthenticated callers receive only <code>status</code> (<code>ok</code> or <code>degraded</code>) so version and internal details are not disclosed. When called with a valid session cookie it returns the full payload: version, build info, uptime, DB connectivity and size, IMAP state, poller info, and summary stats.</p>
     <pre><code class="language-bash">curl http://{{.Host}}/health</code></pre>
     <p class="desc">Public (unauthenticated) response:</p>
     <pre><code class="language-json">{
@@ -566,6 +571,10 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
         <tr><td><code>mailflow_cpu_percent</code></td><td>Gauge</td><td>Current CPU %</td></tr>
         <tr><td><code>mailflow_memory_bytes</code></td><td>Gauge</td><td>Current memory usage</td></tr>
         <tr><td><code>mailflow_uptime_seconds</code></td><td>Gauge</td><td>Process uptime</td></tr>
+        <tr><td><code>mailflow_rules_total</code></td><td>Gauge</td><td>Configured rules</td></tr>
+        <tr><td><code>mailflow_contacts_total</code></td><td>Gauge</td><td>Collected contacts</td></tr>
+        <tr><td><code>mailflow_db_size_bytes</code></td><td>Gauge</td><td>Database size</td></tr>
+        <tr><td><code>mailflow_build_info</code></td><td>Gauge</td><td>Build info (labels: version, commit)</td></tr>
     </table>
     <pre><code class="language-bash">curl http://{{.Host}}/metrics</code></pre>
 </div>

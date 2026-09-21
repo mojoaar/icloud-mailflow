@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Nested AND/OR condition groups in the rule editor (preserved through export, backup, and MCP)
+- Failure alerts: POST a webhook when the poller goes unhealthy or recovers, or a scheduled backup fails
+- Rule import is validated and previewed — invalid files are rejected and duplicate names skipped; MCP `import_rules` supports `dry_run`
+- "Run rules" on an activity row to dry-run the current rules against that message
+- Metrics: `mailflow_rules_total`, `mailflow_contacts_total`, `mailflow_db_size_bytes`, `mailflow_build_info`; `/health` reports DB size, build info, and the poller's last error
+- Build commit injectable via `-ldflags -X main.commit=…`
+
+### Changed
+- MCP `run_poll` reports "poll already in progress" instead of a false success
+
 ## [0.12.2] - 2026-09-21
 
 ### Changed
