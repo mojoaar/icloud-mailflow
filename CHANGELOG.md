@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `Content-Security-Policy` is now strict: `script-src 'self' 'nonce-…'` with no `unsafe-inline`/`unsafe-eval`; inline event handlers were replaced with delegated listeners and inline scripts carry a per-request nonce
+- HTMX, Lucide and Chart.js are self-hosted under `/static` instead of loaded from CDNs (no third-party script origins); the keyboard-modal and Docs styles moved from inline `<style>` blocks into `style.css`
+
 ## [0.12.1] - 2026-09-21
 
 ### Added

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>
+    <script nonce="{{.Nonce}}">
 (function(){var v=localStorage.getItem('theme');if(v==='light')v='mailflow-light';if(v==='')v=null;if(!v||v.indexOf('-')<0)v=window.matchMedia('(prefers-color-scheme:light)').matches?'mailflow-light':'mailflow-dark';document.documentElement.setAttribute('data-theme',v);var l=document.createElement('link');l.rel='stylesheet';l.id='hljs-theme';l.href=v.slice(-6)==='-light'?'/static/hljs-light.css':'/static/hljs-dark.css';document.head.appendChild(l)})();
     </script>
     <title>iCloud Mailflow — {{.Title}}</title>
@@ -33,7 +33,7 @@
         </div>
         {{end}}
     </nav>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+    <script src="/static/chart.min.js"></script>
     <main id="main-content">{{.Content}}</main>
     <footer>
         Crafted with ❤️ &amp; 🤖 by <a href="https://johansen.foo" target="_blank">Morten Johansen</a> ·
@@ -43,10 +43,10 @@
         <a href="/docs" target="_blank">Docs</a> ·
         v{{.Version}} · © 2026
     </footer>
-    <script src="https://unpkg.com/htmx.org@2.0.10/dist/htmx.min.js"></script>
-    <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+    <script src="/static/htmx.min.js"></script>
+    <script src="/static/lucide.min.js"></script>
     <script src="/static/highlight.min.js"></script>
-    <script>function themeLink(v){var l=document.getElementById('hljs-theme');if(l)l.href=v.slice(-6)==='-light'?'/static/hljs-light.css':'/static/hljs-dark.css';var c=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();var m=document.querySelector('meta[name=theme-color]');if(m&&c)m.setAttribute('content',c)}
+    <script nonce="{{.Nonce}}">function themeLink(v){var l=document.getElementById('hljs-theme');if(l)l.href=v.slice(-6)==='-light'?'/static/hljs-light.css':'/static/hljs-dark.css';var c=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();var m=document.querySelector('meta[name=theme-color]');if(m&&c)m.setAttribute('content',c)}
 function toggleTheme(el){var v=document.documentElement.getAttribute('data-theme')||'mailflow-dark';var light=/-(light)$/.test(v);var base=v.replace(/-(light|dark)$/,'');var next=base+(light?'-dark':'-light');document.documentElement.setAttribute('data-theme',next);localStorage.setItem('theme',next);var icon=el.querySelector('.theme-icon');if(icon)icon.innerHTML='<i data-lucide="'+(next.slice(-6)==='-light'?'sun':'moon')+'" class="nav-icon"></i>';themeLink(next);lucide.createIcons();window.dispatchEvent(new Event('themechange'))}
 (function(){var v=document.documentElement.getAttribute('data-theme')||'mailflow-dark';var s=document.querySelector('.theme-icon');if(s)s.innerHTML='<i data-lucide="'+(v.slice(-6)==='-light'?'sun':'moon')+'" class="nav-icon"></i>';themeLink(v)})();
 lucide.createIcons();document.body.addEventListener('htmx:afterSettle',()=>{lucide.createIcons();hljs.highlightAll()});hljs.highlightAll();
@@ -78,7 +78,7 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
         </div>
     </div>
 </div>
-<script>
+<script nonce="{{.Nonce}}">
 (function(){
   var d = document;
   var themeLinkEl = d.getElementById('theme-toggle');
@@ -138,6 +138,7 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
       var b = t.parentNode && t.parentNode.querySelector('.search-clear');
       if (b) b.classList.toggle('visible', t.value.length > 0);
     }
+    if (t && t.id === 'rule-search') { filterRules(t.value); }
   });
 
   document.body.addEventListener('htmx:afterRequest', function(e){
@@ -146,6 +147,103 @@ document.body.addEventListener('showToast',function(e){var t=document.createElem
     if (el.id === 'activity-refresh' && e.detail.successful) { if (window.htmx) htmx.trigger(document.body, 'showToast', {type: 'success', message: 'Activity refreshed'}); }
     if (el.id === 'seed-contacts' && e.detail.failed) { var st = d.getElementById('seed-toast'); if (st) st.innerHTML = '<div class="toast toast-error">Contact seeding failed</div>'; }
   });
+
+  // Rules list: filter + drag/drop reorder (delegated so it survives htmx swaps).
+  var rulesDragRow = null;
+  function filterRules(value) {
+    var tbody = d.getElementById('rules-tbody');
+    if (!tbody) return;
+    var query = (value || '').toLowerCase();
+    var rows = tbody.querySelectorAll('tr[draggable]');
+    var found = 0;
+    rows.forEach(function(r) {
+      var text = (r.getAttribute('data-search') || '').toLowerCase();
+      var match = !query || text.indexOf(query) !== -1;
+      r.style.display = match ? '' : 'none';
+      if (match) found++;
+    });
+    var count = d.getElementById('rule-search-count');
+    if (count) count.textContent = query ? found + ' of ' + rows.length + ' rules' : '';
+    var noResults = d.getElementById('no-results');
+    if (query && !found) {
+      if (!noResults) {
+        noResults = d.createElement('tr');
+        noResults.id = 'no-results';
+        noResults.innerHTML = '<td colspan="7" style="text-align:center;color:var(--muted);padding:32px">No matching rules found</td>';
+        tbody.appendChild(noResults);
+      }
+    } else if (noResults) {
+      noResults.remove();
+    }
+    var clear = d.getElementById('rule-search-clear');
+    if (clear) clear.classList.toggle('visible', !!(value || '').length);
+  }
+  d.addEventListener('dragstart', function(e) {
+    var tr = e.target.closest && e.target.closest('#rules-tbody tr[draggable]');
+    if (!tr) return;
+    rulesDragRow = tr;
+    tr.classList.add('row-dragging');
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+  });
+  d.addEventListener('dragend', function(e) {
+    var tr = e.target.closest && e.target.closest('#rules-tbody tr');
+    if (tr) tr.classList.remove('row-dragging');
+    var tbody = d.getElementById('rules-tbody');
+    if (tbody) tbody.querySelectorAll('tr').forEach(function(r){ r.classList.remove('row-drag-over'); });
+    rulesDragRow = null;
+  });
+  d.addEventListener('dragover', function(e) {
+    var tr = e.target.closest && e.target.closest('#rules-tbody tr');
+    if (!tr || tr === rulesDragRow) return;
+    e.preventDefault();
+    var tbody = d.getElementById('rules-tbody');
+    if (tbody) tbody.querySelectorAll('tr').forEach(function(r){ r.classList.remove('row-drag-over'); });
+    tr.classList.add('row-drag-over');
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  });
+  d.addEventListener('dragleave', function(e) {
+    var tr = e.target.closest && e.target.closest('#rules-tbody tr');
+    if (tr) tr.classList.remove('row-drag-over');
+  });
+  d.addEventListener('drop', function(e) {
+    var tr = e.target.closest && e.target.closest('#rules-tbody tr');
+    if (!tr || tr === rulesDragRow || !rulesDragRow) return;
+    e.preventDefault();
+    tr.classList.remove('row-drag-over');
+    var rows = Array.from(d.querySelectorAll('#rules-tbody tr'));
+    var before = rows.indexOf(rulesDragRow);
+    var after = rows.indexOf(tr);
+    if (after > before) tr.after(rulesDragRow); else tr.before(rulesDragRow);
+    var ids = [];
+    d.querySelectorAll('#rules-tbody tr[data-rule-id]').forEach(function(r){ ids.push(r.getAttribute('data-rule-id')); });
+    var si = d.getElementById('rule-search');
+    if (window.htmx) htmx.ajax('POST', '/rules/reorder', {target: '#rules-panel', swap: 'outerHTML', indicator: '#reorder-spinner', values: {'rule_ids': ids, 'q': si ? si.value : ''}});
+  });
+
+  function syncSearchClear() {
+    ['activity-search', 'rule-search'].forEach(function(id) {
+      var i = d.getElementById(id);
+      if (!i) return;
+      var b = i.parentNode && i.parentNode.querySelector('.search-clear');
+      if (b) b.classList.toggle('visible', i.value.length > 0);
+    });
+  }
+  document.body.addEventListener('htmx:afterSettle', function(){ lucide.createIcons(); hljs.highlightAll(); syncSearchClear(); });
+  syncSearchClear();
+  var rs = d.getElementById('rule-search');
+  if (rs && rs.value) filterRules(rs.value);
+
+  // Auto-dismiss server-rendered toasts (their inline script was removed for CSP).
+  var toastObserver = new MutationObserver(function(muts) {
+    muts.forEach(function(m) {
+      m.addedNodes.forEach(function(n) {
+        if (n.nodeType !== 1) return;
+        var t = (n.classList && n.classList.contains('toast')) ? n : (n.querySelector && n.querySelector('.toast'));
+        if (t) setTimeout(function(){ if (t.parentNode) t.remove(); }, 5000);
+      });
+    });
+  });
+  toastObserver.observe(document.body, {childList: true, subtree: true});
 })();
 </script>
 </body>

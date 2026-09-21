@@ -173,7 +173,7 @@
 </div>
 </div>
 
-<script>
+<script nonce="{{.Nonce}}">
 (function(){
 var dataDaily   = {labels:[{{range .Daily}}"{{.Date}}",{{end}}],vals:[{{range .Daily}}{{.Count}},{{end}}]};
 var dataActions = {labels:[{{range .Actions}}"{{.Type}}",{{end}}],vals:[{{range .Actions}}{{.Count}},{{end}}]};

@@ -49,7 +49,8 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - MCP API key authentication with constant-time comparison
 - bcrypt hashed admin password
 - SameSite=Strict session cookies
-- Security headers on all responses (Content-Security-Policy, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy) and HSTS over HTTPS
+- Security headers on all responses — a strict nonce-based `Content-Security-Policy` (no `unsafe-inline`/`unsafe-eval` for scripts), `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` — and HSTS over HTTPS
+- Frontend libraries (HTMX, Lucide, Chart.js, highlight.js) are self-hosted under `/static`; no scripts are loaded from third-party CDNs
 - Secure and HttpOnly cookies when behind TLS
 - Logout requires POST with CSRF (no GET-based logout)
 
@@ -229,11 +230,11 @@ Using the iCloud web mail client (mail.icloud.com) while Mailflow is polling may
 
 | Asset | Use | License |
 | ----- | --- | ------- |
-| [Lucide Icons](https://lucide.dev) | SVG icons throughout the UI | ISC |
+| [Lucide Icons](https://lucide.dev) | SVG icons throughout the UI (self-hosted) | ISC |
 | [JetBrains Mono](https://www.jetbrains.com/lp/mono/) | Monospace font (optional, toggled in Settings) | OFL-1.1 |
-| [highlight.js](https://highlightjs.org) | Syntax highlighting on the Docs page | BSD-3-Clause |
-| [Chart.js](https://www.chartjs.org) | Charts on the Stats page | MIT |
-| [HTMX](https://htmx.org) | Frontend interactivity without JavaScript frameworks | 0BSD |
+| [highlight.js](https://highlightjs.org) | Syntax highlighting on the Docs page (self-hosted) | BSD-3-Clause |
+| [Chart.js](https://www.chartjs.org) | Charts on the Stats page (self-hosted) | MIT |
+| [HTMX](https://htmx.org) | Frontend interactivity without JavaScript frameworks (self-hosted) | 0BSD |
 
 ## License
 

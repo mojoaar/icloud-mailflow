@@ -22,6 +22,7 @@ type pageData struct {
 	Title     string
 	Content   template.HTML
 	CSRFToken string
+	Nonce     string
 	ShowNav   bool
 	Version   string
 	MonoFont  bool
@@ -96,10 +97,12 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 		return
 	}
 	http.SetCookie(w, csrfCookieWithToken(token, r))
+	nonce := nonceFrom(r)
 	if m, ok := data.(map[string]any); ok {
 		m["CSRFToken"] = token
+		m["Nonce"] = nonce
 	} else {
-		data = map[string]any{"CSRFToken": token}
+		data = map[string]any{"CSRFToken": token, "Nonce": nonce}
 	}
 	var buf bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&buf, pageName, data); err != nil {
@@ -110,6 +113,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 		Title:     title,
 		Content:   template.HTML(buf.String()),
 		CSRFToken: token,
+		Nonce:     nonce,
 		ShowNav:   pageName != "login" && pageName != "setup",
 		Version:   appVersion,
 		MonoFont:  useMonoFont.Load(),

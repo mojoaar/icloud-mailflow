@@ -1,4 +1,3 @@
 {{define "toast"}}
 <div class="toast toast-{{.Type}}" id="toast-{{.Type}}">{{.Message}}</div>
-<script>setTimeout(function(){var t=document.querySelector('.toast:last-of-type');if(t)t.remove()},5000)</script>
 {{end}}

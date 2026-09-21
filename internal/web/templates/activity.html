@@ -29,7 +29,6 @@
             hx-include="[name='rule'],[name='status'],[name='per_page']" style="width:100%;max-width:none">
         <button class="search-clear" id="activity-search-clear" aria-label="Clear search">&#10005;</button>
     </div>
-    <script>var i=document.getElementById('activity-search');if(i&&i.value)i.dispatchEvent(new Event('input'))</script>
     <select name="rule" hx-get="/activity" hx-trigger="change"
         hx-target="#activity-content" hx-swap="outerHTML" hx-indicator="#activity-spinner"
         hx-include="[name='q'],[name='status'],[name='per_page']">
@@ -53,7 +52,6 @@
     </select>
     <span id="activity-spinner" class="htmx-indicator" style="align-self:center;color:var(--muted);margin-left:4px"><span class="spinner"></span></span>
 </div>
-<script>(function(){var i=document.getElementById('activity-search');if(i){var b=i.nextElementSibling;i.addEventListener('input',function(){b.classList.toggle('visible',i.value.length>0)});if(i.value)b.classList.add('visible')}})()</script>
 {{if not .Entries}}
 <div class="card">
     <p class="muted">No activity yet. Messages will appear here when rules process mail.</p>

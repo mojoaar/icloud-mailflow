@@ -17,6 +17,7 @@ func docsStandaloneHandler(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 			"Host":     r.Host,
 			"MonoFont": monoFont,
 			"Version":  appVersion,
+			"Nonce":    nonceFrom(r),
 		}); err != nil {
 			slog.Error("render docs failed", "error", err)
 			http.Error(w, "Internal error", http.StatusInternalServerError)
