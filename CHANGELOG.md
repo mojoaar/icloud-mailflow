@@ -9,15 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - The IMAP password is no longer written to `config.json` — it is stored only in the encrypted database. A legacy plaintext value is migrated into the encrypted store on startup and the `imap_password` field is removed from the file
+- `X-Forwarded-For` is only trusted when `TRUST_PROXY=true`, so the login and MCP rate limits can no longer be bypassed by spoofing the header
+- Changing the admin password now invalidates all other sessions
 
 ### Changed
 - Theme families are now listed alphabetically in Settings, the docs, and the README (Mailflow, the default, stays first)
+- `config.json` is written atomically (temp file + rename) and serialized, so a crash mid-write can no longer leave it corrupt
+- IMAP/SMTP credentials are read from the encrypted store at use time, so changing the password takes effect without a restart
+- The auto-reply daily throttle is consumed only after a successful send
 
 ### Fixed
 - Polling settings (interval, messages per poll, log retention) are validated before saving — an invalid interval can no longer be persisted and block startup; an invalid legacy interval self-heals to the default
 - `Run Poll Now`, `Backup Now`, and `Apply to Folder` no longer panic when IMAP is not configured
 - The poller could execute a matched rule's actions repeatedly within a single tick, and could crash after processing a full batch (`atomic.Value.Store(nil)`) — both fixed
 - IMAP session access is serialized across the poller, bulk apply, rule test, folder refresh, and contact seeding, removing data races on the shared connection
+- Stats backfill runs again on upgrade (it was dead code), and folder sync no longer aborts on duplicate folder paths
+- Schedules can cross midnight (e.g. `22:00–06:00`), and zero/negative day counts are rejected
+- Activity pagination URL-encodes the search/filter values; auto-reply-throttled actions show a distinct `skipped` badge instead of `error`
+- Rule reorder ignores non-rule rows and invalid ids; a blank priority on edit no longer resets to 0; the built-in catch-all rule can no longer be deleted
+- Apply-to-folder job status is mutex-guarded and HTML-escaped
+- MCP tools validate their arguments instead of panicking on unexpected types; activity `per_page` is capped
+- CardDAV credentials are only sent to the configured iCloud host; SMTP multipart writes are error-checked
 
 ## [0.12.0] - 2026-09-20
 
