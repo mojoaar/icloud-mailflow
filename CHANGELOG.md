@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Apply-to-folder job status is mutex-guarded and HTML-escaped
 - MCP tools validate their arguments instead of panicking on unexpected types; activity `per_page` is capped
 - CardDAV credentials are only sent to the configured iCloud host; SMTP multipart writes are error-checked
+- MOVE on a server without UIDPLUS now reports an error and stops remaining actions for that message, instead of addressing the wrong UID
+- Rule export and the scheduled-backup email now include schedules, priority, and enabled state; the backup attachment uses the same envelope as import and can be restored
 
 ## [0.12.0] - 2026-09-20
 

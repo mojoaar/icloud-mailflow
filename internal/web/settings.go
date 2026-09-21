@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -414,65 +413,21 @@ func carddavImportHandler(settingsRepo *db.SettingsRepo, cfg *config.Config, con
 	}
 }
 
-type rulesExport struct {
-	Rules []ruleExport `json:"rules"`
-}
-
-type ruleExport struct {
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	Priority    int              `json:"priority"`
-	Enabled     bool             `json:"enabled"`
-	Operator    string           `json:"operator"`
-	Conditions  []ruleCondExport `json:"conditions"`
-	Actions     []ruleActExport  `json:"actions"`
-}
-
-type ruleCondExport struct {
-	Field    string `json:"field"`
-	Operator string `json:"operator"`
-	Value    string `json:"value"`
-}
-
-type ruleActExport struct {
-	Type  string `json:"type"`
-	Value string `json:"value"`
-}
-
 func rulesExportHandler(repo *db.RulesRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rules, err := repo.List()
+		exported, err := repo.Export()
 		if err != nil {
 			http.Error(w, "Failed to export rules", http.StatusInternalServerError)
 			return
 		}
-		var exp rulesExport
-		for _, rule := range rules {
-			if rule.Name == "_catch_all" {
-				continue
-			}
-			re := ruleExport{
-				Name:        rule.Name,
-				Description: rule.Description,
-				Priority:    rule.Priority,
-				Enabled:     rule.Enabled,
-			}
-			for _, g := range rule.Groups {
-				re.Operator = g.Operator
-				for _, c := range g.Conditions {
-					re.Conditions = append(re.Conditions, ruleCondExport{
-						Field: c.Field, Operator: c.Operator, Value: c.Value,
-					})
-				}
-			}
-			for _, a := range rule.Actions {
-				re.Actions = append(re.Actions, ruleActExport{Type: a.Type, Value: a.Value})
-			}
-			exp.Rules = append(exp.Rules, re)
+		data, err := db.MarshalExport(exported)
+		if err != nil {
+			http.Error(w, "Failed to export rules", http.StatusInternalServerError)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Disposition", "attachment; filename=\"icloud-mailflow-rules.json\"")
-		json.NewEncoder(w).Encode(exp)
+		w.Write(data)
 	}
 }
 
@@ -492,42 +447,11 @@ func rulesImportHandler(repo *db.RulesRepo) http.HandlerFunc {
 			return
 		}
 
-		var exp rulesExport
-		if err := json.Unmarshal(data, &exp); err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Invalid JSON format"})
+		imported, err := repo.Import(data)
+		if err != nil {
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Invalid rules file"})
 			return
 		}
-
-		imported := 0
-		for _, re := range exp.Rules {
-			rule := &db.Rule{
-				Name:        re.Name,
-				Description: re.Description,
-				Priority:    re.Priority,
-				Enabled:     re.Enabled,
-			}
-			if len(re.Conditions) > 0 {
-				g := db.ConditionGroup{Operator: re.Operator}
-				if g.Operator == "" {
-					g.Operator = "AND"
-				}
-				for _, c := range re.Conditions {
-					g.Conditions = append(g.Conditions, db.Condition{
-						Field: c.Field, Operator: c.Operator, Value: c.Value,
-					})
-				}
-				rule.Groups = []db.ConditionGroup{g}
-			}
-			for _, a := range re.Actions {
-				rule.Actions = append(rule.Actions, db.Action{Type: a.Type, Value: a.Value})
-			}
-			if err := repo.Create(rule); err != nil {
-				renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Import failed"})
-				return
-			}
-			imported++
-		}
-
 		if imported == 0 {
 			renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "No rules to import"})
 			return

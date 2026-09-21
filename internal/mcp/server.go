@@ -390,51 +390,11 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 	s.AddTool(mcp.NewTool("backup_rules",
 		mcp.WithDescription("Export all rules as JSON (excludes catch-all)"),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		rules, err := rulesRepo.List()
+		exported, err := rulesRepo.Export()
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		type export struct {
-			Name        string `json:"name"`
-			Description string `json:"description,omitempty"`
-			Priority    int    `json:"priority"`
-			Enabled     bool   `json:"enabled"`
-			Operator    string `json:"operator,omitempty"`
-			Conditions  []struct {
-				Field    string `json:"field"`
-				Operator string `json:"operator"`
-				Value    string `json:"value"`
-			} `json:"conditions,omitempty"`
-			Actions []struct {
-				Type  string `json:"type"`
-				Value string `json:"value"`
-			} `json:"actions,omitempty"`
-		}
-		var result []export
-		for _, r := range rules {
-			if r.Name == "_catch_all" {
-				continue
-			}
-			e := export{Name: r.Name, Description: r.Description, Priority: r.Priority, Enabled: r.Enabled}
-			for _, g := range r.Groups {
-				e.Operator = g.Operator
-				for _, c := range g.Conditions {
-					e.Conditions = append(e.Conditions, struct {
-						Field    string `json:"field"`
-						Operator string `json:"operator"`
-						Value    string `json:"value"`
-					}{c.Field, c.Operator, c.Value})
-				}
-			}
-			for _, a := range r.Actions {
-				e.Actions = append(e.Actions, struct {
-					Type  string `json:"type"`
-					Value string `json:"value"`
-				}{a.Type, a.Value})
-			}
-			result = append(result, e)
-		}
-		return resultJSON(map[string]any{"rules": result})
+		return resultJSON(map[string]any{"rules": exported})
 	})
 
 	s.AddTool(mcp.NewTool("list_folders",
@@ -569,49 +529,9 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		var input []struct {
-			Name        string `json:"name"`
-			Description string `json:"description,omitempty"`
-			Priority    int    `json:"priority"`
-			Enabled     bool   `json:"enabled"`
-			Operator    string `json:"operator,omitempty"`
-			Conditions  []struct {
-				Field    string `json:"field"`
-				Operator string `json:"operator"`
-				Value    string `json:"value"`
-			} `json:"conditions,omitempty"`
-			Actions []struct {
-				Type  string `json:"type"`
-				Value string `json:"value"`
-			} `json:"actions,omitempty"`
-		}
-		if err := json.Unmarshal([]byte(rulesJSON), &input); err != nil {
+		imported, err := rulesRepo.Import([]byte(rulesJSON))
+		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
-		}
-		imported := 0
-		for _, r := range input {
-			op := r.Operator
-			if op == "" {
-				op = "OR"
-			}
-			if op != "AND" && op != "OR" {
-				op = "OR"
-			}
-			rule := &db.Rule{Name: r.Name, Description: r.Description, Priority: r.Priority, Enabled: r.Enabled}
-			if len(r.Conditions) > 0 {
-				g := db.ConditionGroup{Operator: op}
-				for _, c := range r.Conditions {
-					g.Conditions = append(g.Conditions, db.Condition{Field: c.Field, Operator: c.Operator, Value: c.Value})
-				}
-				rule.Groups = []db.ConditionGroup{g}
-			}
-			for _, a := range r.Actions {
-				rule.Actions = append(rule.Actions, db.Action{Type: a.Type, Value: a.Value})
-			}
-			if err := rulesRepo.Create(rule); err != nil {
-				return mcp.NewToolResultError("import failed: " + err.Error()), nil
-			}
-			imported++
 		}
 		return resultJSON(map[string]int{"imported": imported})
 	})

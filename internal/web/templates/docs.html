@@ -334,7 +334,7 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <tr><td>Admin Password</td><td>Change password (leave blank to keep current)</td></tr>
     <tr><td>Polling</td><td>Source folder, poll interval, messages per poll, log retention, enable/disable, refresh folders</td></tr>
     <tr><td>Webhooks</td><td>Shared secret for authenticating outgoing webhook requests (with a Generate button)</td></tr>
-    <tr><td>Rules</td><td>Export/import rules as JSON</td></tr>
+    <tr><td>Rules</td><td>Export/import rules as JSON (includes schedules, priority, and enabled state; the scheduled-backup attachment uses the same format)</td></tr>
     <tr><td>Backup</td><td>Scheduled rules backup via email — enabled toggle, frequency, recipient, Backup Now button</td></tr>
     <tr><td>Contacts</td><td>Import from iCloud, enable/disable auto-collection, wipe all contacts</td></tr>
     <tr><td>MCP Access</td><td>Enable remote access for AI agents (Claude Code, OpenCode, Codex) with API key auth</td></tr>
@@ -458,13 +458,13 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
 
 <div class="endpoint">
     <h4><span class="method-badge method-get">GET</span> GET /settings/rules/export</h4>
-    <p class="desc">Download all rules as JSON (excludes catch-all).</p>
+    <p class="desc">Download all rules as JSON (excludes catch-all). Includes priority, enabled state, and schedules.</p>
     <pre><code class="language-bash">curl http://{{.Host}}/settings/rules/export -b cookies.txt -o rules.json</code></pre>
 </div>
 
 <div class="endpoint">
     <h4><span class="method-badge method-post">POST</span> POST /settings/rules/import</h4>
-    <p class="desc">Import rules from a JSON file.</p>
+    <p class="desc">Import rules from a JSON file — accepts the export/scheduled-backup format, with or without the <code>{"rules":[...]}</code> envelope.</p>
     <pre><code class="language-bash">curl -X POST http://{{.Host}}/settings/rules/import -b cookies.txt \
   -F "rules_file=@rules.json"</code></pre>
 </div>

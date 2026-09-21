@@ -629,52 +629,12 @@ func (p *Poller) BackupNow() error {
 	if p.settingsRepo == nil || p.cfg == nil {
 		return fmt.Errorf("backup: settings not configured")
 	}
-	rules, err := p.rulesRepo.List()
+	rules, err := p.rulesRepo.Export()
 	if err != nil {
-		return fmt.Errorf("backup: list rules: %w", err)
+		return fmt.Errorf("backup: export rules: %w", err)
 	}
 
-	type backupRule struct {
-		Name        string `json:"name"`
-		Description string `json:"description,omitempty"`
-		Operator    string `json:"operator,omitempty"`
-		Conditions  []struct {
-			Field    string `json:"field"`
-			Operator string `json:"operator"`
-			Value    string `json:"value"`
-		} `json:"conditions,omitempty"`
-		Actions []struct {
-			Type  string `json:"type"`
-			Value string `json:"value"`
-		} `json:"actions,omitempty"`
-	}
-
-	var export []backupRule
-	for _, rule := range rules {
-		if rule.Name == "_catch_all" {
-			continue
-		}
-		br := backupRule{Name: rule.Name, Description: rule.Description}
-		for _, g := range rule.Groups {
-			br.Operator = g.Operator
-			for _, c := range g.Conditions {
-				br.Conditions = append(br.Conditions, struct {
-					Field    string `json:"field"`
-					Operator string `json:"operator"`
-					Value    string `json:"value"`
-				}{c.Field, c.Operator, c.Value})
-			}
-		}
-		for _, a := range rule.Actions {
-			br.Actions = append(br.Actions, struct {
-				Type  string `json:"type"`
-				Value string `json:"value"`
-			}{a.Type, a.Value})
-		}
-		export = append(export, br)
-	}
-
-	jsonData, err := json.MarshalIndent(export, "", "  ")
+	jsonData, err := db.MarshalExport(rules)
 	if err != nil {
 		return fmt.Errorf("backup: marshal rules: %w", err)
 	}
@@ -689,16 +649,20 @@ func (p *Poller) BackupNow() error {
 	ts := time.Now().Format("2006-01-02 15:04")
 	subject := fmt.Sprintf("[Mailflow Backup] Rules - %s", ts)
 	filename := fmt.Sprintf("icloud-mailflow-rules-%s.json", time.Now().Format("2006-01-02"))
-	body := fmt.Sprintf("Mailflow rules backup from %s.\n\n%d rules exported.\n\nTo restore, download the JSON attachment and import it in Settings > Rules > Import.", ts, len(export))
+	body := fmt.Sprintf("Mailflow rules backup from %s.\n\n%d rules exported.\n\nTo restore, download the JSON attachment and import it in Settings > Rules > Import.", ts, len(rules))
 
-	if err := smtp.Send(recipient, from, password, subject, body, smtp.Attachment{
+	send := p.sendMail
+	if send == nil {
+		send = smtp.Send
+	}
+	if err := send(recipient, from, password, subject, body, smtp.Attachment{
 		Name: filename, Data: jsonData,
 	}); err != nil {
 		return fmt.Errorf("backup: send email: %w", err)
 	}
 
 	p.settingsRepo.Set("last_backup", time.Now().Format(time.RFC3339))
-	slog.Info("backup sent", "recipient", recipient, "rules", len(export))
+	slog.Info("backup sent", "recipient", recipient, "rules", len(rules))
 	return nil
 }
 

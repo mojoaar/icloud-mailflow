@@ -1263,3 +1263,62 @@ func TestMoveUnknownDestUIDStopsActions(t *testing.T) {
 		t.Errorf("webhook executed %d times, want 0 (actions must stop after unknown dest UID)", got)
 	}
 }
+
+func TestBackupExportRoundTrips(t *testing.T) {
+	rulesRepo, _ := openPollerTestDB(t)
+	settingsRepo := db.NewSettingsRepo(rulesRepo.DB)
+
+	rule := &db.Rule{
+		Name:          "sched",
+		Priority:      3,
+		Enabled:       true,
+		ScheduleDays:  "mon,wed",
+		ScheduleStart: "09:00",
+		ScheduleEnd:   "17:00",
+		Groups: []db.ConditionGroup{
+			{Operator: "AND", Conditions: []db.Condition{{Field: "from", Operator: "contains", Value: "@x.com"}}},
+		},
+		Actions: []db.Action{{Type: "move_to_folder", Value: "Archive"}},
+	}
+	if err := rulesRepo.Create(rule); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	var attachment []byte
+	p := NewPoller(&trackedMock{}, rulesRepo, nil, nil, settingsRepo, nil, nil, &config.Config{}, 10, 60, "INBOX", "me@example.com", nil)
+	p.sendMail = func(to, from, password, subject, body string, atts ...smtp.Attachment) error {
+		if len(atts) > 0 {
+			attachment = atts[0].Data
+		}
+		return nil
+	}
+
+	if err := p.BackupNow(); err != nil {
+		t.Fatalf("BackupNow: %v", err)
+	}
+	if len(attachment) == 0 {
+		t.Fatal("no backup attachment captured")
+	}
+
+	dstRepo := db.NewRulesRepo(db.NewTestDB(t))
+	n, err := dstRepo.Import(attachment)
+	if err != nil {
+		t.Fatalf("Import attachment: %v", err)
+	}
+	if n != 1 {
+		t.Fatalf("imported %d, want 1", n)
+	}
+	restored, err := dstRepo.List()
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(restored) != 1 {
+		t.Fatalf("restored %d rules, want 1", len(restored))
+	}
+	if s := restored[0].ScheduleDays; s != "mon,wed" {
+		t.Errorf("schedule lost in backup: %q", s)
+	}
+	if restored[0].ScheduleStart != "09:00" || restored[0].ScheduleEnd != "17:00" {
+		t.Errorf("schedule lost in backup: %q %q", restored[0].ScheduleStart, restored[0].ScheduleEnd)
+	}
+}
