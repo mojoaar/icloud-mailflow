@@ -110,6 +110,17 @@ func (p *Poller) Tick() error {
 	return p.process()
 }
 
+// TryTick runs a poll cycle only if one is not already in progress; started
+// reports whether this call actually ran it.
+func (p *Poller) TryTick() (bool, error) {
+	if !p.processing.CompareAndSwap(false, true) {
+		return false, nil
+	}
+	err := p.runTick()
+	p.processing.Store(false)
+	return true, err
+}
+
 func (p *Poller) LastTick() time.Time {
 	ns := p.lastTick.Load()
 	if ns == 0 {
@@ -145,7 +156,10 @@ func (p *Poller) process() error {
 		return nil
 	}
 	defer p.processing.Store(false)
+	return p.runTick()
+}
 
+func (p *Poller) runTick() error {
 	start := time.Now()
 	metrics.PollerTicks.Inc()
 	defer func() {

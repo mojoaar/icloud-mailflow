@@ -369,8 +369,12 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if p == nil {
 			return mcp.NewToolResultError("poller not available: IMAP not configured"), nil
 		}
-		if err := p.Tick(); err != nil {
+		started, err := p.TryTick()
+		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
+		}
+		if !started {
+			return mcp.NewToolResultText("poll already in progress"), nil
 		}
 		return mcp.NewToolResultText("poll cycle completed"), nil
 	})

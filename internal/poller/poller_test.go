@@ -1322,3 +1322,21 @@ func TestBackupExportRoundTrips(t *testing.T) {
 		t.Errorf("schedule lost in backup: %q %q", restored[0].ScheduleStart, restored[0].ScheduleEnd)
 	}
 }
+
+func TestTryTickBusy(t *testing.T) {
+	rulesRepo, contactsRepo := openPollerTestDB(t)
+	mock := &trackedMock{}
+	p := NewPoller(mock, rulesRepo, contacts.NewCollector(contactsRepo, mock), nil, nil, nil, nil, nil, 10, 60, "INBOX", "", nil)
+
+	p.processing.Store(true)
+	started, err := p.TryTick()
+	if err != nil || started {
+		t.Errorf("busy: started=%v err=%v, want false, nil", started, err)
+	}
+
+	p.processing.Store(false)
+	started, err = p.TryTick()
+	if err != nil || !started {
+		t.Errorf("idle: started=%v err=%v, want true, nil", started, err)
+	}
+}

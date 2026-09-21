@@ -126,8 +126,13 @@ func pollerTickHandler(p *poller.Poller) http.HandlerFunc {
 			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "IMAP not configured"})
 			return
 		}
-		if err := p.Tick(); err != nil {
+		started, err := p.TryTick()
+		if err != nil {
 			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Poll failed"})
+			return
+		}
+		if !started {
+			renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Poll already in progress"})
 			return
 		}
 		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Poll complete"})
