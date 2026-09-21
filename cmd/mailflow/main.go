@@ -25,6 +25,7 @@ import (
 )
 
 var version = "0.12.2"
+var commit = "dev"
 
 type App struct {
 	Config   *config.Config
@@ -169,7 +170,7 @@ func initialize(dataDir string) (*App, error) {
 		}
 	}
 
-	router, shutdownMCP := web.New(cfg, database, imapClient, contactsCollector, logRepo, statsRepo, version, startTime, p)
+	router, shutdownMCP := web.New(cfg, database, imapClient, contactsCollector, logRepo, statsRepo, version, commit, startTime, p)
 
 	metricsCtx, metricsCancel := context.WithCancel(context.Background())
 	web.StartMetricsCollector(statsRepo, metricsCtx)

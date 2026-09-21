@@ -35,6 +35,7 @@ func healthHandler(d *sql.DB, p *poller.Poller, imapClient imap.Client, statsRep
 				"last_tick":            ps.LastTick.Format(time.RFC3339),
 				"last_duration_ms":     ps.LastDuration.Milliseconds(),
 				"consecutive_failures": ps.ConsecutiveFailures,
+				"last_error":           ps.LastError,
 			}
 			if !ps.Healthy {
 				status = "degraded"
@@ -59,6 +60,8 @@ func healthHandler(d *sql.DB, p *poller.Poller, imapClient imap.Client, statsRep
 			"version":        appVersion,
 			"uptime_seconds": int(time.Since(startTime).Seconds()),
 			"db":             dbStatus,
+			"db_size_bytes":  dbSizeBytes(d),
+			"build":          map[string]any{"version": appVersion, "commit": buildCommit},
 			"imap":           imapStatus,
 			"status":         status,
 		}

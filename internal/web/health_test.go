@@ -75,3 +75,39 @@ func TestHealthAuthenticatedFull(t *testing.T) {
 		t.Errorf("version = %v, want 0.8.0", body["version"])
 	}
 }
+
+func TestHealthIncludesBuildAndDBSize(t *testing.T) {
+	database := openWebTestDB(t)
+	statsRepo := db.NewStatsRepo(database)
+	contactsRepo := db.NewContactsRepo(database)
+	rulesRepo := db.NewRulesRepo(database)
+	sessRepo := db.NewSessionsRepo(database)
+	appVersion = "0.9.0"
+	buildCommit = "abc123"
+	startTime = time.Now()
+
+	token, _ := generateToken()
+	if err := sessRepo.Create(token, time.Hour); err != nil {
+		t.Fatalf("create session: %v", err)
+	}
+
+	h := healthHandler(database, nil, nil, statsRepo, contactsRepo, rulesRepo, sessRepo)
+	req := httptest.NewRequest("GET", "/health", nil)
+	req.AddCookie(&http.Cookie{Name: sessionCookie, Value: token})
+	rec := serveHandler(h, req)
+
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if _, ok := body["db_size_bytes"]; !ok {
+		t.Error("authenticated /health must include db_size_bytes")
+	}
+	build, ok := body["build"].(map[string]any)
+	if !ok {
+		t.Fatalf("authenticated /health must include build, got %v", body["build"])
+	}
+	if build["commit"] != "abc123" {
+		t.Errorf("build.commit = %v, want abc123", build["commit"])
+	}
+}

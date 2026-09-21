@@ -46,6 +46,22 @@ var (
 		Name: "mailflow_uptime_seconds",
 		Help: "Process uptime in seconds.",
 	})
+	RulesTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "mailflow_rules_total",
+		Help: "Number of configured rules (including the catch-all).",
+	})
+	ContactsTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "mailflow_contacts_total",
+		Help: "Number of collected contacts.",
+	})
+	DBSizeBytes = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "mailflow_db_size_bytes",
+		Help: "SQLite database size in bytes.",
+	})
+	BuildInfo = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "mailflow_build_info",
+		Help: "Build information; always 1.",
+	}, []string{"version", "commit"})
 )
 
 func PromHandler() http.Handler {

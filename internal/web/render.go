@@ -31,6 +31,7 @@ type pageData struct {
 var tmpl *template.Template
 
 var appVersion string
+var buildCommit = "dev"
 var useMonoFont atomic.Bool
 var startTime time.Time
 

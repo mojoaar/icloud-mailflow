@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"database/sql"
 	"runtime"
 	"strconv"
 	"syscall"
@@ -21,6 +22,7 @@ func StartMetricsCollector(repo *db.StatsRepo, parentCtx context.Context) {
 			prevSys = ru.Stime.Nano()
 		}
 
+		metrics.BuildInfo.WithLabelValues(appVersion, buildCommit).Set(1)
 		collect(repo, &prevUser, &prevSys)
 
 		ticker := time.NewTicker(time.Hour)
@@ -37,6 +39,18 @@ func StartMetricsCollector(repo *db.StatsRepo, parentCtx context.Context) {
 	}()
 }
 
+// dbSizeBytes returns the SQLite database size in bytes.
+func dbSizeBytes(d *sql.DB) int64 {
+	var pages, pageSize int64
+	if err := d.QueryRow(`PRAGMA page_count`).Scan(&pages); err != nil {
+		return 0
+	}
+	if err := d.QueryRow(`PRAGMA page_size`).Scan(&pageSize); err != nil {
+		return 0
+	}
+	return pages * pageSize
+}
+
 func collect(repo *db.StatsRepo, prevUser, prevSys *int64) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
@@ -47,6 +61,14 @@ func collect(repo *db.StatsRepo, prevUser, prevSys *int64) {
 	metrics.UptimeSeconds.Set(time.Since(startTime).Seconds())
 	repo.SetStat("memory", key, int(m.Alloc/1024/1024))
 	repo.SetStat("goroutines", key, runtime.NumGoroutine())
+
+	if rules, err := db.NewRulesRepo(repo.DB).List(); err == nil {
+		metrics.RulesTotal.Set(float64(len(rules)))
+	}
+	if contacts, err := db.NewContactsRepo(repo.DB).Count(); err == nil {
+		metrics.ContactsTotal.Set(float64(contacts))
+	}
+	metrics.DBSizeBytes.Set(float64(dbSizeBytes(repo.DB)))
 
 	var ru syscall.Rusage
 	if err := syscall.Getrusage(syscall.RUSAGE_SELF, &ru); err == nil {
