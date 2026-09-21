@@ -156,10 +156,15 @@ func (r *RulesRepo) Reorder(ids []int64) error {
 		return err
 	}
 	defer tx.Rollback()
-	for pri, id := range ids {
+	pri := 0
+	for _, id := range ids {
+		if id <= 0 {
+			continue
+		}
 		if _, err := tx.Exec(`UPDATE rules SET priority=? WHERE id=?`, pri, id); err != nil {
 			return err
 		}
+		pri++
 	}
 	if _, err := tx.Exec(`UPDATE rules SET priority = 999 WHERE name = ?`, "_catch_all"); err != nil {
 		return err

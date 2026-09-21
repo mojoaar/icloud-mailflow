@@ -89,7 +89,7 @@
             <td style="white-space:nowrap;font-size:0.8rem;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis">{{.FromAddr}}</td>
             <td>{{.RuleName}}</td>
             <td>{{.ActionType}}{{if .ActionValue}} → {{.ActionValue}}{{end}}</td>
-            <td>{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>
+            <td>{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else if eq .Status "skipped"}}<span class="badge">skipped</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>
         </tr>
         {{end}}
         </tbody>
@@ -99,10 +99,10 @@
         <span class="muted">Page {{.Page}} of {{.TotalPages}} ({{.TotalEntries}} entries)</span>
         <div style="display:flex;gap:4px">
             {{if gt .Page 1}}
-            <button class="btn" hx-get="/activity?page={{subtract .Page 1}}&per_page={{.PerPage}}&q={{.Search}}&rule={{.Rule}}&status={{.Status}}" hx-target="#activity-content" hx-swap="outerHTML">Prev</button>
+            <button class="btn" hx-get="/activity?page={{subtract .Page 1}}&per_page={{.PerPage}}&q={{.Search | urlquery}}&rule={{.Rule | urlquery}}&status={{.Status | urlquery}}" hx-target="#activity-content" hx-swap="outerHTML">Prev</button>
             {{end}}
             {{if lt .Page .TotalPages}}
-            <button class="btn" hx-get="/activity?page={{add .Page 1}}&per_page={{.PerPage}}&q={{.Search}}&rule={{.Rule}}&status={{.Status}}" hx-target="#activity-content" hx-swap="outerHTML">Next</button>
+            <button class="btn" hx-get="/activity?page={{add .Page 1}}&per_page={{.PerPage}}&q={{.Search | urlquery}}&rule={{.Rule | urlquery}}&status={{.Status | urlquery}}" hx-target="#activity-content" hx-swap="outerHTML">Next</button>
             {{end}}
         </div>
     </div>

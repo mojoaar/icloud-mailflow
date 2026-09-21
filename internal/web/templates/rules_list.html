@@ -170,7 +170,7 @@
         }
 
         var ids = [];
-        tbody.querySelectorAll('tr').forEach(function(r) {
+        tbody.querySelectorAll('tr[data-rule-id]').forEach(function(r) {
             ids.push(r.getAttribute('data-rule-id'));
         });
 

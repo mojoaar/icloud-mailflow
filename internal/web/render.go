@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -119,5 +120,8 @@ func renderPage(w http.ResponseWriter, r *http.Request, title string, pageName s
 }
 
 func renderPartial(w http.ResponseWriter, pageName string, data any) {
-	tmpl.ExecuteTemplate(w, pageName, data)
+	if err := tmpl.ExecuteTemplate(w, pageName, data); err != nil {
+		slog.Error("render partial failed", "template", pageName, "error", err)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
+	}
 }

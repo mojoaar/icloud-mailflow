@@ -313,3 +313,24 @@ func TestRulesScheduleRoundTrip(t *testing.T) {
 	}
 	t.Error("rule not found in List")
 }
+
+func TestReorderIgnoresInvalidIDs(t *testing.T) {
+	d := NewTestDB(t)
+	repo := NewRulesRepo(d)
+	r1 := &Rule{Name: "a", Enabled: true}
+	r2 := &Rule{Name: "b", Enabled: true}
+	if err := repo.Create(r1); err != nil {
+		t.Fatalf("Create r1: %v", err)
+	}
+	if err := repo.Create(r2); err != nil {
+		t.Fatalf("Create r2: %v", err)
+	}
+	if err := repo.Reorder([]int64{r2.ID, 0, r1.ID}); err != nil {
+		t.Fatalf("Reorder: %v", err)
+	}
+	got1, _ := repo.Get(r1.ID)
+	got2, _ := repo.Get(r2.ID)
+	if got2.Priority != 0 || got1.Priority != 1 {
+		t.Errorf("priorities: r2=%d r1=%d, want 0 and 1", got2.Priority, got1.Priority)
+	}
+}

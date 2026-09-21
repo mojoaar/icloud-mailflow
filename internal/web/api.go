@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/mojoaar/icloud-mailflow/internal/db"
@@ -38,7 +39,13 @@ func foldersListHandler(imapClient imap.Client, repo *db.FoldersRepo, settingsRe
 				}
 			}
 			if !found {
-				w.Header().Set("HX-Trigger", `{"showToast":{"type":"error","message":"Source folder '`+source+`' not found on IMAP server"}}`)
+				payload, err := json.Marshal(map[string]any{"showToast": map[string]string{
+					"type":    "error",
+					"message": "Source folder '" + source + "' not found on IMAP server",
+				}})
+				if err == nil {
+					w.Header().Set("HX-Trigger", string(payload))
+				}
 			}
 		}
 		renderPartial(w, "folders_list", map[string]any{"Folders": folders, "SourceFolder": source})

@@ -205,7 +205,7 @@ function updateActionInput(select) {
         if (input && input.tagName === 'TEXTAREA') { var inp = document.createElement('input'); inp.type = 'text'; inp.name = 'action_value'; inp.placeholder = 'Webhook URL (e.g. https://ntfy.sh/topic)'; inp.style.flex = '1'; inp.value = input.value; input.replaceWith(inp); }
         else { input.style.display = ''; input.removeAttribute('list'); input.placeholder = 'Webhook URL (e.g. https://ntfy.sh/topic)'; }
     } else {
-        if (input) input.style.display = 'none';
+        if (input) { input.value = ''; input.style.display = 'none'; }
     }
 }
 function onFieldChange(select) {
