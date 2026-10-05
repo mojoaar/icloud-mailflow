@@ -124,7 +124,9 @@ func initialize(dataDir string) (*App, error) {
 		}
 		if imapConn != nil {
 			imapClient = imapConn
-			imapClient.CreateFolder(cfg.SourceFolder)
+			if err := imapClient.CreateFolder(cfg.SourceFolder); err != nil {
+				slog.Warn("failed to create source folder", "folder", cfg.SourceFolder, "error", err)
+			}
 			slog.Debug("imap connected and ready")
 		}
 	}
@@ -239,18 +241,23 @@ func main() {
 
 	server := newHTTPServer(app.Config.ListenAddr, app.Router)
 
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	serverErr := make(chan error, 1)
+
 	go func() {
 		slog.Info("server starting", "addr", app.Config.ListenAddr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("server error", "error", err)
-			os.Exit(1)
+			serverErr <- err
 		}
 	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	slog.Info("shutting down")
+	select {
+	case sig := <-quit:
+		slog.Info("shutting down", "signal", sig)
+	case err := <-serverErr:
+		slog.Error("server error", "error", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()

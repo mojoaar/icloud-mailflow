@@ -56,6 +56,7 @@ type Client interface {
 type IMAPClient struct {
 	cfg    *config.Config
 	client *imapclient.Client
+	caps   goimap.CapSet
 	mu     sync.Mutex
 }
 
@@ -102,6 +103,9 @@ func (c *IMAPClient) Connect() error {
 		c.client = nil
 		return fmt.Errorf("login: %w", err)
 	}
+	if caps, err := c.client.Capability().Wait(); err == nil {
+		c.caps = caps
+	}
 	slog.Debug("connected to imap server", "server", addr)
 	return nil
 }
@@ -111,6 +115,11 @@ func (c *IMAPClient) Close() error {
 		return nil
 	}
 	return c.client.Close()
+}
+
+// Connected reports whether the client has an established connection.
+func (c *IMAPClient) Connected() bool {
+	return c != nil && c.client != nil
 }
 
 func (c *IMAPClient) ListFolders() ([]Folder, error) {
@@ -203,7 +212,19 @@ func destinationUID(dest goimap.NumSet) (uint32, bool) {
 	return 0, false
 }
 
+func (c *IMAPClient) hasMoveCapability() bool {
+	if c.caps == nil {
+		if caps, err := c.client.Capability().Wait(); err == nil {
+			c.caps = caps
+		}
+	}
+	return c.caps != nil && c.caps.Has(goimap.CapMove)
+}
+
 func (c *IMAPClient) MoveMessage(uid uint32, dest string) (uint32, error) {
+	if !c.hasMoveCapability() {
+		return uid, fmt.Errorf("move uid %d to %s: server does not support MOVE", uid, dest)
+	}
 	seqSet := goimap.UIDSetNum(goimap.UID(uid))
 	data, err := c.client.Move(seqSet, dest).Wait()
 	if err != nil {
@@ -341,8 +362,10 @@ func (c *IMAPClient) FetchMessageHeader(uid uint32, headerName string) (string, 
 	body := raw[0].FindBodySection(&fetchItem)
 	if body != nil {
 		v := string(body)
-		v = strings.TrimPrefix(v, headerName+": ")
-		return strings.TrimSpace(v), nil
+		if idx := strings.Index(v, ":"); idx >= 0 {
+			v = strings.TrimSpace(v[idx+1:])
+		}
+		return v, nil
 	}
 	return "", nil
 }

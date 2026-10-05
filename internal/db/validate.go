@@ -102,6 +102,9 @@ func validateCondition(i int, c RuleConditionExport) []string {
 		errs = append(errs, fmt.Sprintf("condition %d: unknown operator %q", i, c.Operator))
 		return errs
 	}
+	if c.Field == "has_attachment" && c.Operator != "exists" && c.Operator != "not_exists" {
+		errs = append(errs, fmt.Sprintf("condition %d: has_attachment only supports exists/not_exists", i))
+	}
 	switch c.Operator {
 	case "matches_regex":
 		if _, err := regexp.Compile(c.Value); err != nil {

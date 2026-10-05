@@ -93,7 +93,16 @@ func (p *Poller) Stop() {
 		return
 	}
 	close(p.stopCh)
-	p.wg.Wait()
+	done := make(chan struct{})
+	go func() {
+		p.wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(15 * time.Second):
+		slog.Warn("poller stop timed out waiting for in-flight tick")
+	}
 	slog.Info("poller stopped")
 }
 
@@ -123,6 +132,18 @@ func closeClient(c imap.Client) {
 	if cl, ok := c.(interface{ Close() error }); ok {
 		_ = cl.Close()
 	}
+}
+
+// hasTerminalAction reports whether the rule's actions will remove the message
+// from the unseen set (move/delete) or mark it read, preventing re-processing.
+func hasTerminalAction(rule *db.Rule) bool {
+	for _, a := range rule.Actions {
+		switch a.Type {
+		case "mark_as_read", "move_to_folder", "delete":
+			return true
+		}
+	}
+	return false
 }
 
 func (p *Poller) Tick() error {
@@ -214,7 +235,7 @@ func (p *Poller) runTick() error {
 		slog.Debug("search result", "found", len(uids), "minUID", minUIDFloor)
 		if len(uids) == 0 {
 			slog.Debug("folder empty, tick complete")
-			return nil
+			break
 		}
 		remaining := uids[:0]
 		for _, uid := range uids {
@@ -259,15 +280,10 @@ func (p *Poller) runTick() error {
 			if matched != nil {
 				slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
 				metrics.RulesMatched.WithLabelValues(matched.Name).Inc()
-				hasMarkRead := false
-				for _, a := range matched.Actions {
-					if a.Type == "mark_as_read" {
-						hasMarkRead = true
-						break
+				if !hasTerminalAction(matched) {
+					if err := client.SetFlags(u, []string{"\\Seen"}); err != nil {
+						slog.Warn("failed to mark matched message seen", "uid", uid, "error", err)
 					}
-				}
-				if !hasMarkRead {
-					slog.Warn("matched rule has no mark_as_read — message may re-process on next tick", "uid", uid, "rule", matched.Name)
 				}
 				p.executeActions(matched, u, msg, captures)
 			} else {
@@ -746,26 +762,40 @@ func (p *Poller) checkBackup() {
 }
 
 func (p *Poller) getTrashFolder() (string, error) {
+	p.mu.Lock()
 	if p.trashFolder != "" {
-		return p.trashFolder, nil
+		v := p.trashFolder
+		p.mu.Unlock()
+		return v, nil
 	}
+	p.mu.Unlock()
+
 	folders, err := p.client().ListFolders()
 	if err != nil {
 		return "", err
 	}
+	var found string
 	for _, f := range folders {
 		if strings.Contains(f.Flags, "\\Trash") {
-			p.trashFolder = f.Name
-			return p.trashFolder, nil
+			found = f.Name
+			break
 		}
 	}
-	for _, f := range folders {
-		if strings.EqualFold(f.Name, "Deleted Messages") {
-			p.trashFolder = f.Name
-			return p.trashFolder, nil
+	if found == "" {
+		for _, f := range folders {
+			if strings.EqualFold(f.Name, "Deleted Messages") {
+				found = f.Name
+				break
+			}
 		}
 	}
-	return "", fmt.Errorf("no trash folder found")
+	if found == "" {
+		return "", fmt.Errorf("no trash folder found")
+	}
+	p.mu.Lock()
+	p.trashFolder = found
+	p.mu.Unlock()
+	return found, nil
 }
 
 func buildForwardMIME(original, subject, from string) []byte {
@@ -953,6 +983,10 @@ func (p *Poller) reconnect() {
 	p.mu.Unlock()
 
 	time.Sleep(delay)
+
+	if !p.running.Load() {
+		return
+	}
 
 	client, err := p.imapConnect()
 	if err != nil {

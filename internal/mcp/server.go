@@ -609,7 +609,11 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		}
 
 		if imapClient != nil {
-			health["imap"] = "connected"
+			if cc, ok := imapClient.(interface{ Connected() bool }); ok && !cc.Connected() {
+				health["imap"] = "not_connected"
+			} else {
+				health["imap"] = "connected"
+			}
 		} else {
 			health["imap"] = "not_configured"
 		}

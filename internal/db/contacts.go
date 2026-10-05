@@ -22,7 +22,7 @@ func NewContactsRepo(d *sql.DB) *ContactsRepo {
 func (r *ContactsRepo) Upsert(email, name string) error {
 	_, err := r.DB.Exec(
 		`INSERT INTO contacts (email, name, first_at, last_at, count) VALUES (?, ?, datetime('now'), datetime('now'), 1)
-		ON CONFLICT(email) DO UPDATE SET name = excluded.name, last_at = excluded.last_at, count = contacts.count + 1`,
+		ON CONFLICT(email) DO UPDATE SET name = CASE WHEN excluded.name != '' THEN excluded.name ELSE contacts.name END, last_at = excluded.last_at, count = contacts.count + 1`,
 		email, name,
 	)
 	return err
@@ -72,7 +72,7 @@ func (r *ContactsRepo) UpsertBatch(entries []Contact) error {
 	for _, c := range entries {
 		_, err := tx.Exec(
 			`INSERT INTO contacts (email, name, first_at, last_at, count) VALUES (?, ?, datetime('now'), datetime('now'), 1)
-			ON CONFLICT(email) DO UPDATE SET name = excluded.name, last_at = excluded.last_at, count = contacts.count + 1`,
+			ON CONFLICT(email) DO UPDATE SET name = CASE WHEN excluded.name != '' THEN excluded.name ELSE contacts.name END, last_at = excluded.last_at, count = contacts.count + 1`,
 			c.Email, c.Name,
 		)
 		if err != nil {

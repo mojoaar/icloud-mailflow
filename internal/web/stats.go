@@ -48,6 +48,9 @@ func statsHandler(repo *db.StatsRepo, settingsRepo *db.SettingsRepo, p *poller.P
 
 		metricsMem, _ := repo.MetricValues("memory", 1440, loc)
 		metricsCPU, _ := repo.MetricValues("cpu", 1440, loc)
+		for i := range metricsCPU {
+			metricsCPU[i].Count /= 10000
+		}
 
 		pollerInfo := map[string]any{"Configured": false}
 		if p != nil {

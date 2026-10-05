@@ -125,17 +125,21 @@ func Migrate(d *sql.DB) error {
 }
 
 func backfillStats(d *sql.DB) error {
-	var count int
-	if err := d.QueryRow("SELECT COUNT(*) FROM stats").Scan(&count); err != nil {
-		return nil
+	var done int
+	if err := d.QueryRow("SELECT COUNT(*) FROM stats WHERE category='__backfill' AND key='done'").Scan(&done); err != nil {
+		return err
 	}
-	if count > 0 {
+	if done > 0 {
 		return nil
 	}
 
 	var logCount int
-	if err := d.QueryRow("SELECT COUNT(*) FROM message_log").Scan(&logCount); err != nil || logCount == 0 {
-		return nil
+	if err := d.QueryRow("SELECT COUNT(*) FROM message_log").Scan(&logCount); err != nil {
+		return err
+	}
+	if logCount == 0 {
+		_, err := d.Exec("INSERT INTO stats (category, key, value) VALUES ('__backfill', 'done', 1)")
+		return err
 	}
 
 	queries := []string{
@@ -150,8 +154,9 @@ func backfillStats(d *sql.DB) error {
 	}
 	for _, q := range queries {
 		if _, err := d.Exec(q); err != nil {
-			return nil
+			return err
 		}
 	}
-	return nil
+	_, err := d.Exec("INSERT INTO stats (category, key, value) VALUES ('__backfill', 'done', 1)")
+	return err
 }

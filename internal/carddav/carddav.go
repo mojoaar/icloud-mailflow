@@ -22,10 +22,17 @@ type basicAuthTransport struct {
 }
 
 func (t *basicAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	if t.AllowedHost == "" || strings.EqualFold(req.URL.Hostname(), t.AllowedHost) {
+	if t.AllowedHost == "" || hostAllowed(req.URL.Hostname(), t.AllowedHost) {
 		req.SetBasicAuth(t.Username, t.Password)
 	}
 	return t.Next.RoundTrip(req)
+}
+
+// hostAllowed reports whether host equals allowed or is a subdomain of it, so
+// credentials follow redirects to per-user subdomains without leaking elsewhere.
+func hostAllowed(host, allowed string) bool {
+	host, allowed = strings.ToLower(host), strings.ToLower(allowed)
+	return host == allowed || strings.HasSuffix(host, "."+allowed)
 }
 
 type Importer struct {

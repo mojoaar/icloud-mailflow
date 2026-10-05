@@ -55,6 +55,7 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - Frontend libraries (HTMX, Lucide, Chart.js, highlight.js) are self-hosted under `/static`; no scripts are loaded from third-party CDNs
 - Secure and HttpOnly cookies when behind TLS
 - Logout requires POST with CSRF (no GET-based logout)
+- `/metrics` (Prometheus) and `/docs` are intentionally public — they expose build info, counters, and API documentation but no user data or credentials
 
 ## Screenshots
 

@@ -99,15 +99,19 @@ func inSchedule(rule *db.Rule, loc *time.Location) bool {
 }
 
 func inScheduleAt(rule *db.Rule, now time.Time) bool {
+	current := now.Format("15:04")
+	start, end := rule.ScheduleStart, rule.ScheduleEnd
 	day := strings.ToLower(now.Format("mon"))
+	// For a window that crosses midnight, the post-midnight portion belongs to
+	// the previous calendar day (e.g. fri 22:00-06:00 is still "fri" at 03:00).
+	if start != "" && end != "" && start > end && current <= end {
+		day = strings.ToLower(now.AddDate(0, 0, -1).Format("mon"))
+	}
 	days := strings.ToLower(rule.ScheduleDays)
 	if days != "" && !strings.Contains(days, day) {
 		return false
 	}
-	current := now.Format("15:04")
-	start, end := rule.ScheduleStart, rule.ScheduleEnd
 	if start != "" && end != "" && start > end {
-		// Window crosses midnight (e.g. 22:00-06:00).
 		return current >= start || current <= end
 	}
 	if start != "" && current < start {
@@ -203,23 +207,21 @@ func evalConditionWithExtras(c db.Condition, msg *imap.Message, extras *msgExtra
 		}
 		return time.Since(msg.Date) < time.Duration(days)*24*time.Hour, nil
 	case "before":
-		target, err := time.Parse("2006-01-02", c.Value)
-		if err != nil {
+		if _, err := time.Parse("2006-01-02", c.Value); err != nil {
 			return false, err
 		}
 		if msg.Date.IsZero() {
 			return false, nil
 		}
-		return msg.Date.Before(target), nil
+		return msg.Date.Format("2006-01-02") < c.Value, nil
 	case "after":
-		target, err := time.Parse("2006-01-02", c.Value)
-		if err != nil {
+		if _, err := time.Parse("2006-01-02", c.Value); err != nil {
 			return false, err
 		}
 		if msg.Date.IsZero() {
 			return false, nil
 		}
-		return msg.Date.After(target), nil
+		return msg.Date.Format("2006-01-02") > c.Value, nil
 	}
 
 	val := getFieldValueWithExtras(c.Field, msg, extras)
@@ -440,8 +442,7 @@ func evalConditionWithResult(c db.Condition, msg *imap.Message, extras *msgExtra
 		cr.Passed = time.Since(msg.Date) < time.Duration(days)*24*time.Hour
 		return cr, nil
 	case "before":
-		target, err := time.Parse("2006-01-02", c.Value)
-		if err != nil {
+		if _, err := time.Parse("2006-01-02", c.Value); err != nil {
 			return cr, err
 		}
 		if msg.Date.IsZero() {
@@ -449,11 +450,10 @@ func evalConditionWithResult(c db.Condition, msg *imap.Message, extras *msgExtra
 			return cr, nil
 		}
 		cr.Actual = msg.Date.Format("2006-01-02")
-		cr.Passed = msg.Date.Before(target)
+		cr.Passed = msg.Date.Format("2006-01-02") < c.Value
 		return cr, nil
 	case "after":
-		target, err := time.Parse("2006-01-02", c.Value)
-		if err != nil {
+		if _, err := time.Parse("2006-01-02", c.Value); err != nil {
 			return cr, err
 		}
 		if msg.Date.IsZero() {
@@ -461,7 +461,7 @@ func evalConditionWithResult(c db.Condition, msg *imap.Message, extras *msgExtra
 			return cr, nil
 		}
 		cr.Actual = msg.Date.Format("2006-01-02")
-		cr.Passed = msg.Date.After(target)
+		cr.Passed = msg.Date.Format("2006-01-02") > c.Value
 		return cr, nil
 	}
 

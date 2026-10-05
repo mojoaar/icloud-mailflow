@@ -20,6 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add panic recovery and safe argument handling to MCP tools, and stop exposing webhook secret/IMAP email via `get_settings`
 - Cap the bulk-apply limit at 200 to prevent unbounded IMAP processing
 - Trust `X-Forwarded-Proto` for secure-cookie/HSTS decisions only when `TRUST_PROXY` is set
+- Poller now clears errors and syncs folders on empty ticks (not only full batches), and marks matched messages seen when a rule has no move/delete/read action to prevent re-firing side effects
+- Poller shutdown has a 15-second timeout and reconnects abort once the poller stops
+- Guarded the cached trash-folder name against concurrent access; server listen errors now use the graceful shutdown path instead of `os.Exit`; source-folder creation failures are logged
+- Fixed the `/stats` CPU chart scale (was 10,000× too high)
+- Fixed crossing-midnight rule schedules so the day follows the window start
+- Reject moves on servers without the MOVE capability instead of a broken COPY/EXPUNGE fallback
+- Contacts seeding now scans all messages in a folder, not just unseen ones; collecting addresses no longer wipes existing contact names
+- `before`/`after` conditions now compare calendar days; `has_attachment` is restricted to `exists`/`not_exists`; `header:` matching is case-insensitive
+- IMAP health now reports "not_connected" when the connection failed; CardDAV keeps auth on redirects to icloud.com subdomains
+- Stats backfill now surfaces errors and resumes cleanly instead of silently skipping partial backfills
 
 ## [0.13.0] - 2026-09-21
 
