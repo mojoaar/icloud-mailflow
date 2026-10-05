@@ -467,6 +467,9 @@ func rulesApplyHandler(repo *db.RulesRepo, p *poller.Poller) http.HandlerFunc {
 		if limit <= 0 {
 			limit = 50
 		}
+		if limit > 200 {
+			limit = 200
+		}
 		jobID := fmt.Sprintf("%d", time.Now().UnixNano())
 		job := &applyJob{status: poller.ApplyStatus{Running: true, Folder: folder}}
 		applyJobs.Store(jobID, job)

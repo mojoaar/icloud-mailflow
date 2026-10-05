@@ -83,7 +83,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 	statsRepo := db.NewStatsRepo(d)
 	contactsRepo := db.NewContactsRepo(d)
 
-	s := server.NewMCPServer("mailflow", version)
+	s := server.NewMCPServer("mailflow", version, server.WithRecovery())
 
 	s.AddTool(mcp.NewTool("list_rules",
 		mcp.WithDescription("List all filtering rules with conditions, groups and actions"),
@@ -143,14 +143,14 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid input: %v", err)), nil
 		}
-		if v, ok := args["schedule_days"]; ok {
-			rule.ScheduleDays = v.(string)
+		if v, ok := args["schedule_days"].(string); ok {
+			rule.ScheduleDays = v
 		}
-		if v, ok := args["schedule_start"]; ok {
-			rule.ScheduleStart = v.(string)
+		if v, ok := args["schedule_start"].(string); ok {
+			rule.ScheduleStart = v
 		}
-		if v, ok := args["schedule_end"]; ok {
-			rule.ScheduleEnd = v.(string)
+		if v, ok := args["schedule_end"].(string); ok {
+			rule.ScheduleEnd = v
 		}
 		if err := rulesRepo.Create(rule); err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
@@ -181,36 +181,36 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 
-		if v, ok := args["name"]; ok {
-			existing.Name = v.(string)
+		if v, ok := args["name"].(string); ok {
+			existing.Name = v
 		}
-		if v, ok := args["priority"]; ok {
-			existing.Priority = int(v.(float64))
+		if v, ok := args["priority"].(float64); ok {
+			existing.Priority = int(v)
 		}
-		if v, ok := args["schedule_days"]; ok {
-			existing.ScheduleDays = v.(string)
+		if v, ok := args["schedule_days"].(string); ok {
+			existing.ScheduleDays = v
 		}
-		if v, ok := args["schedule_start"]; ok {
-			existing.ScheduleStart = v.(string)
+		if v, ok := args["schedule_start"].(string); ok {
+			existing.ScheduleStart = v
 		}
-		if v, ok := args["schedule_end"]; ok {
-			existing.ScheduleEnd = v.(string)
+		if v, ok := args["schedule_end"].(string); ok {
+			existing.ScheduleEnd = v
 		}
-		if condsJSON, ok := args["conditions_json"]; ok {
+		if condsJSON, ok := args["conditions_json"].(string); ok {
 			actsJSON := `[]`
 			if existing.Actions != nil {
 				b, _ := json.Marshal(existing.Actions)
 				actsJSON = string(b)
 			}
-			updated, err := parseRuleInput(existing.Name, existing.Priority, condsJSON.(string), actsJSON)
+			updated, err := parseRuleInput(existing.Name, existing.Priority, condsJSON, actsJSON)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("invalid conditions: %v", err)), nil
 			}
 			existing.Groups = updated.Groups
 		}
-		if actsJSON, ok := args["actions_json"]; ok {
+		if actsJSON, ok := args["actions_json"].(string); ok {
 			var actions []actionInput
-			if err := json.Unmarshal([]byte(actsJSON.(string)), &actions); err != nil {
+			if err := json.Unmarshal([]byte(actsJSON), &actions); err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("invalid actions JSON: %v", err)), nil
 			}
 			existing.Actions = nil
@@ -251,17 +251,17 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
 		msg := &imap.Message{}
-		if v, ok := args["from"]; ok {
-			msg.From = []imap.Address{{Email: v.(string)}}
+		if v, ok := args["from"].(string); ok {
+			msg.From = []imap.Address{{Email: v}}
 		}
-		if v, ok := args["to"]; ok {
-			msg.To = []imap.Address{{Email: v.(string)}}
+		if v, ok := args["to"].(string); ok {
+			msg.To = []imap.Address{{Email: v}}
 		}
-		if v, ok := args["cc"]; ok {
-			msg.Cc = []imap.Address{{Email: v.(string)}}
+		if v, ok := args["cc"].(string); ok {
+			msg.Cc = []imap.Address{{Email: v}}
 		}
-		if v, ok := args["subject"]; ok {
-			msg.Subject = v.(string)
+		if v, ok := args["subject"].(string); ok {
+			msg.Subject = v
 		}
 		ruleList, err := rulesRepo.List()
 		if err != nil {
@@ -286,21 +286,12 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		mcp.WithNumber("per_page", mcp.Description("Entries per page (default 50)")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
-		search := ""
-		if v, ok := args["search"]; ok {
-			search = v.(string)
-		}
-		rule := ""
-		if v, ok := args["rule"]; ok {
-			rule = v.(string)
-		}
-		status := ""
-		if v, ok := args["status"]; ok {
-			status = v.(string)
-		}
+		search, _ := args["search"].(string)
+		rule, _ := args["rule"].(string)
+		status, _ := args["status"].(string)
 		perPage := 50
-		if v, ok := args["per_page"]; ok {
-			perPage = int(v.(float64))
+		if v, ok := args["per_page"].(float64); ok {
+			perPage = int(v)
 		}
 		if perPage <= 0 {
 			perPage = 50
@@ -309,8 +300,8 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 			perPage = 500
 		}
 		page := 1
-		if v, ok := args["page"]; ok {
-			page = int(v.(float64))
+		if v, ok := args["page"].(float64); ok {
+			page = int(v)
 		}
 		if page < 1 {
 			page = 1
@@ -339,12 +330,12 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
 		days := 7
-		if v, ok := args["days"]; ok {
-			days = int(v.(float64))
+		if v, ok := args["days"].(float64); ok {
+			days = int(v)
 		}
 		weeks := 24
-		if v, ok := args["weeks"]; ok {
-			weeks = int(v.(float64))
+		if v, ok := args["weeks"].(float64); ok {
+			weeks = int(v)
 		}
 		total, _ := statsRepo.TotalProcessed()
 		hits, _ := statsRepo.RuleHits()
@@ -665,6 +656,8 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 			"admin_password_hash": true,
 			"imap_password":       true,
 			"mcp_api_key":         true,
+			"webhook_secret":      true,
+			"imap_email":          true,
 		}
 		safeSettings := map[string]string{}
 		for k, v := range all {

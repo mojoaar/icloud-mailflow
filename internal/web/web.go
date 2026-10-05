@@ -208,7 +208,7 @@ func csrfCookieWithToken(token string, r *http.Request) *http.Cookie {
 		Path:     "/",
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
-		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+		Secure:   isSecureRequest(r),
 	}
 }
 

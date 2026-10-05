@@ -55,7 +55,7 @@ func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.Ha
 			Value:    token,
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+			Secure:   isSecureRequest(r),
 			SameSite: http.SameSiteStrictMode,
 			Expires:  time.Now().Add(sessionTTL),
 		})

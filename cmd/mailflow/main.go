@@ -30,7 +30,6 @@ var commit = "dev"
 type App struct {
 	Config      *config.Config
 	DB          *sql.DB
-	ImapConn    *imap.IMAPClient
 	Poller      *poller.Poller
 	Router      http.Handler
 	cancel      context.CancelFunc
@@ -47,9 +46,7 @@ func (a *App) Close() {
 	}
 	if a.Poller != nil {
 		a.Poller.Stop()
-	}
-	if a.ImapConn != nil {
-		a.ImapConn.Close()
+		a.Poller.CloseClient()
 	}
 	if a.DB != nil {
 		a.DB.Close()
@@ -182,7 +179,6 @@ func initialize(dataDir string) (*App, error) {
 	return &App{
 		Config:      cfg,
 		DB:          database,
-		ImapConn:    imapConn,
 		Poller:      p,
 		Router:      router,
 		cancel:      metricsCancel,

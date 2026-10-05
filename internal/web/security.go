@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
+	"os"
 )
 
 type cspNonceKey struct{}
@@ -12,6 +13,15 @@ type cspNonceKey struct{}
 func nonceFrom(r *http.Request) string {
 	s, _ := r.Context().Value(cspNonceKey{}).(string)
 	return s
+}
+
+// isSecureRequest reports whether the request arrived over TLS, trusting
+// X-Forwarded-Proto only when explicitly behind a trusted proxy.
+func isSecureRequest(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	return os.Getenv("TRUST_PROXY") == "true" && r.Header.Get("X-Forwarded-Proto") == "https"
 }
 
 func newNonce() string {
@@ -43,7 +53,7 @@ func securityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 		w.Header().Set("Content-Security-Policy", contentSecurityPolicy(nonce))
-		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+		if isSecureRequest(r) {
 			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), cspNonceKey{}, nonce)))

@@ -138,7 +138,7 @@ func settingsPage(settingsRepo *db.SettingsRepo, foldersRepo *db.FoldersRepo, cf
 		alertsEnabled, _ := settingsRepo.Get("alerts_enabled")
 		alertWebhookURL, _ := settingsRepo.Get("alert_webhook_url")
 		protocol := "http"
-		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+		if isSecureRequest(r) {
 			protocol = "https"
 		}
 		mcpURL := protocol + "://" + r.Host + "/mcp"
@@ -262,6 +262,9 @@ func settingsSaveIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 			slog.Error("settings imap parse form failed", "error", err)
 		}
 		cfg.IMAPEmail = r.FormValue("imap_email")
+		if err := settingsRepo.Set("imap_email", cfg.IMAPEmail); err != nil {
+			slog.Error("settings store imap email failed", "error", err)
+		}
 		if p := r.FormValue("imap_password"); p != "" {
 			if err := storePassword(settingsRepo, cfg, p); err != nil {
 				slog.Error("settings store imap password failed", "error", err)

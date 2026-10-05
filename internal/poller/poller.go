@@ -55,6 +55,7 @@ type Poller struct {
 	sendWebhook         func(url string, payload []byte, secret string) error
 	sendAlert           func(url string, payload []byte, secret string) error
 	alertedUnhealthy    bool
+	reconnecting        atomic.Bool
 }
 
 func (p *Poller) SetAutoReplyRepo(r *db.AutoReplyRepo) { p.autoReplyRepo = r }
@@ -106,6 +107,22 @@ func (p *Poller) setClient(c imap.Client) {
 	p.imapMu.Lock()
 	p.imapClient = c
 	p.imapMu.Unlock()
+}
+
+// CloseClient closes the current IMAP client, if any.
+func (p *Poller) CloseClient() {
+	p.imapMu.Lock()
+	defer p.imapMu.Unlock()
+	closeClient(p.imapClient)
+}
+
+func closeClient(c imap.Client) {
+	if c == nil {
+		return
+	}
+	if cl, ok := c.(interface{ Close() error }); ok {
+		_ = cl.Close()
+	}
 }
 
 func (p *Poller) Tick() error {
@@ -814,8 +831,11 @@ func (p *Poller) setLastError(err error) {
 	if shouldAlert {
 		p.sendAlertNow("poller_unhealthy", err.Error())
 	}
-	if cf > 2 && p.running.Load() && p.imapConnect != nil {
-		go p.reconnect()
+	if cf > 2 && p.running.Load() && p.imapConnect != nil && p.reconnecting.CompareAndSwap(false, true) {
+		go func() {
+			defer p.reconnecting.Store(false)
+			p.reconnect()
+		}()
 	}
 }
 
@@ -946,7 +966,9 @@ func (p *Poller) reconnect() {
 		p.mu.Unlock()
 		return
 	}
+	old := p.client()
 	p.setClient(client)
+	closeClient(old)
 	p.clearLastError()
 	slog.Info("IMAP reconnected")
 }

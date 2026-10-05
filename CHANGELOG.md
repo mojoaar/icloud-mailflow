@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `App.Close` now waits for the metrics collector goroutine to finish before closing the database — fixes a flaky `cmd/mailflow` test failure (`TempDir RemoveAll cleanup: directory not empty`) on Linux CI
 - Weekly volume on `/stats` now follows the selected range (7/30/90 days → 1/4/12 weeks) instead of clamping to a minimum of 8 weeks
 - Added spacing between the "Refresh folders" button and the Source Folder dropdown on `/settings`
+- Prevent unbounded IMAP reconnect goroutines and close replaced clients to stop file-descriptor leaks
+- Reject CRLF in SMTP From/To headers to block header injection, and safely encode attachment filenames
+- Persist the IMAP email to the settings store so changing it in Settings takes effect
+- Add panic recovery and safe argument handling to MCP tools, and stop exposing webhook secret/IMAP email via `get_settings`
+- Cap the bulk-apply limit at 200 to prevent unbounded IMAP processing
+- Trust `X-Forwarded-Proto` for secure-cookie/HSTS decisions only when `TRUST_PROXY` is set
 
 ## [0.13.0] - 2026-09-21
 

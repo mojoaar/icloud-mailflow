@@ -20,6 +20,9 @@ type Attachment struct {
 const smtpHost = "smtp.mail.me.com:587"
 
 func Send(to, from, password, subject, body string, attachments ...Attachment) error {
+	if strings.ContainsAny(from, "\r\n") || strings.ContainsAny(to, "\r\n") {
+		return fmt.Errorf("invalid header: CRLF not allowed in address")
+	}
 	var buf bytes.Buffer
 	buf.WriteString(fmt.Sprintf("From: %s\r\n", from))
 	buf.WriteString(fmt.Sprintf("To: %s\r\n", to))
@@ -46,7 +49,7 @@ func Send(to, from, password, subject, body string, attachments ...Attachment) e
 	for _, a := range attachments {
 		attHeader := textproto.MIMEHeader{}
 		attHeader.Set("Content-Type", "application/json; charset=utf-8")
-		attHeader.Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", a.Name))
+		attHeader.Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": a.Name}))
 		attHeader.Set("Content-Transfer-Encoding", "binary")
 		aw, err := mp.CreatePart(attHeader)
 		if err != nil {

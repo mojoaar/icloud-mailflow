@@ -61,6 +61,7 @@ func TestSecurityHeadersNonceMatchesContext(t *testing.T) {
 }
 
 func TestSecurityHeadersHSTSOnTLS(t *testing.T) {
+	t.Setenv("TRUST_PROXY", "true")
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("X-Forwarded-Proto", "https")
 	rec := httptest.NewRecorder()
@@ -68,5 +69,17 @@ func TestSecurityHeadersHSTSOnTLS(t *testing.T) {
 
 	if rec.Header().Get("Strict-Transport-Security") == "" {
 		t.Error("expected HSTS when the request is HTTPS")
+	}
+}
+
+func TestSecurityHeadersNoHSTSUntrustedProxy(t *testing.T) {
+	t.Setenv("TRUST_PROXY", "false")
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	rec := httptest.NewRecorder()
+	securityTestHandler(nil).ServeHTTP(rec, req)
+
+	if rec.Header().Get("Strict-Transport-Security") != "" {
+		t.Error("HSTS must not be sent when X-Forwarded-Proto is untrusted")
 	}
 }
