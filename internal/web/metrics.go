@@ -12,8 +12,10 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/metrics"
 )
 
-func StartMetricsCollector(repo *db.StatsRepo, parentCtx context.Context) {
+func StartMetricsCollector(repo *db.StatsRepo, parentCtx context.Context) func() {
+	done := make(chan struct{})
 	go func() {
+		defer close(done)
 		defer func() { _ = recover() }()
 		var prevUser, prevSys int64
 		var ru syscall.Rusage
@@ -37,6 +39,7 @@ func StartMetricsCollector(repo *db.StatsRepo, parentCtx context.Context) {
 			}
 		}
 	}()
+	return func() { <-done }
 }
 
 // dbSizeBytes returns the SQLite database size in bytes.

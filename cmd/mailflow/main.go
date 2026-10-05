@@ -28,18 +28,22 @@ var version = "0.13.0"
 var commit = "dev"
 
 type App struct {
-	Config   *config.Config
-	DB       *sql.DB
-	ImapConn *imap.IMAPClient
-	Poller   *poller.Poller
-	Router   http.Handler
-	cancel   context.CancelFunc
-	shutdown func(context.Context) error
+	Config      *config.Config
+	DB          *sql.DB
+	ImapConn    *imap.IMAPClient
+	Poller      *poller.Poller
+	Router      http.Handler
+	cancel      context.CancelFunc
+	waitMetrics func()
+	shutdown    func(context.Context) error
 }
 
 func (a *App) Close() {
 	if a.cancel != nil {
 		a.cancel()
+	}
+	if a.waitMetrics != nil {
+		a.waitMetrics()
 	}
 	if a.Poller != nil {
 		a.Poller.Stop()
@@ -173,16 +177,17 @@ func initialize(dataDir string) (*App, error) {
 	router, shutdownMCP := web.New(cfg, database, imapClient, contactsCollector, logRepo, statsRepo, version, commit, startTime, p)
 
 	metricsCtx, metricsCancel := context.WithCancel(context.Background())
-	web.StartMetricsCollector(statsRepo, metricsCtx)
+	waitMetrics := web.StartMetricsCollector(statsRepo, metricsCtx)
 
 	return &App{
-		Config:   cfg,
-		DB:       database,
-		ImapConn: imapConn,
-		Poller:   p,
-		Router:   router,
-		cancel:   metricsCancel,
-		shutdown: shutdownMCP,
+		Config:      cfg,
+		DB:          database,
+		ImapConn:    imapConn,
+		Poller:      p,
+		Router:      router,
+		cancel:      metricsCancel,
+		waitMetrics: waitMetrics,
+		shutdown:    shutdownMCP,
 	}, nil
 }
 
