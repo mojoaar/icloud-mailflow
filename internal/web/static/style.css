@@ -794,12 +794,11 @@ html { scrollbar-color: var(--border) var(--bg); scrollbar-width: thin; }
 .rules-table col:nth-child(6) { width: 100px; }
 
 .activity-table { table-layout: auto; }
-.activity-table col:nth-child(1) { width: 185px; }
-.activity-table col:nth-child(3) { width: 180px; }
-.activity-table col:nth-child(4) { width: 130px; }
-.activity-table col:nth-child(5) { width: 150px; }
-.activity-table col:nth-child(6) { width: 80px; }
-.activity-table col:nth-child(7) { width: 110px; }
+.activity-table col:nth-child(1) { width: 32px; }
+.activity-table col:nth-child(2) { width: 150px; }
+.activity-table col:nth-child(5) { width: 140px; }
+.activity-table col:nth-child(6) { width: 140px; }
+.activity-table col:nth-child(7) { width: 90px; }
 .input-xs { width: 80px; }
 .auth-card-sm { max-width: 360px; margin: 80px auto; }
 
