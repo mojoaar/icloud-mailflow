@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.14.0] - 2026-10-05
 
 ### Removed
 - "Run rules" on the Activity Log (`POST /activity/rerun`) — the dry-run frequently failed with "Message no longer available" because the logged message had usually already been moved or deleted
@@ -701,6 +701,7 @@ Superseded by 0.5.0.
 - 160+ tests across all packages
 - Folder auto-creation, source folder dropdown with autocomplete
 
+[0.14.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/mojoaar/icloud-mailflow/compare/v0.12.2...v0.13.0
 [0.12.2]: https://github.com/mojoaar/icloud-mailflow/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/mojoaar/icloud-mailflow/compare/v0.12.0...v0.12.1
