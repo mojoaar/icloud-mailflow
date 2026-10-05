@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- "Run rules" on the Activity Log (`POST /activity/rerun`) — the dry-run frequently failed with "Message no longer available" because the logged message had usually already been moved or deleted
+
 ## [0.13.0] - 2026-09-21
 
 ### Added

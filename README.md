@@ -14,7 +14,6 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **IMAP Rules Engine** — match messages by from/to/cc/subject/body/headers/attachment/content_type with AND/OR logic and 13 operators, execute actions (move, mark read/unread, set/remove flags, auto_reply, forward, delete, webhook)
 - **Nested Condition Groups** — nest AND/OR groups, e.g. `(from contains @a.com OR subject starts_with "Invoice") AND has_attachment`; preserved through export/backup/MCP
 - **Failure Alerts** — POST a webhook when the poller goes unhealthy or recovers, or when a scheduled backup fails
-- **Activity Re-run** — dry-run the current rules against any logged message to see which rule matches
 - **Auto-Reply Throttling** — each sender receives at most one `auto_reply` per day, with self-address skipping to prevent mail loops
 - **Rule Scheduling** — optional time-of-day and day-of-week filter per rule
 - **Regex Capture** — named groups from `matches_regex` conditions become `[capture:name]` template variables
