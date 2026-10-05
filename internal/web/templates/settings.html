@@ -54,7 +54,7 @@
     {{if .PollError}}<p class="error-hint">Invalid polling settings — not saved</p>{{end}}
     <form method="POST" action="/settings/poll"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-group">
-            <div class="flex-between">
+            <div class="flex-between mb-1">
                 <label for="source-folder-select">Source Folder (where rules run on new mail)</label>
                 <button type="button" class="btn"
                     hx-get="/api/folders" hx-target="#source-folder-select" hx-swap="innerHTML">

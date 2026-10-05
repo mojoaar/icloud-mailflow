@@ -31,11 +31,7 @@ func statsHandler(repo *db.StatsRepo, settingsRepo *db.SettingsRepo, p *poller.P
 		daily, _ := repo.DailyVolume(days)
 		errors, _ := repo.ErrorBreakdown()
 		folders, _ := repo.FolderDistribution()
-		weeks := days / 7
-		if weeks < 8 {
-			weeks = 8
-		}
-		weekly, _ := repo.WeeklyVolume(weeks)
+		weekly, _ := repo.WeeklyVolume(statsWeeks(days))
 
 		maxRuleHit := 0
 		for _, h := range rules {
@@ -104,11 +100,7 @@ func statsExportHandler(repo *db.StatsRepo) http.HandlerFunc {
 		errors, _ := repo.ErrorBreakdown()
 		folders, _ := repo.FolderDistribution()
 		daily, _ := repo.DailyVolume(days)
-		weeks := days / 7
-		if weeks < 8 {
-			weeks = 8
-		}
-		weekly, _ := repo.WeeklyVolume(weeks)
+		weekly, _ := repo.WeeklyVolume(statsWeeks(days))
 
 		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"mailflow-stats-%s.csv\"", time.Now().Format("2006-01-02")))
@@ -150,4 +142,8 @@ func statsRange(v string) int {
 		}
 	}
 	return statsDayOptions[0]
+}
+
+func statsWeeks(days int) int {
+	return days / 7
 }

@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `App.Close` now waits for the metrics collector goroutine to finish before closing the database — fixes a flaky `cmd/mailflow` test failure (`TempDir RemoveAll cleanup: directory not empty`) on Linux CI
+- Weekly volume on `/stats` now follows the selected range (7/30/90 days → 1/4/12 weeks) instead of clamping to a minimum of 8 weeks
+- Added spacing between the "Refresh folders" button and the Source Folder dropdown on `/settings`
 
 ## [0.13.0] - 2026-09-21
 

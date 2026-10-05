@@ -466,6 +466,22 @@ func TestStatsRange(t *testing.T) {
 	}
 }
 
+func TestStatsWeeks(t *testing.T) {
+	cases := []struct {
+		in   int
+		want int
+	}{
+		{7, 1},
+		{30, 4},
+		{90, 12},
+	}
+	for _, c := range cases {
+		if got := statsWeeks(c.in); got != c.want {
+			t.Errorf("statsWeeks(%d) = %d, want %d", c.in, got, c.want)
+		}
+	}
+}
+
 func TestStatsHandlerRangeAndPoller(t *testing.T) {
 	database := openWebTestDB(t)
 	statsRepo := db.NewStatsRepo(database)
