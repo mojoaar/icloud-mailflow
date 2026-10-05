@@ -44,6 +44,9 @@ func ValidateRuleExport(re RuleExport) []string {
 	if strings.TrimSpace(re.Name) == "" {
 		errs = append(errs, "name is required")
 	}
+	if re.Name == "_catch_all" {
+		errs = append(errs, "name '_catch_all' is reserved")
+	}
 	if re.Operator != "" && !validGroupOperators[re.Operator] {
 		errs = append(errs, fmt.Sprintf("unknown group operator %q", re.Operator))
 	}

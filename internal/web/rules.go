@@ -3,6 +3,7 @@ package web
 import (
 	"fmt"
 	"html"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -432,7 +433,8 @@ func rulesTestHandler(repo *db.RulesRepo, imapClient imap.Client) http.HandlerFu
 		}
 		matched, captures, results, err := rules.EvaluateWithResults(rule, msg, nil)
 		if err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+			slog.Error("rule test failed", "error", err)
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Failed to test rule"})
 			return
 		}
 		renderPartial(w, "rules_test_result", map[string]any{
@@ -546,12 +548,14 @@ func rulesTestMessageHandler(repo *db.RulesRepo, imapClient imap.Client) http.Ha
 		}
 		msg, err := imapClient.FetchMessage(uint32(uids[0]))
 		if err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Failed to fetch message: " + err.Error()})
+			slog.Error("fetch message failed", "error", err)
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Failed to fetch message"})
 			return
 		}
 		matched, captures, results, err := rules.EvaluateWithResults(rule, msg, imapClient)
 		if err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": err.Error()})
+			slog.Error("rule test failed", "error", err)
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Failed to test rule"})
 			return
 		}
 		renderPartial(w, "rules_test_result", map[string]any{

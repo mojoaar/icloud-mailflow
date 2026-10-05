@@ -306,6 +306,9 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		if page < 1 {
 			page = 1
 		}
+		if page > 100000 {
+			page = 100000
+		}
 		offset := (page - 1) * perPage
 		entries, total, err := logRepo.ListFiltered(perPage, offset, search, rule, status)
 		if err != nil {

@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 )
 
@@ -106,6 +107,9 @@ func Migrate(d *sql.DB) error {
 			slog.Warn("migration add message_log.folder failed", "error", err)
 		}
 	}
+	if err := ensureUniqueRuleNames(d); err != nil {
+		return err
+	}
 	if err := backfillStats(d); err != nil {
 		return err
 	}
@@ -122,6 +126,56 @@ func Migrate(d *sql.DB) error {
 		}
 	}
 	return nil
+}
+
+// ensureUniqueRuleNames renames duplicate rule names and enforces uniqueness so
+// name-based lookups (the catch-all, import dedup) remain unambiguous.
+func ensureUniqueRuleNames(d *sql.DB) error {
+	rows, err := d.Query(`SELECT id, name FROM rules WHERE name IN (SELECT name FROM rules GROUP BY name HAVING COUNT(*) > 1) ORDER BY name, id`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	type dup struct {
+		id   int64
+		name string
+	}
+	var dups []dup
+	for rows.Next() {
+		var r dup
+		if err := rows.Scan(&r.id, &r.name); err != nil {
+			return err
+		}
+		dups = append(dups, r)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	kept := map[string]bool{}
+	for _, r := range dups {
+		if !kept[r.name] {
+			kept[r.name] = true
+			continue
+		}
+		for i := 2; ; i++ {
+			candidate := fmt.Sprintf("%s (%d)", r.name, i)
+			var n int
+			if err := d.QueryRow(`SELECT COUNT(*) FROM rules WHERE name = ?`, candidate).Scan(&n); err != nil {
+				return err
+			}
+			if n == 0 {
+				if _, err := d.Exec(`UPDATE rules SET name = ? WHERE id = ?`, candidate, r.id); err != nil {
+					return err
+				}
+				break
+			}
+		}
+	}
+
+	_, err = d.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_rules_name ON rules(name)`)
+	return err
 }
 
 func backfillStats(d *sql.DB) error {

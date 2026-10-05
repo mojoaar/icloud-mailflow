@@ -590,7 +590,8 @@ func settingsTestAlert(p *poller.Poller) http.HandlerFunc {
 			return
 		}
 		if err := p.SendTestAlert(); err != nil {
-			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Test alert failed: " + err.Error()})
+			slog.Error("test alert failed", "error", err)
+			renderPartial(w, "toast", map[string]string{"Type": "error", "Message": "Test alert failed"})
 			return
 		}
 		renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "Test alert sent"})

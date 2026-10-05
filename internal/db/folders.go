@@ -60,11 +60,11 @@ func (r *FoldersRepo) Sync(folders []Folder) error {
 		}
 	}
 
-	if len(paths) == 0 {
+	if len(folders) == 0 {
 		if _, err := tx.Exec(`DELETE FROM folders`); err != nil {
 			return err
 		}
-	} else {
+	} else if len(paths) > 0 {
 		placeholders := strings.TrimSuffix(strings.Repeat("?,", len(paths)), ",")
 		args := make([]any, len(paths))
 		for i, p := range paths {

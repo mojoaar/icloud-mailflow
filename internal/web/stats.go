@@ -110,7 +110,7 @@ func statsExportHandler(repo *db.StatsRepo) http.HandlerFunc {
 		cw := csv.NewWriter(w)
 		defer cw.Flush()
 		write := func(category, name string, count int) {
-			_ = cw.Write([]string{category, name, strconv.Itoa(count)})
+			_ = cw.Write([]string{category, csvSafe(name), strconv.Itoa(count)})
 		}
 		_ = cw.Write([]string{"category", "name", "count"})
 		write("total", "processed", total)
@@ -149,4 +149,16 @@ func statsRange(v string) int {
 
 func statsWeeks(days int) int {
 	return days / 7
+}
+
+// csvSafe neutralizes formula injection for values opened in spreadsheet apps.
+func csvSafe(s string) string {
+	if s == "" {
+		return s
+	}
+	switch s[0] {
+	case '=', '+', '-', '@', '\t', '\r':
+		return "'" + s
+	}
+	return s
 }

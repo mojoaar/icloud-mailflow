@@ -188,7 +188,10 @@ func (r *RulesRepo) Create(rule *Rule) error {
 	if err != nil {
 		return err
 	}
-	rule.ID, _ = res.LastInsertId()
+	rule.ID, err = res.LastInsertId()
+	if err != nil {
+		return err
+	}
 	if err := r.saveConditions(tx, rule); err != nil {
 		return err
 	}
@@ -248,7 +251,7 @@ func (r *RulesRepo) Reorder(ids []int64) error {
 		}
 		pri++
 	}
-	if _, err := tx.Exec(`UPDATE rules SET priority = 999 WHERE name = ?`, "_catch_all"); err != nil {
+	if _, err := tx.Exec(`UPDATE rules SET priority = (SELECT COALESCE(MAX(priority), 0) + 1 FROM rules WHERE name != '_catch_all') WHERE name = ?`, "_catch_all"); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -339,7 +342,10 @@ func (r *RulesRepo) saveConditions(tx *sql.Tx, rule *Rule) error {
 		if err != nil {
 			return err
 		}
-		gID, _ := res.LastInsertId()
+		gID, err := res.LastInsertId()
+		if err != nil {
+			return err
+		}
 		for _, c := range g.Conditions {
 			if _, err := tx.Exec(`INSERT INTO conditions (group_id, field, operator, value) VALUES (?, ?, ?, ?)`,
 				gID, c.Field, c.Operator, c.Value); err != nil {
@@ -395,7 +401,7 @@ func (r *RulesRepo) EnsureCatchAll() error {
 				return err
 			}
 		}
-		if _, err := tx.Exec(`UPDATE rules SET priority = 999 WHERE name = ?`, "_catch_all"); err != nil {
+		if _, err := tx.Exec(`UPDATE rules SET priority = (SELECT COALESCE(MAX(priority), 0) + 1 FROM rules WHERE name != '_catch_all') WHERE name = ?`, "_catch_all"); err != nil {
 			return err
 		}
 		return tx.Commit()

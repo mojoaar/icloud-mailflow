@@ -30,6 +30,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `before`/`after` conditions now compare calendar days; `has_attachment` is restricted to `exists`/`not_exists`; `header:` matching is case-insensitive
 - IMAP health now reports "not_connected" when the connection failed; CardDAV keeps auth on redirects to icloud.com subdomains
 - Stats backfill now surfaces errors and resumes cleanly instead of silently skipping partial backfills
+- Return `LastInsertId` errors when creating rules so child rows can't be orphaned against a missing rule
+- Standardize the catch-all rule priority on `MAX(priority)+1` instead of a hardcoded 999
+- Escape LIKE wildcards in activity-log search so `%`/`_` match literally
+- Only clear the folder cache when IMAP returns no folders at all
+- Neutralize spreadsheet formula injection in the stats CSV export
+- Show generic messages (and log the detail) instead of leaking IMAP/SMTP/evaluation errors in the UI
+- Clamp MCP pagination to prevent integer overflow
+- Enforce unique rule names via a migration (renaming any existing duplicates) and reserve the `_catch_all` name
 
 ## [0.13.0] - 2026-09-21
 

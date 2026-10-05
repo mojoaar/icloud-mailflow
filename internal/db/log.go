@@ -83,8 +83,8 @@ func (r *LogRepo) ListFiltered(limit, offset int, search, rule, status string) (
 	var args []any
 
 	if search != "" {
-		s := "%" + search + "%"
-		wheres = append(wheres, "(subject LIKE ? OR from_addr LIKE ? OR rule_name LIKE ?)")
+		s := "%" + escapeLike(search) + "%"
+		wheres = append(wheres, `(subject LIKE ? ESCAPE '\' OR from_addr LIKE ? ESCAPE '\' OR rule_name LIKE ? ESCAPE '\')`)
 		args = append(args, s, s, s)
 	}
 	if rule != "" {
