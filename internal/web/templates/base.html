@@ -31,6 +31,7 @@
             <a href="/activity"{{if navMatch .Page "activity"}} aria-current="page"{{end}}><i data-lucide="list" class="nav-icon" aria-hidden="true"></i> Activity</a>
             <a href="/rules"{{if navMatch .Page "rules"}} aria-current="page"{{end}}><i data-lucide="git-branch" class="nav-icon" aria-hidden="true"></i> Rules</a>
             <a href="/settings"{{if navMatch .Page "settings"}} aria-current="page"{{end}}><i data-lucide="settings" class="nav-icon" aria-hidden="true"></i> Settings</a>
+            <a href="/stats"{{if navMatch .Page "stats"}} aria-current="page"{{end}}><i data-lucide="bar-chart-3" class="nav-icon" aria-hidden="true"></i> Stats</a>
             <form method="POST" action="/logout" class="inline-form"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}"><button type="submit" class="nav-btn"><i data-lucide="log-out" class="nav-icon" aria-hidden="true"></i> Logout</button></form>
             <a href="#" id="theme-toggle" aria-label="Toggle dark/light mode" class="nav-theme-link">
                 <span class="theme-icon" aria-hidden="true"><i data-lucide="moon" class="nav-icon"></i></span>
@@ -43,8 +44,7 @@
     <footer>
         Crafted with ❤️ &amp; 🤖 by <a href="https://johansen.foo" target="_blank">Morten Johansen</a> ·
         <a href="https://github.com/mojoaar/icloud-mailflow" target="_blank">GitHub</a> ·
-        <a href="https://github.com/mojoaar/icloud-mailflow/blob/main/LICENSE" target="_blank">MIT</a>{{if .ShowNav}} ·{{end}}
-        {{if .ShowNav}}<a href="/stats"{{if navMatch .Page "stats"}} aria-current="page"{{end}}>Stats</a> ·{{end}}
+        <a href="https://github.com/mojoaar/icloud-mailflow/blob/main/LICENSE" target="_blank">MIT</a> ·
         <a href="/docs" target="_blank">Docs</a> ·
         v{{.Version}} · © 2026
     </footer>

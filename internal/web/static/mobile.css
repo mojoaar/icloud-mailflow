@@ -23,7 +23,7 @@
     }
     .nav-links a, .nav-links .nav-btn { width: 100%; padding: 8px; font-size: 0.9rem; text-align: left; }
 
-    h1 { font-size: 1.2rem; }
+    h1 { font-size: 1.5rem; }
 
     .condition-row, .action-row, .group-head { flex-wrap: wrap; }
     .condition-row select[name], .condition-row input[name],
@@ -32,4 +32,15 @@
     .input-narrow, .metric-card, #rule-test input[name="folder"] { width: 100%; }
 
     td p, td span, td a, .muted { overflow-wrap: anywhere; }
+
+    /* Activity table → stacked cards */
+    .activity-table { overflow-x: visible; }
+    .activity-table thead { display: none; }
+    .activity-table tbody { display: block; }
+    .activity-table tr { display: block; margin-bottom: 12px; border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; }
+    .activity-table td { display: flex; justify-content: space-between; gap: 12px; border-bottom: none; padding: 3px 0; }
+    .activity-table td::before { content: attr(data-label); font-weight: 600; color: var(--muted); flex-shrink: 0; }
+    .activity-table td:first-child { display: block; padding: 0 0 6px; }
+    .activity-table td:first-child::before { content: none; }
+    .activity-table td.cell-truncate { white-space: normal; overflow: visible; text-overflow: clip; max-width: none; }
 }

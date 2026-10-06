@@ -87,12 +87,12 @@
         {{range .Entries}}
         <tr>
             <td><input type="checkbox" class="activity-select" name="id" value="{{.ID}}" aria-label="Select entry"></td>
-            <td class="nowrap text-sm muted">{{.CreatedAt}}</td>
-            <td>{{.Subject}}</td>
-            <td class="cell-truncate">{{.FromAddr}}</td>
-            <td>{{.RuleName}}</td>
-            <td>{{.ActionType}}{{if .ActionValue}} → {{.ActionValue}}{{end}}</td>
-            <td>{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else if eq .Status "skipped"}}<span class="badge">skipped</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>
+            <td class="nowrap text-sm muted" data-label="Time">{{.CreatedAt}}</td>
+            <td data-label="Subject">{{.Subject}}</td>
+            <td class="cell-truncate" data-label="From">{{.FromAddr}}</td>
+            <td data-label="Rule">{{.RuleName}}</td>
+            <td data-label="Action">{{.ActionType}}{{if .ActionValue}} → {{.ActionValue}}{{end}}</td>
+            <td data-label="Status">{{if eq .Status "success"}}<span class="badge badge-on">ok</span>{{else if eq .Status "skipped"}}<span class="badge">skipped</span>{{else}}<span class="badge badge-off">error</span>{{end}}</td>
         </tr>
         {{end}}
         </tbody>

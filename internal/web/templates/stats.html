@@ -211,7 +211,7 @@ function makeChart(canvasId, type, labels, vals, label) {
         return new Chart(ctx, {
             type:'doughnut',
             data:{labels:labels,datasets:[{data:vals,backgroundColor:accentArr,borderColor:'transparent'}]},
-            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:colors.text,padding:12,font:{size:12},usePointStyle:true}}}}
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:(window.innerWidth < 768 ? 'bottom' : 'right'),labels:{color:colors.text,padding:12,font:{size:12},usePointStyle:true}}}}
         });
     }
     if (type === 'bar') {
