@@ -25,7 +25,7 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/web"
 )
 
-var version = "0.14.2"
+var version = "0.15.0"
 var commit = "dev"
 
 type App struct {
