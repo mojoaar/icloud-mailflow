@@ -136,16 +136,6 @@ func closeClient(c imap.Client) {
 
 // hasTerminalAction reports whether the rule's actions will remove the message
 // from the unseen set (move/delete) or mark it read, preventing re-processing.
-func hasTerminalAction(rule *db.Rule) bool {
-	for _, a := range rule.Actions {
-		switch a.Type {
-		case "mark_as_read", "move_to_folder", "delete":
-			return true
-		}
-	}
-	return false
-}
-
 func (p *Poller) Tick() error {
 	return p.process()
 }
@@ -280,12 +270,12 @@ func (p *Poller) runTick() error {
 			if matched != nil {
 				slog.Debug("rule matched", "uid", uid, "rule", matched.Name)
 				metrics.RulesMatched.WithLabelValues(matched.Name).Inc()
-				if !hasTerminalAction(matched) {
+				movedOut := p.executeActions(matched, u, msg, captures)
+				if !movedOut {
 					if err := client.SetFlags(u, []string{"\\Seen"}); err != nil {
 						slog.Warn("failed to mark matched message seen", "uid", uid, "error", err)
 					}
 				}
-				p.executeActions(matched, u, msg, captures)
 			} else {
 				skipUIDs[u] = true
 				slog.Debug("no rule matched, skipping", "uid", uid)
@@ -352,7 +342,12 @@ func (p *Poller) ApplyToFolder(folder string, limit int) (*ApplyResult, error) {
 		result.Processed++
 		if matched != nil {
 			result.Matched++
-			p.executeActions(matched, uid, msg, captures)
+			movedOut := p.executeActions(matched, uid, msg, captures)
+			if !movedOut {
+				if err := client.SetFlags(uid, []string{"\\Seen"}); err != nil {
+					slog.Warn("failed to mark matched message seen", "uid", uid, "error", err)
+				}
+			}
 			result.Actions += len(matched.Actions)
 		}
 		minUID = uid + 1
@@ -360,7 +355,7 @@ func (p *Poller) ApplyToFolder(folder string, limit int) (*ApplyResult, error) {
 	return result, nil
 }
 
-func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, captures map[string]string) {
+func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, captures map[string]string) bool {
 	client := p.client()
 	from := ""
 	if msg != nil && len(msg.From) > 0 {
@@ -374,6 +369,7 @@ func (p *Poller) executeActions(rule *db.Rule, uid uint32, msg *imap.Message, ca
 	effectiveUID := uid
 	destFolder := ""
 	messageStatsDone := false
+	movedOut := false
 
 	logAction := func(actionUID uint32, action db.Action, status string) {
 		metrics.ActionsTotal.WithLabelValues(action.Type, status).Inc()
@@ -439,6 +435,7 @@ actions:
 				logAction(effectiveUID, action, "success")
 				effectiveUID = newUID
 				destFolder = action.Value
+				movedOut = true
 				client.SelectMailbox(destFolder)
 			}
 		case "mark_as_read":
@@ -501,6 +498,7 @@ actions:
 				} else {
 					logAction(effectiveUID, action, "success")
 					effectiveUID = newUID
+					movedOut = true
 					client.SelectMailbox(trash)
 				}
 			}
@@ -593,6 +591,7 @@ actions:
 			slog.Warn("unknown action type", "type", action.Type)
 		}
 	}
+	return movedOut
 }
 
 func (p *Poller) getIMAPEmail() string {

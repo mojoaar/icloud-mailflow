@@ -452,6 +452,36 @@ func TestExecuteActionsMultipleActions(t *testing.T) {
 	mock.mu.Unlock()
 }
 
+func TestExecuteActionsMovedOutOnFailure(t *testing.T) {
+	mock := &trackedMock{moveErr: errors.New("move failed")}
+	p := &Poller{imapClient: mock}
+
+	rule := &db.Rule{
+		Name: "test",
+		Actions: []db.Action{
+			{Type: "move_to_folder", Value: "Archive"},
+		},
+	}
+	if movedOut := p.executeActions(rule, 5, nil, nil); movedOut {
+		t.Error("expected movedOut=false when the move fails")
+	}
+}
+
+func TestExecuteActionsMovedOutOnSuccess(t *testing.T) {
+	mock := &trackedMock{}
+	p := &Poller{imapClient: mock}
+
+	rule := &db.Rule{
+		Name: "test",
+		Actions: []db.Action{
+			{Type: "move_to_folder", Value: "Archive"},
+		},
+	}
+	if movedOut := p.executeActions(rule, 5, nil, nil); !movedOut {
+		t.Error("expected movedOut=true when the move succeeds")
+	}
+}
+
 func TestExecuteActionsMoveToFolderEmptyValue(t *testing.T) {
 	mock := &trackedMock{}
 	p := &Poller{imapClient: mock}
