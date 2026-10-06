@@ -228,7 +228,18 @@ func (c *IMAPClient) SelectMailbox(name string) error {
 }
 
 func (c *IMAPClient) CreateFolder(name string) error {
-	return c.client.Create(name, nil).Wait()
+	if err := c.client.Create(name, nil).Wait(); err != nil {
+		if isAlreadyExists(err) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func isAlreadyExists(err error) bool {
+	var imapErr *goimap.Error
+	return errors.As(err, &imapErr) && imapErr.Code == goimap.ResponseCodeAlreadyExists
 }
 
 func (c *IMAPClient) SetFlags(uid uint32, flags []string) error {

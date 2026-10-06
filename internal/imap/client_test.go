@@ -259,3 +259,12 @@ func TestDestinationUID(t *testing.T) {
 		t.Error("empty set should not resolve")
 	}
 }
+
+func TestIsAlreadyExists(t *testing.T) {
+	if !isAlreadyExists(&goimap.Error{Code: goimap.ResponseCodeAlreadyExists}) {
+		t.Error("ALREADYEXISTS should be recognised")
+	}
+	if isAlreadyExists(&goimap.Error{Code: goimap.ResponseCodeNonExistent}) {
+		t.Error("a different response code should not match")
+	}
+}
