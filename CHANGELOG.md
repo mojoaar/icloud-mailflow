@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Enlarged tap targets for nav/icon/search controls on mobile
+- Added noindex/nofollow (meta tag + X-Robots-Tag header) so the self-hosted app isn't indexed by search engines
+
 ### Fixed
 - Strip trailing NUL padding from iCloud envelope strings (subject and addresses) so subjects render correctly
+- The mono-font toggle now actually switches the UI to a sans-serif font when disabled (the body always had class="mono")
 
 ## [0.14.1] - 2026-10-06
 
