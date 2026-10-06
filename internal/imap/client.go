@@ -56,7 +56,6 @@ type Client interface {
 type IMAPClient struct {
 	cfg    *config.Config
 	client *imapclient.Client
-	caps   goimap.CapSet
 	mu     sync.Mutex
 }
 
@@ -102,9 +101,6 @@ func (c *IMAPClient) Connect() error {
 		c.client.Close()
 		c.client = nil
 		return fmt.Errorf("login: %w", err)
-	}
-	if caps, err := c.client.Capability().Wait(); err == nil {
-		c.caps = caps
 	}
 	slog.Debug("connected to imap server", "server", addr)
 	return nil
@@ -212,19 +208,7 @@ func destinationUID(dest goimap.NumSet) (uint32, bool) {
 	return 0, false
 }
 
-func (c *IMAPClient) hasMoveCapability() bool {
-	if c.caps == nil {
-		if caps, err := c.client.Capability().Wait(); err == nil {
-			c.caps = caps
-		}
-	}
-	return c.caps != nil && c.caps.Has(goimap.CapMove)
-}
-
 func (c *IMAPClient) MoveMessage(uid uint32, dest string) (uint32, error) {
-	if !c.hasMoveCapability() {
-		return uid, fmt.Errorf("move uid %d to %s: server does not support MOVE", uid, dest)
-	}
 	seqSet := goimap.UIDSetNum(goimap.UID(uid))
 	data, err := c.client.Move(seqSet, dest).Wait()
 	if err != nil {

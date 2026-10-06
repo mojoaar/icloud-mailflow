@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - The Activity Log checkbox column no longer reserves a stale 185px width, so the table uses only the space it needs
+- Fix a regression where `move_to_folder` failed with "server does not support MOVE" on iCloud
 
 ## [0.14.0] - 2026-10-05
 
