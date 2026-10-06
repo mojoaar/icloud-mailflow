@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Recent errors/warnings card on the Dashboard (in-memory ring buffer of WARN/ERROR log entries)
+- Audit log: records login/logout, password/IMAP/MCP-key changes, rule create/update/delete/import, and MCP auth events, viewable at `/audit`
+
 ### Fixed
 - The Docs page now respects the mono-font setting (previously it was always monospace)
 - A matched message whose move/delete failed is now marked `\Seen` so it isn't re-processed (and its sender/action counts no longer inflate) on every poll

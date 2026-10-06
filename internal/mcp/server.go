@@ -32,6 +32,11 @@ func resultJSON(v any) (*mcp.CallToolResult, error) {
 
 var mcpLimiter = newMCPRateLimiter()
 
+var (
+	mcpAuditMu    sync.Mutex
+	mcpLastAccess time.Time
+)
+
 type mcpRateLimiter struct {
 	mu      sync.Mutex
 	entries map[string]*mcpRateEntry
@@ -781,7 +786,7 @@ func clientIP(r *http.Request) string {
 	return r.RemoteAddr
 }
 
-func NewAuthMiddleware(mcpHandler http.Handler, settingsRepo *db.SettingsRepo) http.HandlerFunc {
+func NewAuthMiddleware(mcpHandler http.Handler, settingsRepo *db.SettingsRepo, auditRepo *db.AuditRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		enabled, _ := settingsRepo.Get("mcp_enabled")
 		if enabled != "true" {
@@ -794,15 +799,27 @@ func NewAuthMiddleware(mcpHandler http.Handler, settingsRepo *db.SettingsRepo) h
 		}
 		auth := r.Header.Get("Authorization")
 		if !strings.HasPrefix(auth, "Bearer ") {
+			auditRepo.Add("mcp_auth_failed", "", "missing bearer token", clientIP(r))
 			http.Error(w, "missing or invalid Authorization header", http.StatusUnauthorized)
 			return
 		}
 		key, _ := settingsRepo.Get("mcp_api_key")
 		if key == "" || subtle.ConstantTimeCompare([]byte(auth), []byte("Bearer "+key)) != 1 {
+			auditRepo.Add("mcp_auth_failed", "", "invalid api key", clientIP(r))
 			http.Error(w, "invalid API key", http.StatusUnauthorized)
 			return
 		}
+		recordMcpAccess(auditRepo, clientIP(r))
 		mcpHandler.ServeHTTP(w, r)
+	}
+}
+
+func recordMcpAccess(auditRepo *db.AuditRepo, ip string) {
+	mcpAuditMu.Lock()
+	defer mcpAuditMu.Unlock()
+	if time.Since(mcpLastAccess) >= 10*time.Minute {
+		mcpLastAccess = time.Now()
+		auditRepo.Add("mcp_access", "", "", ip)
 	}
 }
 

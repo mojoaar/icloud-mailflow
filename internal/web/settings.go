@@ -256,7 +256,7 @@ func getPassword(settingsRepo *db.SettingsRepo, cfg *config.Config) (string, err
 	return decryptPassword(p, cfg.EncryptionKey)
 }
 
-func settingsSaveIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.HandlerFunc {
+func settingsSaveIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo, auditRepo *db.AuditRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			slog.Error("settings imap parse form failed", "error", err)
@@ -275,11 +275,12 @@ func settingsSaveIMAP(cfg *config.Config, settingsRepo *db.SettingsRepo) http.Ha
 		if err := cfg.Save(); err != nil {
 			slog.Error("settings save config failed", "error", err)
 		}
+		auditRepo.Add("imap_updated", "", "", clientIP(r))
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
 }
 
-func settingsSavePassword(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.HandlerFunc {
+func settingsSavePassword(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo, auditRepo *db.AuditRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			slog.Error("settings password parse form failed", "error", err)
@@ -302,6 +303,7 @@ func settingsSavePassword(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRe
 					slog.Error("settings invalidate sessions failed", "error", err)
 				}
 			}
+			auditRepo.Add("password_changed", "", "", clientIP(r))
 		}
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
@@ -468,7 +470,7 @@ func rulesImportHandler(repo *db.RulesRepo) http.HandlerFunc {
 	}
 }
 
-func rulesImportConfirmHandler(repo *db.RulesRepo) http.HandlerFunc {
+func rulesImportConfirmHandler(repo *db.RulesRepo, auditRepo *db.AuditRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		data := r.FormValue("rules_data")
@@ -485,6 +487,7 @@ func rulesImportConfirmHandler(repo *db.RulesRepo) http.HandlerFunc {
 			renderPartial(w, "toast", map[string]string{"Type": "success", "Message": "No new rules to import"})
 			return
 		}
+		auditRepo.Add("rules_imported", "", fmt.Sprintf("%d rules", report.Imported), clientIP(r))
 		msg := fmt.Sprintf("Imported %d rules", report.Imported)
 		if report.Skipped > 0 {
 			msg += fmt.Sprintf(", skipped %d duplicate(s)", report.Skipped)
@@ -613,11 +616,12 @@ func settingsMcpToggle(settingsRepo *db.SettingsRepo) http.HandlerFunc {
 	}
 }
 
-func settingsMcpRegenerate(settingsRepo *db.SettingsRepo) http.HandlerFunc {
+func settingsMcpRegenerate(settingsRepo *db.SettingsRepo, auditRepo *db.AuditRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		key := make([]byte, 32)
 		rand.Read(key)
 		settingsRepo.Set("mcp_api_key", hex.EncodeToString(key))
+		auditRepo.Add("mcp_key_regenerated", "", "", clientIP(r))
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 	}
 }

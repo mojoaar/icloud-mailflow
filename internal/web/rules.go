@@ -45,7 +45,7 @@ func rulesNewHandler(foldersRepo *db.FoldersRepo, contactsRepo *db.ContactsRepo,
 	}
 }
 
-func rulesCreateHandler(repo *db.RulesRepo, settingsRepo *db.SettingsRepo) http.HandlerFunc {
+func rulesCreateHandler(repo *db.RulesRepo, settingsRepo *db.SettingsRepo, auditRepo *db.AuditRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		rule := &db.Rule{
@@ -76,6 +76,7 @@ func rulesCreateHandler(repo *db.RulesRepo, settingsRepo *db.SettingsRepo) http.
 			renderPage(w, r, "New Rule", "rules_form", map[string]any{"Rule": rule, "Error": "Failed to create rule", "New": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": "OR", "ScheduleDays": []string{}, "ScheduleStart": rule.ScheduleStart, "ScheduleEnd": rule.ScheduleEnd, "Timezone": tz})
 			return
 		}
+		auditRepo.Add("rule_created", "", rule.Name, clientIP(r))
 		repo.EnsureCatchAll()
 		http.Redirect(w, r, "/rules", http.StatusSeeOther)
 	}
@@ -100,7 +101,7 @@ func rulesEditHandler(repo *db.RulesRepo, foldersRepo *db.FoldersRepo, contactsR
 	}
 }
 
-func rulesUpdateHandler(repo *db.RulesRepo, settingsRepo *db.SettingsRepo) http.HandlerFunc {
+func rulesUpdateHandler(repo *db.RulesRepo, settingsRepo *db.SettingsRepo, auditRepo *db.AuditRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 		r.ParseForm()
@@ -139,12 +140,13 @@ func rulesUpdateHandler(repo *db.RulesRepo, settingsRepo *db.SettingsRepo) http.
 			renderPage(w, r, "Edit Rule", "rules_form", map[string]any{"Rule": rule, "Error": "Failed to update rule", "Edit": true, "Fields": conditionFields(), "Folders": []db.Folder{}, "Contacts": []db.Contact{}, "CondOperator": op, "ScheduleDays": strings.Split(rule.ScheduleDays, ","), "ScheduleStart": rule.ScheduleStart, "ScheduleEnd": rule.ScheduleEnd, "Timezone": tz})
 			return
 		}
+		auditRepo.Add("rule_updated", "", rule.Name, clientIP(r))
 		repo.EnsureCatchAll()
 		http.Redirect(w, r, "/rules", http.StatusSeeOther)
 	}
 }
 
-func rulesDeleteHandler(repo *db.RulesRepo) http.HandlerFunc {
+func rulesDeleteHandler(repo *db.RulesRepo, auditRepo *db.AuditRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.Atoi(chi.URLParam(r, "id"))
 		if err != nil {
@@ -171,6 +173,7 @@ func rulesDeleteHandler(repo *db.RulesRepo) http.HandlerFunc {
 			http.Error(w, "Internal error", http.StatusInternalServerError)
 			return
 		}
+		auditRepo.Add("rule_deleted", "", strconv.Itoa(id), clientIP(r))
 		if r.Header.Get("HX-Request") == "true" {
 			rules, _ := repo.List()
 			renderPartial(w, "rules_list", map[string]any{"Rules": rules})

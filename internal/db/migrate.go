@@ -80,6 +80,14 @@ var migrations = []string{
 		reply_date TEXT NOT NULL,
 		PRIMARY KEY (recipient, reply_date)
 	)`,
+	`CREATE TABLE IF NOT EXISTS audit_log (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		created_at TEXT NOT NULL DEFAULT (datetime('now')),
+		action TEXT NOT NULL,
+		actor TEXT NOT NULL DEFAULT '',
+		detail TEXT NOT NULL DEFAULT '',
+		ip TEXT NOT NULL DEFAULT ''
+	)`,
 	`CREATE INDEX IF NOT EXISTS idx_condition_groups_rule_id ON condition_groups(rule_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_conditions_group_id ON conditions(group_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_actions_rule_id ON actions(rule_id)`,

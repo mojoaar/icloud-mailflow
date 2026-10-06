@@ -802,6 +802,12 @@ html { scrollbar-color: var(--border) var(--bg); scrollbar-width: thin; }
 .input-xs { width: 80px; }
 .auth-card-sm { max-width: 360px; margin: 80px auto; }
 
+/* Recent-errors card */
+.log-list { list-style: none; margin: 0; padding: 0; }
+.log-entry { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.log-entry:last-child { border-bottom: none; }
+.log-msg { overflow-wrap: anywhere; }
+
 /* Utilities */
 .row { display: flex; gap: 8px; align-items: center; }
 .row-lg { display: flex; gap: 16px; align-items: center; }

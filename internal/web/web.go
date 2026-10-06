@@ -20,12 +20,13 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/contacts"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
+	"github.com/mojoaar/icloud-mailflow/internal/logbuf"
 	"github.com/mojoaar/icloud-mailflow/internal/mcp"
 	"github.com/mojoaar/icloud-mailflow/internal/metrics"
 	"github.com/mojoaar/icloud-mailflow/internal/poller"
 )
 
-func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *contacts.Collector, logRepo *db.LogRepo, statsRepo *db.StatsRepo, version, commit string, st time.Time, p *poller.Poller) (http.Handler, func(context.Context) error) {
+func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *contacts.Collector, logRepo *db.LogRepo, statsRepo *db.StatsRepo, version, commit string, st time.Time, p *poller.Poller, logBuf *logbuf.Buffer) (http.Handler, func(context.Context) error) {
 	appVersion = version
 	buildCommit = commit
 	startTime = st
@@ -51,6 +52,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 		}
 	}()
 	rulesRepo := db.NewRulesRepo(d)
+	auditRepo := db.NewAuditRepo(d)
 	foldersRepo := db.NewFoldersRepo(d)
 
 	contactsRepo := db.NewContactsRepo(d)
@@ -70,7 +72,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	})
 
 	mcpServer := mcp.New(d, imapClient, p, version, collector, settingsRepo)
-	mcpHandler := mcp.NewAuthMiddleware(mcpServer, settingsRepo)
+	mcpHandler := mcp.NewAuthMiddleware(mcpServer, settingsRepo, auditRepo)
 	r.Handle("/mcp", mcpHandler)
 	r.Handle("/mcp/*", mcpHandler)
 
@@ -84,9 +86,9 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	})
 
-	r.Get("/login", loginPage(settingsRepo, sessRepo))
-	r.Post("/login", loginPage(settingsRepo, sessRepo))
-	r.Post("/logout", logoutHandler(sessRepo))
+	r.Get("/login", loginPage(settingsRepo, sessRepo, auditRepo))
+	r.Post("/login", loginPage(settingsRepo, sessRepo, auditRepo))
+	r.Post("/logout", logoutHandler(sessRepo, auditRepo))
 
 	r.Get("/setup", setupPage(settingsRepo, d, cfg))
 	r.Post("/setup", setupPage(settingsRepo, d, cfg))
@@ -94,11 +96,15 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Get("/dashboard", dashboardHandler(imapClient, p, rulesRepo, foldersRepo, settingsRepo, contactsRepo, cfg))
 	r.Get("/dashboard/status", dashboardStatusHandler(p, settingsRepo, imapClient, rulesRepo, foldersRepo, contactsRepo, cfg))
 	r.Get("/dashboard/rules", dashboardRulesHandler(rulesRepo))
+	r.Get("/logs", logsHandler(logBuf))
+	r.Post("/logs/clear", logsClearHandler(logBuf))
 	r.Post("/poller/tick", pollerTickHandler(p))
 
 	r.Get("/activity", activityHandler(logRepo, rulesRepo, settingsRepo))
 	r.Post("/activity/delete", activityDeleteHandler(logRepo))
 	r.Post("/activity/delete-selected", activityDeleteSelectedHandler(logRepo))
+	r.Get("/audit", auditHandler(auditRepo))
+	r.Post("/audit/delete", auditDeleteHandler(auditRepo))
 	r.Get("/docs", docsStandaloneHandler(settingsRepo))
 	r.Get("/health", healthHandler(d, p, imapClient, statsRepo, contactsRepo, rulesRepo, sessRepo))
 	r.Get("/metrics", metrics.PromHandler().ServeHTTP)
@@ -107,10 +113,10 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 
 	r.Get("/rules", rulesListHandler(rulesRepo, foldersRepo))
 	r.Get("/rules/new", rulesNewHandler(foldersRepo, contactsRepo, settingsRepo))
-	r.Post("/rules", rulesCreateHandler(rulesRepo, settingsRepo))
+	r.Post("/rules", rulesCreateHandler(rulesRepo, settingsRepo, auditRepo))
 	r.Get("/rules/{id}/edit", rulesEditHandler(rulesRepo, foldersRepo, contactsRepo, settingsRepo))
-	r.Put("/rules/{id}", rulesUpdateHandler(rulesRepo, settingsRepo))
-	r.Delete("/rules/{id}", rulesDeleteHandler(rulesRepo))
+	r.Put("/rules/{id}", rulesUpdateHandler(rulesRepo, settingsRepo, auditRepo))
+	r.Delete("/rules/{id}", rulesDeleteHandler(rulesRepo, auditRepo))
 	r.Post("/rules/reorder", rulesReorderHandler(rulesRepo, foldersRepo))
 	r.Post("/rules/reorder/move", rulesReorderMoveHandler(rulesRepo, foldersRepo))
 
@@ -120,15 +126,15 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/rules/{id}/test-message", rulesTestMessageHandler(rulesRepo, imapClient))
 
 	r.Get("/settings", settingsPage(settingsRepo, foldersRepo, cfg, imapClient, version, contactsRepo))
-	r.Post("/settings/imap", settingsSaveIMAP(cfg, settingsRepo))
+	r.Post("/settings/imap", settingsSaveIMAP(cfg, settingsRepo, auditRepo))
 	r.Post("/settings/imap/test", settingsTestIMAP(cfg, settingsRepo))
-	r.Post("/settings/password", settingsSavePassword(settingsRepo, sessRepo))
+	r.Post("/settings/password", settingsSavePassword(settingsRepo, sessRepo, auditRepo))
 	r.Post("/settings/poll", settingsSavePoll(cfg, settingsRepo))
 	r.Post("/settings/carddav-import", carddavImportHandler(settingsRepo, cfg, contactsRepo))
 	r.Post("/settings/poll/toggle", settingsTogglePolling(settingsRepo, p))
 	r.Get("/settings/rules/export", rulesExportHandler(rulesRepo))
 	r.Post("/settings/rules/import", rulesImportHandler(rulesRepo))
-	r.Post("/settings/rules/import/confirm", rulesImportConfirmHandler(rulesRepo))
+	r.Post("/settings/rules/import/confirm", rulesImportConfirmHandler(rulesRepo, auditRepo))
 	r.Post("/settings/timezone", settingsSaveTimezone(settingsRepo))
 	r.Post("/settings/font", settingsSaveFont(settingsRepo))
 	r.Post("/settings/webhook", settingsSaveWebhook(settingsRepo))
@@ -137,7 +143,7 @@ func New(cfg *config.Config, d *sql.DB, imapClient imap.Client, collector *conta
 	r.Post("/settings/backup/save", settingsSaveBackup(settingsRepo))
 	r.Post("/settings/backup/now", settingsBackupNow(p))
 	r.Post("/settings/mcp/toggle", settingsMcpToggle(settingsRepo))
-	r.Post("/settings/mcp/regenerate", settingsMcpRegenerate(settingsRepo))
+	r.Post("/settings/mcp/regenerate", settingsMcpRegenerate(settingsRepo, auditRepo))
 	r.Post("/settings/contacts/toggle", settingsContactsToggle(settingsRepo))
 	r.Post("/settings/contacts/wipe", settingsContactsWipe(contactsRepo))
 

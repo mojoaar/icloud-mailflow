@@ -57,7 +57,7 @@ func TestAuthMiddleware(t *testing.T) {
 	backend := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	handler := NewAuthMiddleware(backend, settingsRepo)
+	handler := NewAuthMiddleware(backend, settingsRepo, db.NewAuditRepo(d))
 
 	t.Run("missing auth header", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/mcp", nil)
@@ -103,7 +103,7 @@ func TestAuthMiddleware(t *testing.T) {
 	t.Run("disabled when setting missing", func(t *testing.T) {
 		d2 := db.NewTestDB(t)
 		sr := db.NewSettingsRepo(d2)
-		h := NewAuthMiddleware(backend, sr)
+		h := NewAuthMiddleware(backend, sr, db.NewAuditRepo(d2))
 		req := httptest.NewRequest(http.MethodPost, "/mcp", nil)
 		req.Header.Set("Authorization", "Bearer any-key")
 		rec := httptest.NewRecorder()

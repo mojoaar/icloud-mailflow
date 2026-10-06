@@ -11,11 +11,12 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/config"
 	"github.com/mojoaar/icloud-mailflow/internal/crypto"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
+	"github.com/mojoaar/icloud-mailflow/internal/logbuf"
 )
 
 func TestInitialize(t *testing.T) {
 	dir := t.TempDir()
-	app, err := initialize(dir)
+	app, err := initialize(dir, logbuf.New(200))
 	if err != nil {
 		t.Fatalf("initialize: %v", err)
 	}
@@ -31,7 +32,7 @@ func TestInitialize(t *testing.T) {
 
 func TestInitializeRouterResponds(t *testing.T) {
 	dir := t.TempDir()
-	app, err := initialize(dir)
+	app, err := initialize(dir, logbuf.New(200))
 	if err != nil {
 		t.Fatalf("initialize: %v", err)
 	}
@@ -48,7 +49,7 @@ func TestInitializeRouterResponds(t *testing.T) {
 
 func TestInitializeSetupPage(t *testing.T) {
 	dir := t.TempDir()
-	app, err := initialize(dir)
+	app, err := initialize(dir, logbuf.New(200))
 	if err != nil {
 		t.Fatalf("initialize: %v", err)
 	}
@@ -65,7 +66,7 @@ func TestInitializeSetupPage(t *testing.T) {
 
 func TestAppCloseNoPanic(t *testing.T) {
 	dir := t.TempDir()
-	app, err := initialize(dir)
+	app, err := initialize(dir, logbuf.New(200))
 	if err != nil {
 		t.Fatalf("initialize: %v", err)
 	}

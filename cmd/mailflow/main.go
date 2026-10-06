@@ -20,6 +20,7 @@ import (
 	"github.com/mojoaar/icloud-mailflow/internal/crypto"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 	"github.com/mojoaar/icloud-mailflow/internal/imap"
+	"github.com/mojoaar/icloud-mailflow/internal/logbuf"
 	"github.com/mojoaar/icloud-mailflow/internal/poller"
 	"github.com/mojoaar/icloud-mailflow/internal/web"
 )
@@ -60,7 +61,7 @@ func (a *App) Shutdown(ctx context.Context) {
 	}
 }
 
-func initialize(dataDir string) (*App, error) {
+func initialize(dataDir string, logBuf *logbuf.Buffer) (*App, error) {
 	startTime := time.Now()
 	if err := os.MkdirAll(dataDir, 0700); err != nil {
 		return nil, err
@@ -102,6 +103,7 @@ func initialize(dataDir string) (*App, error) {
 		}
 	}
 	db.NewLogRepo(database).Cleanup(logKeep)
+	db.NewAuditRepo(database).Cleanup(logKeep)
 
 	imapEmail, _ := settingsRepo.Get("imap_email")
 	storedPassword, _ := settingsRepo.Get("imap_password")
@@ -173,7 +175,7 @@ func initialize(dataDir string) (*App, error) {
 		}
 	}
 
-	router, shutdownMCP := web.New(cfg, database, imapClient, contactsCollector, logRepo, statsRepo, version, commit, startTime, p)
+	router, shutdownMCP := web.New(cfg, database, imapClient, contactsCollector, logRepo, statsRepo, version, commit, startTime, p, logBuf)
 
 	metricsCtx, metricsCancel := context.WithCancel(context.Background())
 	waitMetrics := web.StartMetricsCollector(statsRepo, metricsCtx)
@@ -227,13 +229,18 @@ func migrateLegacyIMAPPassword(cfg *config.Config, settingsRepo *db.SettingsRepo
 }
 
 func main() {
+	logBuf := logbuf.New(200)
+	lvl := slog.LevelInfo
 	if os.Getenv("LOG_LEVEL") == "debug" {
-		slog.SetLogLoggerLevel(slog.LevelDebug)
+		lvl = slog.LevelDebug
 	}
+	slog.SetDefault(slog.New(logbuf.NewHandler(
+		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: lvl}), logBuf)))
+
 	dataDir := flag.String("data", "./data", "Data directory for config, db, and logs")
 	flag.Parse()
 
-	app, err := initialize(*dataDir)
+	app, err := initialize(*dataDir, logBuf)
 	if err != nil {
 		slog.Error("failed to initialize", "error", err)
 		os.Exit(1)

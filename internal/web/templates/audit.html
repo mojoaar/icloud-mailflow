@@ -1,0 +1,77 @@
+{{define "audit"}}
+<div class="flex-between mb-3">
+<h1 class="m-0">Audit Log</h1>
+<div class="flex-row">
+{{if .Entries}}
+<button class="btn btn-danger" hx-post="/audit/delete" hx-confirm="Clear the audit log?">
+    <i data-lucide="trash-2" data-size="14"></i> Clear Log
+</button>
+{{end}}
+</div>
+</div>
+{{template "audit_content" .}}
+{{end}}
+
+{{define "audit_content"}}
+<div id="audit-content" class="loading-target">
+<div class="row row-wrap mb-2">
+    <select name="action" hx-get="/audit" hx-trigger="change" hx-target="#audit-content" hx-swap="outerHTML" hx-include="[name='per_page']">
+        <option value="">All Events</option>
+        <option value="login" {{if eq .Action "login"}}selected{{end}}>Login</option>
+        <option value="login_failed" {{if eq .Action "login_failed"}}selected{{end}}>Login Failed</option>
+        <option value="logout" {{if eq .Action "logout"}}selected{{end}}>Logout</option>
+        <option value="password_changed" {{if eq .Action "password_changed"}}selected{{end}}>Password Changed</option>
+        <option value="imap_updated" {{if eq .Action "imap_updated"}}selected{{end}}>IMAP Updated</option>
+        <option value="mcp_key_regenerated" {{if eq .Action "mcp_key_regenerated"}}selected{{end}}>MCP Key Regenerated</option>
+        <option value="rule_created" {{if eq .Action "rule_created"}}selected{{end}}>Rule Created</option>
+        <option value="rule_updated" {{if eq .Action "rule_updated"}}selected{{end}}>Rule Updated</option>
+        <option value="rule_deleted" {{if eq .Action "rule_deleted"}}selected{{end}}>Rule Deleted</option>
+        <option value="rules_imported" {{if eq .Action "rules_imported"}}selected{{end}}>Rules Imported</option>
+        <option value="mcp_auth_failed" {{if eq .Action "mcp_auth_failed"}}selected{{end}}>MCP Auth Failed</option>
+        <option value="mcp_access" {{if eq .Action "mcp_access"}}selected{{end}}>MCP Access</option>
+    </select>
+    <select name="per_page" hx-get="/audit" hx-trigger="change" hx-target="#audit-content" hx-swap="outerHTML" hx-include="[name='action']">
+        <option value="100" {{if or (eq .PerPage "100") (eq .PerPage "")}}selected{{end}}>100</option>
+        <option value="250" {{if eq .PerPage "250"}}selected{{end}}>250</option>
+        <option value="500" {{if eq .PerPage "500"}}selected{{end}}>500</option>
+    </select>
+</div>
+{{if not .Entries}}
+<div class="card">
+    <p class="empty-state">No audit events yet.</p>
+</div>
+{{else}}
+<div class="card">
+    <table class="table-auto">
+        <thead>
+            <tr><th>Time</th><th>Event</th><th>Actor</th><th>Detail</th><th>IP</th></tr>
+        </thead>
+        <tbody>
+        {{range .Entries}}
+        <tr>
+            <td class="nowrap text-sm muted">{{.CreatedAt}}</td>
+            <td>{{.Action}}</td>
+            <td>{{.Actor}}</td>
+            <td>{{.Detail}}</td>
+            <td class="muted text-sm">{{.IP}}</td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+    {{if gt .TotalPages 1}}
+    <div class="flex-between mt-12">
+        <span class="muted">Page {{.Page}} of {{.TotalPages}}</span>
+        <div class="row gap-4">
+            {{if gt .Page 1}}
+            <button class="btn" hx-get="/audit?page={{subtract .Page 1}}&per_page={{.PerPage}}&action={{.Action | urlquery}}" hx-target="#audit-content" hx-swap="outerHTML">Prev</button>
+            {{end}}
+            {{if lt .Page .TotalPages}}
+            <button class="btn" hx-get="/audit?page={{add .Page 1}}&per_page={{.PerPage}}&action={{.Action | urlquery}}" hx-target="#audit-content" hx-swap="outerHTML">Next</button>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}
+</div>
+{{end}}

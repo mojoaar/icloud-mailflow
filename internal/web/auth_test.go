@@ -157,7 +157,7 @@ func TestLoginPageGet(t *testing.T) {
 	settingsRepo := db.NewSettingsRepo(database)
 	sessRepo := db.NewSessionsRepo(database)
 
-	h := loginPage(settingsRepo, sessRepo)
+	h := loginPage(settingsRepo, sessRepo, db.NewAuditRepo(database))
 	req := httptest.NewRequest("GET", "/login", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -175,7 +175,7 @@ func TestLoginPagePostInvalidPassword(t *testing.T) {
 	hash, _ := crypto.HashPassword("correct")
 	settingsRepo.Set("admin_password_hash", hash)
 
-	h := loginPage(settingsRepo, sessRepo)
+	h := loginPage(settingsRepo, sessRepo, db.NewAuditRepo(database))
 	form := url.Values{"password": {"wrong"}}
 	req := httptest.NewRequest("POST", "/login", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -195,7 +195,7 @@ func TestLoginPagePostValidPassword(t *testing.T) {
 	hash, _ := crypto.HashPassword("correct")
 	settingsRepo.Set("admin_password_hash", hash)
 
-	h := loginPage(settingsRepo, sessRepo)
+	h := loginPage(settingsRepo, sessRepo, db.NewAuditRepo(database))
 	form := url.Values{"password": {"correct"}}
 	req := httptest.NewRequest("POST", "/login", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -219,7 +219,7 @@ func TestLogoutHandler(t *testing.T) {
 	token, _ := generateToken()
 	sessRepo.Create(token, time.Hour)
 
-	h := logoutHandler(sessRepo)
+	h := logoutHandler(sessRepo, db.NewAuditRepo(database))
 	req := httptest.NewRequest("GET", "/logout", nil)
 	req.AddCookie(&http.Cookie{Name: sessionCookie, Value: token})
 	rec := httptest.NewRecorder()
@@ -241,7 +241,7 @@ func TestLoginSessionCreateFailureShowsError(t *testing.T) {
 	sessRepo := db.NewSessionsRepo(sessDB)
 	sessDB.Close()
 
-	h := loginPage(settingsRepo, sessRepo)
+	h := loginPage(settingsRepo, sessRepo, db.NewAuditRepo(database))
 	form := url.Values{"password": {"correct"}}
 	req := httptest.NewRequest("POST", "/login", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

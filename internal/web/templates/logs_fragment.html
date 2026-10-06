@@ -1,0 +1,15 @@
+{{define "logs_fragment"}}
+{{if .Entries}}
+<ul class="log-list">
+{{range .Entries}}
+<li class="log-entry">
+    <span class="muted text-xs nowrap">{{.Time}}</span>
+    <span class="badge {{if eq .Level "ERROR"}}badge-off{{else}}badge{{end}}">{{.Level}}</span>
+    <span class="log-msg">{{.Message}}</span>{{if .Attrs}} <span class="muted text-xs">{{.Attrs}}</span>{{end}}
+</li>
+{{end}}
+</ul>
+{{else}}
+<p class="empty-state">No recent errors or warnings.</p>
+{{end}}
+{{end}}

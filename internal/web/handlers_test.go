@@ -230,7 +230,7 @@ func TestSettingsMcpRegenerate(t *testing.T) {
 	settingsRepo := db.NewSettingsRepo(database)
 	settingsRepo.Set("mcp_api_key", "old-key")
 
-	h := settingsMcpRegenerate(settingsRepo)
+	h := settingsMcpRegenerate(settingsRepo, db.NewAuditRepo(database))
 	req := httptest.NewRequest("POST", "/settings/mcp/regenerate", nil)
 	rec := serveHandler(h, req)
 

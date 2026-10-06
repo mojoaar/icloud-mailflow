@@ -22,7 +22,7 @@ func generateToken() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.HandlerFunc {
+func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo, auditRepo *db.AuditRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			renderPage(w, r, "Login", "login", map[string]any{})
@@ -38,6 +38,7 @@ func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.Ha
 		hash, _ := settingsRepo.Get("admin_password_hash")
 		if hash == "" || !crypto.CheckPassword(hash, password) {
 			loginLimiter.fail(ip, time.Minute)
+			auditRepo.Add("login_failed", "", "invalid password", ip)
 			renderPage(w, r, "Login", "login", map[string]string{"Error": "Invalid password"})
 			return
 		}
@@ -50,6 +51,7 @@ func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.Ha
 			renderPage(w, r, "Login", "login", map[string]string{"Error": "Internal error. Try again."})
 			return
 		}
+		auditRepo.Add("login", "", "", ip)
 		http.SetCookie(w, &http.Cookie{
 			Name:     sessionCookie,
 			Value:    token,
@@ -63,11 +65,12 @@ func loginPage(settingsRepo *db.SettingsRepo, sessRepo *db.SessionsRepo) http.Ha
 	}
 }
 
-func logoutHandler(sessRepo *db.SessionsRepo) http.HandlerFunc {
+func logoutHandler(sessRepo *db.SessionsRepo, auditRepo *db.AuditRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(sessionCookie)
 		if err == nil {
 			sessRepo.Delete(cookie.Value)
+			auditRepo.Add("logout", "", "", clientIP(r))
 		}
 		http.SetCookie(w, &http.Cookie{
 			Name:   sessionCookie,

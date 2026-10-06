@@ -78,6 +78,8 @@ func navMatch(page, section string) bool {
 		return page == "settings"
 	case "stats":
 		return page == "stats"
+	case "audit":
+		return page == "audit"
 	}
 	return false
 }

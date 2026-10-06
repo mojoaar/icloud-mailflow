@@ -19,6 +19,15 @@
 <div hx-get="/dashboard/status" hx-trigger="every 30s" hx-swap="innerHTML">
     {{template "dashboard_status" .}}
 </div>
+<div class="card mt-2">
+    <div class="flex-between mb-1">
+        <h2 class="m-0">Recent Errors</h2>
+        <button class="btn text-xs" hx-post="/logs/clear" hx-target="#logs-list" hx-swap="innerHTML">Clear</button>
+    </div>
+    <div id="logs-list" hx-get="/logs" hx-trigger="load, every 30s" hx-swap="innerHTML">
+        <p class="muted">Loading…</p>
+    </div>
+</div>
 <div id="seed-toast"></div>
 <div id="poll-toast"></div>
 

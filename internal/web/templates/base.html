@@ -32,6 +32,7 @@
             <a href="/rules"{{if navMatch .Page "rules"}} aria-current="page"{{end}}><i data-lucide="git-branch" class="nav-icon" aria-hidden="true"></i> Rules</a>
             <a href="/settings"{{if navMatch .Page "settings"}} aria-current="page"{{end}}><i data-lucide="settings" class="nav-icon" aria-hidden="true"></i> Settings</a>
             <a href="/stats"{{if navMatch .Page "stats"}} aria-current="page"{{end}}><i data-lucide="bar-chart-3" class="nav-icon" aria-hidden="true"></i> Stats</a>
+            <a href="/audit"{{if navMatch .Page "audit"}} aria-current="page"{{end}}><i data-lucide="shield-check" class="nav-icon" aria-hidden="true"></i> Audit</a>
             <form method="POST" action="/logout" class="inline-form"><input type="hidden" name="csrf_token" value="{{.CSRFToken}}"><button type="submit" class="nav-btn"><i data-lucide="log-out" class="nav-icon" aria-hidden="true"></i> Logout</button></form>
             <a href="#" id="theme-toggle" aria-label="Toggle dark/light mode" class="nav-theme-link">
                 <span class="theme-icon" aria-hidden="true"><i data-lucide="moon" class="nav-icon"></i></span>

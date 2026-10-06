@@ -72,7 +72,7 @@ func TestRulesCreateHandler(t *testing.T) {
 	repo := db.NewRulesRepo(database)
 	settingsRepo := db.NewSettingsRepo(database)
 
-	h := rulesCreateHandler(repo, settingsRepo)
+	h := rulesCreateHandler(repo, settingsRepo, db.NewAuditRepo(database))
 	form := url.Values{
 		"name":        {"Test Rule"},
 		"description": {"A test rule"},
@@ -98,7 +98,7 @@ func TestRulesCreateHandlerInvalidRegex(t *testing.T) {
 	repo := db.NewRulesRepo(database)
 	settingsRepo := db.NewSettingsRepo(database)
 
-	h := rulesCreateHandler(repo, settingsRepo)
+	h := rulesCreateHandler(repo, settingsRepo, db.NewAuditRepo(database))
 	form := url.Values{
 		"name":       {"Bad Regex"},
 		"cond_field": {"from"},
@@ -170,7 +170,7 @@ func TestRulesDeleteHandler(t *testing.T) {
 	repo.Create(&db.Rule{Name: "DeleteMe", Priority: 0, Enabled: true})
 	rules, _ := repo.List()
 
-	h := rulesDeleteHandler(repo)
+	h := rulesDeleteHandler(repo, db.NewAuditRepo(database))
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", fmt.Sprintf("%d", rules[0].ID))
 	req := httptest.NewRequest("DELETE", "/rules/1", nil)
@@ -260,7 +260,7 @@ func TestRulesImportHandler(t *testing.T) {
 	req2 := httptest.NewRequest("POST", "/settings/rules/import/confirm", strings.NewReader(form.Encode()))
 	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec2 := httptest.NewRecorder()
-	rulesImportConfirmHandler(repo).ServeHTTP(rec2, req2)
+	rulesImportConfirmHandler(repo, db.NewAuditRepo(database)).ServeHTTP(rec2, req2)
 	if rec2.Code != http.StatusOK {
 		t.Fatalf("confirm status = %d, want 200", rec2.Code)
 	}
@@ -356,7 +356,7 @@ func TestCreateRuleWithSchedule(t *testing.T) {
 	repo := db.NewRulesRepo(database)
 	settingsRepo := db.NewSettingsRepo(database)
 
-	h := rulesCreateHandler(repo, settingsRepo)
+	h := rulesCreateHandler(repo, settingsRepo, db.NewAuditRepo(database))
 	form := url.Values{
 		"name":           {"Scheduled Rule"},
 		"schedule_days":  {"mon", "wed", "fri"},
@@ -399,7 +399,7 @@ func TestCreateRulePartialSchedule(t *testing.T) {
 	repo := db.NewRulesRepo(database)
 	settingsRepo := db.NewSettingsRepo(database)
 
-	h := rulesCreateHandler(repo, settingsRepo)
+	h := rulesCreateHandler(repo, settingsRepo, db.NewAuditRepo(database))
 	form := url.Values{
 		"name":          {"Partial Schedule"},
 		"schedule_days": {"mon", "tue"},
@@ -654,7 +654,7 @@ func TestRulesUpdateKeepsPriorityWhenBlank(t *testing.T) {
 		t.Fatalf("Create: %v", err)
 	}
 
-	h := rulesUpdateHandler(repo, settingsRepo)
+	h := rulesUpdateHandler(repo, settingsRepo, db.NewAuditRepo(database))
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", strconv.FormatInt(rule.ID, 10))
 	form := url.Values{"name": {"KeepPri"}, "enabled": {"on"}, "priority": {""}}
@@ -692,7 +692,7 @@ func TestRulesDeleteCatchAllBlocked(t *testing.T) {
 		t.Fatal("catch-all not created")
 	}
 
-	h := rulesDeleteHandler(repo)
+	h := rulesDeleteHandler(repo, db.NewAuditRepo(database))
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", strconv.FormatInt(catchID, 10))
 	req := httptest.NewRequest("DELETE", "/rules/"+strconv.FormatInt(catchID, 10), nil)
