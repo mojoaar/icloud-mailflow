@@ -124,6 +124,25 @@ func TestConvertMessageMinimal(t *testing.T) {
 	}
 }
 
+func TestConvertMessageStripsNULs(t *testing.T) {
+	buf := &imapclient.FetchMessageBuffer{
+		UID: 1,
+		Envelope: &goimap.Envelope{
+			Subject: "UPS tracking 1Z\x00\x00\x00\x00\x00\x00",
+			From:    []goimap.Address{makeAddr("Alice\x00\x00", "alice", "example.com")},
+		},
+	}
+
+	msg := convertMessage(buf)
+
+	if msg.Subject != "UPS tracking 1Z" {
+		t.Errorf("Subject = %q, want %q", msg.Subject, "UPS tracking 1Z")
+	}
+	if len(msg.From) != 1 || msg.From[0].Name != "Alice" {
+		t.Errorf("From = %v, want name %q", msg.From, "Alice")
+	}
+}
+
 func TestHasAttachmentSinglePartInline(t *testing.T) {
 	buf := &imapclient.FetchMessageBuffer{
 		BodyStructure: &goimap.BodyStructureSinglePart{

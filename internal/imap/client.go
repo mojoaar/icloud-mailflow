@@ -274,7 +274,7 @@ func convertMessage(buf *imapclient.FetchMessageBuffer) *Message {
 		msg.Flags[i] = string(f)
 	}
 	if buf.Envelope != nil {
-		msg.Subject = buf.Envelope.Subject
+		msg.Subject = cleanEnvelopeString(buf.Envelope.Subject)
 		msg.From = convertAddresses(buf.Envelope.From)
 		msg.To = convertAddresses(buf.Envelope.To)
 		msg.Cc = convertAddresses(buf.Envelope.Cc)
@@ -289,11 +289,17 @@ func convertAddresses(addrs []goimap.Address) []Address {
 	out := make([]Address, len(addrs))
 	for i, a := range addrs {
 		out[i] = Address{
-			Name:  a.Name,
-			Email: a.Addr(),
+			Name:  cleanEnvelopeString(a.Name),
+			Email: cleanEnvelopeString(a.Addr()),
 		}
 	}
 	return out
+}
+
+// cleanEnvelopeString strips NUL padding (iCloud pads envelope fields) and
+// surrounding whitespace.
+func cleanEnvelopeString(s string) string {
+	return strings.TrimSpace(strings.ReplaceAll(s, "\x00", ""))
 }
 
 func hasAttachment(buf *imapclient.FetchMessageBuffer) bool {
