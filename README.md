@@ -29,6 +29,8 @@ Mailflow fixes that. It connects to iCloud via IMAP, runs your incoming mail thr
 - **Rules Export/Import** — backup and restore rule configurations as JSON
 - **Scheduled Rules Backup** — email backups of rules as JSON attachments with configurable frequency (daily/weekly/monthly) and recipient
 - **Activity Log** — see every rule match and action result with timestamps; select rows to delete individually or clear the whole log
+- **Audit Log** — records security events (logins, settings and rule changes, MCP auth) with IP addresses; viewable at `/audit`
+- **Recent Errors** — a Dashboard card showing the latest WARN/ERROR log entries for at-a-glance troubleshooting
 - **Stats Dashboard** — rule hit counts, top senders, actions breakdown, daily/weekly volume (7/30/90-day range), messages by folder, poller health, and runtime metrics charts (Memory, CPU %). Stats persist independently from activity logs and export as CSV
 - **Keyboard Shortcuts** — `?` for help dialog, `g` + `d/a/r/s/t` for navigation between pages
 - **Docs Page** — full usage guide and API reference with curl examples and syntax highlighting

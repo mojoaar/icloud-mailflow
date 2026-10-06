@@ -35,6 +35,7 @@
         <a href="#actions">Actions</a>
         <a href="#contacts">Contacts</a>
         <a href="#activity">Activity Log</a>
+        <a href="#audit">Audit Log</a>
         <a href="#stats">Stats Dashboard</a>
         <a href="#themes">Themes &amp; Appearance</a>
         <a href="#mcp">MCP Server</a>
@@ -51,6 +52,7 @@
         <a href="#api-backup">Backup</a>
         <a href="#api-contacts">Contacts &amp; Folders</a>
         <a href="#api-activity">Activity</a>
+        <a href="#api-audit">Audit</a>
         <a href="#api-stats">Stats</a>
         <a href="#api-health">Health</a>
         <a href="#api-metrics">Metrics</a>
@@ -186,6 +188,9 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <li>Clear logs with "Clear Logs" button</li>
     <li>Auto-cleaned on startup (default 1000 entries, configurable in Settings)</li>
 </ul>
+
+<h2 id="audit">Audit Log</h2>
+<p>Security events are recorded at <code>/audit</code> — logins and failed logins, settings and rule changes, and MCP authentication — each with timestamp and IP address. Retained using the same <code>log_keep</code> setting as the activity log.</p>
 
 <h2 id="stats">Stats Dashboard</h2>
 <p>Visit <code>/stats</code> for rule hit counts, top senders, actions breakdown, daily/weekly volume, messages by folder, and runtime metrics charts (Memory and CPU %). A range selector (7/30/90 days) scopes the daily and weekly volume, and a Poller card shows the last run time, duration, health, and consecutive failures. Charts are interactive (Chart.js) with a per-section List/Chart toggle, and they recolor live when the theme changes. Daily/weekly buckets and chart time axes follow the configured timezone. Status totals (success/error/skipped) are shown under the all-time processed count. Stats are stored independently from the activity log — clearing logs preserves all statistics.</p>
@@ -490,6 +495,19 @@ docker compose restart  # after setup → IMAP reconnects</code></pre>
     <h4><span class="method-badge method-post">POST</span> POST /activity/delete-selected</h4>
     <p class="desc">Delete specific activity log entries by id. Accepts repeated <code>id</code> form fields.</p>
     <pre><code class="language-bash">curl -X POST http://{{.Host}}/activity/delete-selected -b cookies.txt -d 'id=1&amp;id=2'</code></pre>
+</div>
+
+<h3 class="api-group" id="api-audit">Audit</h3>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-get">GET</span> GET /audit</h4>
+    <p class="desc">Audit log page (or HTML fragment via <code>HX-Request</code>) with action filter and pagination.</p>
+    <pre><code class="language-bash">curl http://{{.Host}}/audit -b cookies.txt</code></pre>
+</div>
+
+<div class="endpoint">
+    <h4><span class="method-badge method-post">POST</span> POST /audit/delete</h4>
+    <p class="desc">Clear the entire audit log.</p>
 </div>
 
 <h3 class="api-group" id="api-stats">Stats</h3>
