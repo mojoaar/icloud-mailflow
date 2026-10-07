@@ -19,6 +19,8 @@ type Attachment struct {
 
 const smtpHost = "smtp.mail.me.com:587"
 
+var sendMail = smtp.SendMail
+
 func Send(to, from, password, subject, body string, attachments ...Attachment) error {
 	if strings.ContainsAny(from, "\r\n") || strings.ContainsAny(to, "\r\n") {
 		return fmt.Errorf("invalid header: CRLF not allowed in address")
@@ -66,7 +68,7 @@ func Send(to, from, password, subject, body string, attachments ...Attachment) e
 
 	server, _, _ := strings.Cut(smtpHost, ":")
 	auth := smtp.PlainAuth("", from, password, server)
-	if err := smtp.SendMail(smtpHost, auth, from, []string{to}, buf.Bytes()); err != nil {
+	if err := sendMail(smtpHost, auth, from, []string{to}, buf.Bytes()); err != nil {
 		return err
 	}
 	slog.Debug("smtp send", "to", to, "subject", subject)
@@ -76,7 +78,7 @@ func Send(to, from, password, subject, body string, attachments ...Attachment) e
 func SendRaw(to, from, password string, raw []byte) error {
 	server, _, _ := strings.Cut(smtpHost, ":")
 	auth := smtp.PlainAuth("", from, password, server)
-	if err := smtp.SendMail(smtpHost, auth, from, []string{to}, raw); err != nil {
+	if err := sendMail(smtpHost, auth, from, []string{to}, raw); err != nil {
 		return err
 	}
 	slog.Debug("smtp send raw", "to", to)

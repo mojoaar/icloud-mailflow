@@ -101,11 +101,11 @@ func inSchedule(rule *db.Rule, loc *time.Location) bool {
 func inScheduleAt(rule *db.Rule, now time.Time) bool {
 	current := now.Format("15:04")
 	start, end := rule.ScheduleStart, rule.ScheduleEnd
-	day := strings.ToLower(now.Format("mon"))
+	day := strings.ToLower(now.Format("Mon"))
 	// For a window that crosses midnight, the post-midnight portion belongs to
 	// the previous calendar day (e.g. fri 22:00-06:00 is still "fri" at 03:00).
 	if start != "" && end != "" && start > end && current <= end {
-		day = strings.ToLower(now.AddDate(0, 0, -1).Format("mon"))
+		day = strings.ToLower(now.AddDate(0, 0, -1).Format("Mon"))
 	}
 	days := strings.ToLower(rule.ScheduleDays)
 	if days != "" && !strings.Contains(days, day) {

@@ -727,3 +727,148 @@ func TestMatchCachesBodyAndHeaders(t *testing.T) {
 		t.Errorf("headers fetched %d times, want 2 (X-A once, X-B once)", client.headerCalls)
 	}
 }
+
+func TestEvaluateWithResultsSuccessAndFailure(t *testing.T) {
+	rule := &db.Rule{
+		Name: "test-results",
+		Groups: []db.ConditionGroup{
+			{
+				Operator: "AND",
+				Conditions: []db.Condition{
+					{Field: "subject", Operator: "contains", Value: "hello"},
+					{Field: "from", Operator: "equals", Value: "sender@example.com"},
+					{Field: "has_attachment", Operator: "exists"},
+				},
+				Groups: []db.ConditionGroup{
+					{
+						Operator: "OR",
+						Conditions: []db.Condition{
+							{Field: "to", Operator: "contains", Value: "bob"},
+							{Field: "cc", Operator: "contains", Value: "carol"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	msg := &imap.Message{
+		UID:       10,
+		Subject:   "hello there",
+		From:      []imap.Address{{Email: "sender@example.com"}},
+		To:        []imap.Address{{Email: "bob@example.com"}},
+		HasAttach: true,
+		Date:      time.Now(),
+	}
+
+	passed, captures, results, err := EvaluateWithResults(rule, msg, nil)
+	if err != nil {
+		t.Fatalf("EvaluateWithResults failed: %v", err)
+	}
+	if !passed {
+		t.Errorf("expected rule to pass, got false")
+	}
+	if len(results) != 1 || !results[0].Passed {
+		t.Errorf("expected root group to pass, results=%v", results)
+	}
+	_ = captures
+
+	// Failure branch
+	msgFail := &imap.Message{
+		UID:       11,
+		Subject:   "goodbye",
+		From:      []imap.Address{{Email: "other@example.com"}},
+		HasAttach: false,
+	}
+	passedFail, _, resultsFail, err := EvaluateWithResults(rule, msgFail, nil)
+	if err != nil {
+		t.Fatalf("EvaluateWithResults fail branch error: %v", err)
+	}
+	if passedFail {
+		t.Errorf("expected rule to fail, got true")
+	}
+	if len(resultsFail) != 1 || resultsFail[0].Passed {
+		t.Errorf("expected group to fail")
+	}
+
+	// Empty rule groups
+	emptyRule := &db.Rule{Name: "empty"}
+	pEmpty, _, _, err := EvaluateWithResults(emptyRule, msg, nil)
+	if err != nil || !pEmpty {
+		t.Errorf("empty rule groups should evaluate true, got %v, err=%v", pEmpty, err)
+	}
+}
+
+func TestEvaluateWithResultsOperators(t *testing.T) {
+	rule := &db.Rule{
+		Name: "operators-test",
+		Groups: []db.ConditionGroup{
+			{
+				Operator: "AND",
+				Conditions: []db.Condition{
+					{Field: "subject", Operator: "starts_with", Value: "Invoice"},
+					{Field: "subject", Operator: "ends_with", Value: "2026"},
+					{Field: "has_attachment", Operator: "not_exists"},
+					{Field: "content_type", Operator: "contains", Value: "text/plain"},
+					{Field: "from", Operator: "not_equals", Value: "blocked@example.com"},
+					{Field: "to", Operator: "not_contains", Value: "spam"},
+					{Field: "older_than", Operator: "older_than", Value: "1 days"},
+					{Field: "newer_than", Operator: "newer_than", Value: "10 days"},
+					{Field: "before", Operator: "before", Value: "2030-01-01"},
+					{Field: "after", Operator: "after", Value: "2020-01-01"},
+				},
+			},
+		},
+	}
+
+	msg := &imap.Message{
+		UID:          12,
+		Subject:      "Invoice 2026",
+		From:         []imap.Address{{Email: "billing@example.com"}},
+		To:           []imap.Address{{Email: "me@example.com"}},
+		ContentTypes: []string{"text/plain"},
+		Date:         time.Now().Add(-48 * time.Hour),
+		HasAttach:    false,
+	}
+
+	passed, _, results, err := EvaluateWithResults(rule, msg, nil)
+	if err != nil {
+		t.Fatalf("EvaluateWithResults operator error: %v", err)
+	}
+	if !passed {
+		t.Errorf("expected all operators to pass, results=%v", results)
+	}
+}
+
+func TestInScheduleCrossingMidnightWithDay(t *testing.T) {
+	// Rule is scheduled Friday 22:00 to 06:00
+	rule := &db.Rule{
+		ScheduleDays:  "fri",
+		ScheduleStart: "22:00",
+		ScheduleEnd:   "06:00",
+	}
+
+	// Saturday morning 03:00 -> should match Friday overnight window
+	sat0300 := time.Date(2026, 10, 10, 3, 0, 0, 0, time.UTC) // 2026-10-10 is Saturday
+	if !inScheduleAt(rule, sat0300) {
+		t.Errorf("expected Saturday 03:00 to match Friday overnight schedule")
+	}
+
+	// Saturday 07:00 -> outside 06:00 window
+	sat0700 := time.Date(2026, 10, 10, 7, 0, 0, 0, time.UTC)
+	if inScheduleAt(rule, sat0700) {
+		t.Errorf("expected Saturday 07:00 to NOT match Friday overnight schedule")
+	}
+
+	// Friday 23:00 -> should match
+	fri2300 := time.Date(2026, 10, 9, 23, 0, 0, 0, time.UTC) // 2026-10-09 is Friday
+	if !inScheduleAt(rule, fri2300) {
+		t.Errorf("expected Friday 23:00 to match Friday overnight schedule")
+	}
+
+	// Friday 21:00 -> before start
+	fri2100 := time.Date(2026, 10, 9, 21, 0, 0, 0, time.UTC)
+	if inScheduleAt(rule, fri2100) {
+		t.Errorf("expected Friday 21:00 to NOT match")
+	}
+}

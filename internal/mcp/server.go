@@ -83,6 +83,12 @@ func (rl *mcpRateLimiter) allow(ip string) bool {
 }
 
 func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, collector *contacts.Collector, settingsRepo *db.SettingsRepo) *server.StreamableHTTPServer {
+	s := NewMCPServer(d, imapClient, p, version, collector, settingsRepo)
+	return server.NewStreamableHTTPServer(s)
+}
+
+// NewMCPServer returns the underlying MCPServer for testing and direct tool dispatch.
+func NewMCPServer(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, collector *contacts.Collector, settingsRepo *db.SettingsRepo) *server.MCPServer {
 	rulesRepo := db.NewRulesRepo(d)
 	logRepo := db.NewLogRepo(d)
 	statsRepo := db.NewStatsRepo(d)
@@ -776,7 +782,7 @@ func New(d *sql.DB, imapClient imap.Client, p *poller.Poller, version string, co
 		return resultJSON(result)
 	})
 
-	return server.NewStreamableHTTPServer(s)
+	return s
 }
 
 func clientIP(r *http.Request) string {

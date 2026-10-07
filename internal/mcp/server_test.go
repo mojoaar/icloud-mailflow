@@ -1,12 +1,16 @@
 package mcp
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/server"
 	"github.com/mojoaar/icloud-mailflow/internal/db"
 )
 
@@ -183,5 +187,134 @@ func TestNewAllowsNilDeps(t *testing.T) {
 	srvr := New(d, nil, nil, "1.0", nil, nil)
 	if srvr == nil {
 		t.Fatal("New should not panic with nil deps")
+	}
+}
+
+func callTool(ctx context.Context, s *server.MCPServer, name string, args map[string]any) (*mcp.CallToolResult, error) {
+	st := s.GetTool(name)
+	if st == nil {
+		return nil, fmt.Errorf("tool %s not found", name)
+	}
+	req := mcp.CallToolRequest{}
+	req.Params.Name = name
+	req.Params.Arguments = args
+	return st.Handler(ctx, req)
+}
+
+func TestMCPToolsCore(t *testing.T) {
+	d := db.NewTestDB(t)
+	settingsRepo := db.NewSettingsRepo(d)
+	settingsRepo.Set("source_folder", "INBOX")
+	settingsRepo.Set("poll_interval", "120")
+	settingsRepo.Set("webhook_secret", "secret123")
+
+	srv := NewMCPServer(d, nil, nil, "1.0", nil, settingsRepo)
+	ctx := context.Background()
+
+	// 1. Create rule
+	res, err := callTool(ctx, srv, "create_rule", map[string]any{
+		"name":            "VIP Mail",
+		"priority":        float64(1),
+		"conditions_json": `{"operator":"AND","conditions":[{"field":"from","operator":"contains","value":"vip@example.com"}]}`,
+		"actions_json":    `[{"type":"mark_as_read","value":""}]`,
+	})
+	if err != nil || res.IsError {
+		t.Fatalf("create_rule failed: %v, res: %+v", err, res)
+	}
+
+	// 2. List rules
+	res, err = callTool(ctx, srv, "list_rules", nil)
+	if err != nil || res.IsError {
+		t.Fatalf("list_rules failed: %v, res: %+v", err, res)
+	}
+
+	// 3. Get rule
+	res, err = callTool(ctx, srv, "get_rule", map[string]any{"id": float64(1)})
+	if err != nil || res.IsError {
+		t.Fatalf("get_rule failed: %v, res: %+v", err, res)
+	}
+
+	// 4. Update rule
+	res, err = callTool(ctx, srv, "update_rule", map[string]any{
+		"id":   float64(1),
+		"name": "VIP Mail Updated",
+	})
+	if err != nil || res.IsError {
+		t.Fatalf("update_rule failed: %v, res: %+v", err, res)
+	}
+
+	// 5. Check email
+	res, err = callTool(ctx, srv, "check_email", map[string]any{
+		"from": "vip@example.com",
+	})
+	if err != nil || res.IsError {
+		t.Fatalf("check_email failed: %v, res: %+v", err, res)
+	}
+
+	// 6. Get settings (verify webhook_secret redacted)
+	res, err = callTool(ctx, srv, "get_settings", nil)
+	if err != nil || res.IsError {
+		t.Fatalf("get_settings failed: %v, res: %+v", err, res)
+	}
+
+	// 7. Update settings
+	res, err = callTool(ctx, srv, "update_settings", map[string]any{
+		"poll_interval": "180",
+	})
+	if err != nil || res.IsError {
+		t.Fatalf("update_settings failed: %v, res: %+v", err, res)
+	}
+	if val, _ := settingsRepo.Get("poll_interval"); val != "180" {
+		t.Errorf("poll_interval not updated, got %s", val)
+	}
+
+	// 8. Health
+	res, err = callTool(ctx, srv, "health", nil)
+	if err != nil || res.IsError {
+		t.Fatalf("health tool failed: %v, res: %+v", err, res)
+	}
+
+	// 9. Get stats
+	res, err = callTool(ctx, srv, "get_stats", map[string]any{"days": float64(7), "weeks": float64(4)})
+	if err != nil || res.IsError {
+		t.Fatalf("get_stats tool failed: %v, res: %+v", err, res)
+	}
+
+	// 10. Enable & disable rule
+	res, err = callTool(ctx, srv, "disable_rule", map[string]any{"rule_id": float64(1)})
+	if err != nil || res.IsError {
+		t.Fatalf("disable_rule failed: %v, res: %+v", err, res)
+	}
+	res, err = callTool(ctx, srv, "enable_rule", map[string]any{"rule_id": float64(1)})
+	if err != nil || res.IsError {
+		t.Fatalf("enable_rule failed: %v, res: %+v", err, res)
+	}
+
+	// 11. Contacts & Activity
+	res, err = callTool(ctx, srv, "list_contacts", nil)
+	if err != nil || res.IsError {
+		t.Fatalf("list_contacts failed: %v, res: %+v", err, res)
+	}
+	res, err = callTool(ctx, srv, "search_contacts", map[string]any{"q": "vip"})
+	if err != nil || res.IsError {
+		t.Fatalf("search_contacts failed: %v, res: %+v", err, res)
+	}
+	res, err = callTool(ctx, srv, "list_activity", map[string]any{"per_page": float64(10), "page": float64(1)})
+	if err != nil || res.IsError {
+		t.Fatalf("list_activity failed: %v, res: %+v", err, res)
+	}
+	res, err = callTool(ctx, srv, "clear_activity", nil)
+	if err != nil || res.IsError {
+		t.Fatalf("clear_activity failed: %v, res: %+v", err, res)
+	}
+	res, err = callTool(ctx, srv, "backup_rules", nil)
+	if err != nil || res.IsError {
+		t.Fatalf("backup_rules failed: %v, res: %+v", err, res)
+	}
+
+	// 12. Delete rule
+	res, err = callTool(ctx, srv, "delete_rule", map[string]any{"id": float64(1)})
+	if err != nil || res.IsError {
+		t.Fatalf("delete_rule failed: %v, res: %+v", err, res)
 	}
 }
