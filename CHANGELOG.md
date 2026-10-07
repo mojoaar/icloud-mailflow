@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Redesigned status badges and chips with subtle borders and colored indicator dots (Option 2)
+
 ### Fixed
 - Creating the source folder no longer reports an error (or a WARN in the dashboard) when the folder already exists
 

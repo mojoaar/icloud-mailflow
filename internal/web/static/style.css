@@ -501,14 +501,46 @@ th { color: var(--muted); font-weight: 600; }
 .btn-danger:hover { background: var(--red); color: var(--danger-fg); }
 
 .badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    line-height: 1.2;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 80%, var(--bg));
+    color: var(--text);
+    vertical-align: middle;
 }
-.badge-on { background: color-mix(in srgb, var(--green) 22%, transparent); color: var(--green); }
-.badge-off { background: color-mix(in srgb, var(--red) 22%, transparent); color: var(--red); }
+.badge::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+}
+.badge-on {
+    border-color: color-mix(in srgb, var(--green) 35%, var(--border));
+    background: color-mix(in srgb, var(--green) 7%, var(--surface));
+    color: var(--text);
+}
+.badge-on::before {
+    background: var(--green);
+    box-shadow: 0 0 5px color-mix(in srgb, var(--green) 70%, transparent);
+}
+.badge-off {
+    border-color: color-mix(in srgb, var(--red) 35%, var(--border));
+    background: color-mix(in srgb, var(--red) 7%, var(--surface));
+    color: var(--text);
+}
+.badge-off::before {
+    background: var(--red);
+    box-shadow: 0 0 5px color-mix(in srgb, var(--red) 70%, transparent);
+}
 
 input, select, textarea {
     background: var(--bg);
